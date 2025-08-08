@@ -8,6 +8,7 @@ import { User } from './entities/user.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
 import { JwtService as CustomJwtService } from '../users/jwt/jwt.service'; 
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { JwtService as CustomJwtService } from '../users/jwt/jwt.service';
         },
       }),
     }),
+    EmailModule,
   ],
   controllers: [UsersController],
   providers: [UsersService, CustomJwtService],

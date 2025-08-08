@@ -13,6 +13,7 @@ import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
 import { JwtService } from './jwt/jwt.service';
+import { EmailService } from './email/email.service';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +25,7 @@ export class UsersService {
         @InjectRepository(Notification)
         private readonly notificationRepository: Repository<Notification>,
         private readonly jwtService: JwtService,
+        private readonly emailService: EmailService,
     ) { }
 
     /**
@@ -83,6 +85,8 @@ export class UsersService {
 
             await this.createWelcomeNotification(savedUser.id);
 
+            this.sendWelcomeEmailAsync(savedUser);
+
             return {
                 id: savedUser.id,
                 nom: savedUser.nom,
@@ -110,11 +114,22 @@ export class UsersService {
     }
 
     /**
+     * Envoie l'email de bienvenue de manière asynchrone
+     * @param user Utilisateur nouvellement inscrit
+     */
+    private async sendWelcomeEmailAsync(user: User): Promise<void> {
+        try {
+            await this.emailService.sendWelcomeEmail(user);
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi de l\'email de bienvenue:', error);
+        }
+    }
+
+    /**
      * Crée une session utilisateur.
      * @param userId ID de l'utilisateur
      * @param token Token JWT
      * @param ipAddress Adresse IP optionnelle
-     * @param userAgent User agent optionnel
      * @returns Session (objet session créée)
      */
     private async createUserSession(
