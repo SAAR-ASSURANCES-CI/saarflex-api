@@ -1,0 +1,73 @@
+services:
+  api:
+    build: .
+    container_name: saarflex-api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      users-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+      - api_node_modules:/app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: ["sh", "wait-for-mysql.sh"]
+
+
+  users-db:
+    image: mysql:8.0
+    container_name: users-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-user_db}
+      MYSQL_USER: ${DB_USERNAME:-saarflex_users}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-saarflex}
+    ports:
+      - "3307:3306"
+    volumes:
+      - users_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${DB_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+    
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: saarflex-phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: ${PMA_HOST}
+      PMA_PORT: ${PMA_PORT}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    depends_on:
+      users-db:
+        condition: service_healthy
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: saarflex-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+volumes:
+  users_db_data:
+  api_node_modules:
+
+
