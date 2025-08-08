@@ -72,7 +72,6 @@ export class UsersController {
     async register(
         @Body() registerDto: RegisterDto,
         @Ip() ipAddress: string,
-        @Headers('user-agent') userAgent: string
     ): Promise<{
         status: string;
         message: string;
@@ -82,7 +81,6 @@ export class UsersController {
             const newUser = await this.userService.register(
                 registerDto,
                 ipAddress,
-                userAgent
             );
 
             return {
