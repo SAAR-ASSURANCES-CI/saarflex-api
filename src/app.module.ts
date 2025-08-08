@@ -8,6 +8,7 @@ import { APP_PIPE } from '@nestjs/core';
 import { User } from './users/entities/user.entity';
 import { Notification } from './users/entities/notification.entity';
 import { Session } from './users/entities/session.entity';
+import { EmailModule } from './users/email/email.module';
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import { Session } from './users/entities/session.entity';
         logging: configService.get('NODE_ENV') === 'development',
       }),
     }),
-    UsersModule
+    UsersModule, 
+    EmailModule
   ],
   controllers: [AppController],
   providers: [

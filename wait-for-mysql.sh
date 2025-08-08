@@ -1,5 +1,4 @@
 #!/bin/sh
-
 echo "En attente de MySQL sur le port $DB_PORT..."
 
 while ! nc -z "$DB_HOST" "$DB_PORT"; do
