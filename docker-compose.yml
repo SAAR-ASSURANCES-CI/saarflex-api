@@ -3,7 +3,7 @@ services:
     build: .
     container_name: saarflex-api
     ports:
-      - "3000:3000"
+      - "0.0.0.0:3000:3000"
     env_file:
       - .env
     depends_on:
@@ -31,7 +31,7 @@ services:
       MYSQL_USER: ${DB_USERNAME:-saarflex_users}
       MYSQL_PASSWORD: ${DB_PASSWORD:-saarflex}
     ports:
-      - "3307:3306"
+      - "0.0.0.0:3307:3306"
     volumes:
       - users_db_data:/var/lib/mysql
     healthcheck:
@@ -45,7 +45,7 @@ services:
     container_name: saarflex-phpmyadmin
     restart: always
     ports:
-      - "8080:80"
+      - "0.0.0.0:8080:80"
     environment:
       PMA_HOST: ${PMA_HOST}
       PMA_PORT: ${PMA_PORT}
@@ -59,7 +59,7 @@ services:
     image: redis:7-alpine
     container_name: saarflex-redis
     ports:
-      - "6379:6379"
+      - "0.0.0.0:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

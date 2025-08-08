@@ -12,4 +12,4 @@ if [ ! -d "node_modules" ]; then
   pnpm install --frozen-lockfile
 fi
 
-pnpm start:dev
+pnpm run start:dev
