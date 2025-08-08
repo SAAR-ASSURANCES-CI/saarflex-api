@@ -12,6 +12,7 @@ import { User, UserType } from './entities/user.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
+import { JwtService } from './jwt/jwt.service';
 
 @Injectable()
 export class UsersService {
@@ -22,12 +23,20 @@ export class UsersService {
         private readonly sessionRepository: Repository<Session>,
         @InjectRepository(Notification)
         private readonly notificationRepository: Repository<Notification>,
+        private readonly jwtService: JwtService,
     ) { }
 
-
-    async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
+    /**
+     * Inscrit un nouvel utilisateur.
+     * @param registerDto Données d'inscription
+     * @param ipAddress Adresse IP optionnelle
+     * @param userAgent User agent optionnel
+     * @returns RegisterResponseDto (objet contenant les infos de l'utilisateur et le token)
+     * @throws ConflictException, BadRequestException, InternalServerErrorException
+     */
+    async register(registerDto: RegisterDto, ipAddress?: string, userAgent?: string): Promise<RegisterResponseDto> {
         try {
-            // Vérifier si l'email existe déjà
+
             const existingUser = await this.userRepository.findOne({
                 where: { email: registerDto.email },
             });
@@ -56,7 +65,6 @@ export class UsersService {
                 saltRounds
             );
 
-            
             const newUser = this.userRepository.create({
                 nom: registerDto.nom.trim(),
                 email: registerDto.email.toLowerCase().trim(),
@@ -64,9 +72,14 @@ export class UsersService {
                 mot_de_passe: hashedPassword,
                 type_utilisateur: registerDto.type_utilisateur || UserType.CLIENT,
                 statut: true,
+                derniere_connexion: new Date(),
             });
 
             const savedUser = await this.userRepository.save(newUser);
+
+            const token = this.jwtService.generateToken(savedUser);
+
+            await this.createUserSession(savedUser.id, token, ipAddress, userAgent);
 
             await this.createWelcomeNotification(savedUser.id);
 
@@ -78,6 +91,9 @@ export class UsersService {
                 type_utilisateur: savedUser.type_utilisateur,
                 statut: savedUser.statut,
                 date_creation: savedUser.date_creation,
+                token: token,
+                token_type: 'Bearer',
+                expires_in: 86400,
             };
         } catch (error) {
             if (
@@ -94,7 +110,36 @@ export class UsersService {
     }
 
     /**
-     * Trouver un utilisateur par ID
+     * Crée une session utilisateur.
+     * @param userId ID de l'utilisateur
+     * @param token Token JWT
+     * @param ipAddress Adresse IP optionnelle
+     * @param userAgent User agent optionnel
+     * @returns Session (objet session créée)
+     */
+    private async createUserSession(
+        userId: string,
+        token: string,
+        ipAddress?: string,
+        userAgent?: string
+    ): Promise<Session> {
+        const session = this.sessionRepository.create({
+            user_id: userId,
+            token: token,
+            ip: ipAddress,
+            user_agent: userAgent,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            is_active: true,
+        });
+
+        return await this.sessionRepository.save(session);
+    }
+
+    /**
+     * Recherche un utilisateur par son ID.
+     * @param id ID de l'utilisateur
+     * @returns User (l'utilisateur trouvé)
+     * @throws NotFoundException si l'utilisateur n'existe pas
      */
     async findById(id: string): Promise<User> {
         const user = await this.userRepository.findOne({
@@ -110,7 +155,9 @@ export class UsersService {
     }
 
     /**
-     * Trouver un utilisateur par email
+     * Recherche un utilisateur par son email.
+     * @param email Email de l'utilisateur
+     * @returns User | null (l'utilisateur trouvé ou null)
      */
     async findByEmail(email: string): Promise<User | null> {
         return this.userRepository.findOne({
@@ -119,7 +166,9 @@ export class UsersService {
     }
 
     /**
-     * Vérifier si un email existe
+     * Vérifie si un email existe déjà.
+     * @param email Email à vérifier
+     * @returns boolean (true si l'email existe, sinon false)
      */
     async emailExists(email: string): Promise<boolean> {
         const count = await this.userRepository.count({
@@ -129,7 +178,9 @@ export class UsersService {
     }
 
     /**
-     * Vérifier si un téléphone existe
+     * Vérifie si un numéro de téléphone existe déjà.
+     * @param telephone Numéro de téléphone à vérifier
+     * @returns boolean (true si le téléphone existe, sinon false)
      */
     async phoneExists(telephone: string): Promise<boolean> {
         const count = await this.userRepository.count({
@@ -139,7 +190,9 @@ export class UsersService {
     }
 
     /**
-     * Mettre à jour la dernière connexion
+     * Met à jour la date de dernière connexion de l'utilisateur.
+     * @param userId ID de l'utilisateur
+     * @returns void
      */
     async updateLastLogin(userId: string): Promise<void> {
         await this.userRepository.update(userId, {
@@ -148,12 +201,13 @@ export class UsersService {
     }
 
     /**
-     * Désactiver un utilisateur
+     * Désactive un utilisateur et toutes ses sessions.
+     * @param userId ID de l'utilisateur
+     * @returns void
      */
     async deactivateUser(userId: string): Promise<void> {
         await this.userRepository.update(userId, { statut: false });
 
-        // Invalider toutes les sessions actives
         await this.sessionRepository.update(
             { user_id: userId },
             { is_active: false }
@@ -161,7 +215,30 @@ export class UsersService {
     }
 
     /**
-     * Créer une notification de bienvenue
+     * Invalide toutes les sessions d'un utilisateur.
+     * @param userId ID de l'utilisateur
+     * @returns void
+     */
+    async invalidateAllUserSessions(userId: string): Promise<void> {
+        await this.sessionRepository.update(
+            { user_id: userId },
+            { is_active: false }
+        );
+    }
+
+    /**
+     * Invalide une session spécifique.
+     * @param sessionId ID de la session
+     * @returns void
+     */
+    async invalidateSession(sessionId: string): Promise<void> {
+        await this.sessionRepository.update(sessionId, { is_active: false });
+    }
+
+    /**
+     * Crée une notification de bienvenue pour l'utilisateur.
+     * @param userId ID de l'utilisateur
+     * @returns void
      */
     private async createWelcomeNotification(userId: string): Promise<void> {
         const notification = this.notificationRepository.create({
@@ -173,36 +250,5 @@ export class UsersService {
         });
 
         await this.notificationRepository.save(notification);
-    }
-
-    /**
-     * Obtenir les statistiques utilisateurs (pour les admins)
-     */
-    async getUserStats(): Promise<{
-        total: number;
-        actifs: number;
-        inactifs: number;
-        parType: Record<UserType, number>;
-    }> {
-        const total = await this.userRepository.count();
-        const actifs = await this.userRepository.count({ where: { statut: true } });
-        const inactifs = total - actifs;
-
-        const parType = {
-            [UserType.CLIENT]: await this.userRepository.count({
-                where: { type_utilisateur: UserType.CLIENT },
-            }),
-            [UserType.AGENT]: await this.userRepository.count({
-                where: { type_utilisateur: UserType.AGENT },
-            }),
-            [UserType.DRH]: await this.userRepository.count({
-                where: { type_utilisateur: UserType.DRH },
-            }),
-            [UserType.ADMIN]: await this.userRepository.count({
-                where: { type_utilisateur: UserType.ADMIN },
-            }),
-        };
-
-        return { total, actifs, inactifs, parType };
     }
 }

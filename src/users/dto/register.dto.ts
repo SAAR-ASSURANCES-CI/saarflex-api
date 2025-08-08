@@ -84,4 +84,22 @@ export class RegisterResponseDto {
 
     @ApiProperty()
     date_creation: Date;
+
+    @ApiProperty({
+        description: 'Token JWT pour l\'authentification',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+    })
+    token: string;
+
+    @ApiProperty({
+        description: 'Type de token',
+        example: 'Bearer'
+    })
+    token_type: string;
+
+    @ApiProperty({
+        description: 'Durée de validité du token en secondes',
+        example: 86400
+    })
+    expires_in: number;
 }

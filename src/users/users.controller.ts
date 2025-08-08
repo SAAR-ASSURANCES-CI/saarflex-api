@@ -8,6 +8,8 @@ import {
     Param,
     UseGuards,
     Request,
+    Ip,
+    Headers,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -25,32 +27,63 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 export class UsersController {
     constructor(private readonly userService: UsersService) { }
 
+    /**
+     * Inscription d'un nouvel utilisateur via HTTP.
+     * @param registerDto Données d'inscription de l'utilisateur
+     * @param ipAddress Adresse IP de l'utilisateur
+     * @param userAgent User agent de l'utilisateur
+     * @returns Un objet contenant le statut, un message et les données du nouvel utilisateur (RegisterResponseDto)
+     */
     @Post('register')
     @ApiOperation({
         summary: 'Inscription d\'un nouvel utilisateur',
-        description: 'Créer un nouveau compte utilisateur avec validation des données',
+        description: 'Créer un nouveau compte utilisateur avec validation des données et génération automatique du token JWT',
     })
     @ApiBody({ type: RegisterDto })
     @ApiResponse({
         status: 201,
-        description: 'Utilisateur créé avec succès',
+        description: 'Utilisateur créé avec succès avec token JWT',
         type: RegisterResponseDto,
     })
     @ApiResponse({
         status: 409,
         description: 'Email ou téléphone déjà utilisé',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'string', example: 'error' },
+                message: { type: 'string', example: 'Un utilisateur avec cet email existe déjà' },
+                statusCode: { type: 'number', example: 409 }
+            }
+        }
     })
     @ApiResponse({
         status: 400,
         description: 'Données invalides',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'string', example: 'error' },
+                message: { type: 'array', items: { type: 'string' } },
+                statusCode: { type: 'number', example: 400 }
+            }
+        }
     })
-    async register(@Body() registerDto: RegisterDto): Promise<{
+    async register(
+        @Body() registerDto: RegisterDto,
+        @Ip() ipAddress: string,
+        @Headers('user-agent') userAgent: string
+    ): Promise<{
         status: string;
         message: string;
         data: RegisterResponseDto;
     }> {
         try {
-            const newUser = await this.userService.register(registerDto);
+            const newUser = await this.userService.register(
+                registerDto,
+                ipAddress,
+                userAgent
+            );
 
             return {
                 status: 'success',
@@ -73,87 +106,27 @@ export class UsersController {
         }
     }
 
-    @Get(':id')
-    @ApiOperation({
-        summary: 'Obtenir un utilisateur par ID',
-        description: 'Récupérer les informations d\'un utilisateur spécifique',
-    })
-    @ApiResponse({
-        status: 200,
-        description: 'Utilisateur trouvé',
-    })
-    @ApiResponse({
-        status: 404,
-        description: 'Utilisateur non trouvé',
-    })
-    async findById(@Param('id') id: string): Promise<{
-        status: string;
-        data: any;
-    }> {
-        try {
-            const user = await this.userService.findById(id);
-
-            const { mot_de_passe, ...userWithoutPassword } = user;
-
-            return {
-                status: 'success',
-                data: userWithoutPassword,
-            };
-        } catch (error) {
-            if (error instanceof HttpException) {
-                throw error;
-            }
-
-            throw new HttpException(
-                {
-                    status: 'error',
-                    message: 'Erreur lors de la récupération de l\'utilisateur',
-                },
-                HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-        }
-    }
-
-    @Get('stats/overview')
-    @ApiOperation({
-        summary: 'Statistiques des utilisateurs',
-        description: 'Obtenir les statistiques générales des utilisateurs (admin)',
-    })
-    @ApiResponse({
-        status: 200,
-        description: 'Statistiques récupérées avec succès',
-    })
-    async getStats(): Promise<{
-        status: string;
-        data: any;
-    }> {
-        try {
-            const stats = await this.userService.getUserStats();
-
-            return {
-                status: 'success',
-                data: stats,
-            };
-        } catch (error) {
-            throw new HttpException(
-                {
-                    status: 'error',
-                    message: 'Erreur lors de la récupération des statistiques',
-                },
-                HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-        }
-    }
-
-
+    /**
+     * Inscription d'un nouvel utilisateur via microservice (MessagePattern).
+     * @param data Objet contenant registerDto, ipAddress et userAgent
+     * @returns Un objet avec success (boolean), data (RegisterResponseDto) ou error (string)
+     */
     @MessagePattern('user.register')
-    async handleUserRegister(@Payload() registerDto: RegisterDto): Promise<{
+    async handleUserRegister(@Payload() data: {
+        registerDto: RegisterDto;
+        ipAddress?: string;
+        userAgent?: string;
+    }): Promise<{
         success: boolean;
         data?: RegisterResponseDto;
         error?: string;
     }> {
         try {
-            const newUser = await this.userService.register(registerDto);
+            const newUser = await this.userService.register(
+                data.registerDto,
+                data.ipAddress,
+                data.userAgent
+            );
             return {
                 success: true,
                 data: newUser,
@@ -166,6 +139,11 @@ export class UsersController {
         }
     }
 
+    /**
+     * Recherche un utilisateur par son ID via microservice.
+     * @param userId ID de l'utilisateur
+     * @returns Un objet avec success (boolean), data (utilisateur sans mot de passe) ou error (string)
+     */
     @MessagePattern('user.findById')
     async handleFindById(@Payload() userId: string): Promise<{
         success: boolean;
@@ -188,6 +166,11 @@ export class UsersController {
         }
     }
 
+    /**
+     * Recherche un utilisateur par son email via microservice.
+     * @param email Email de l'utilisateur
+     * @returns Un objet avec success (boolean), data (utilisateur) ou error (string)
+     */
     @MessagePattern('user.findByEmail')
     async handleFindByEmail(@Payload() email: string): Promise<{
         success: boolean;
@@ -216,6 +199,11 @@ export class UsersController {
         }
     }
 
+    /**
+     * Met à jour la date de dernière connexion d'un utilisateur via microservice.
+     * @param userId ID de l'utilisateur
+     * @returns Un objet avec success (boolean) et éventuellement error (string)
+     */
     @MessagePattern('user.updateLastLogin')
     async handleUpdateLastLogin(@Payload() userId: string): Promise<{
         success: boolean;
@@ -234,6 +222,11 @@ export class UsersController {
         }
     }
 
+    /**
+     * Vérifie si un email existe déjà via microservice.
+     * @param email Email à vérifier
+     * @returns Un objet avec success (boolean), exists (boolean) et éventuellement error (string)
+     */
     @MessagePattern('user.emailExists')
     async handleEmailExists(@Payload() email: string): Promise<{
         success: boolean;
@@ -250,6 +243,52 @@ export class UsersController {
             return {
                 success: false,
                 exists: false,
+                error: error.message,
+            };
+        }
+    }
+
+    /**
+     * Invalide une session spécifique via microservice.
+     * @param sessionId ID de la session à invalider
+     * @returns Un objet avec success (boolean) et éventuellement error (string)
+     */
+    @MessagePattern('user.invalidateSession')
+    async handleInvalidateSession(@Payload() sessionId: string): Promise<{
+        success: boolean;
+        error?: string;
+    }> {
+        try {
+            await this.userService.invalidateSession(sessionId);
+            return {
+                success: true,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+            };
+        }
+    }
+
+    /**
+     * Invalide toutes les sessions d'un utilisateur via microservice.
+     * @param userId ID de l'utilisateur
+     * @returns Un objet avec success (boolean) et éventuellement error (string)
+     */
+    @MessagePattern('user.invalidateAllUserSessions')
+    async handleInvalidateAllUserSessions(@Payload() userId: string): Promise<{
+        success: boolean;
+        error?: string;
+    }> {
+        try {
+            await this.userService.invalidateAllUserSessions(userId);
+            return {
+                success: true,
+            };
+        } catch (error) {
+            return {
+                success: false,
                 error: error.message,
             };
         }
