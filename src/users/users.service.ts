@@ -13,10 +13,14 @@ import * as bcrypt from 'bcrypt';
 import { User, UserType } from './entities/user.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
+import { PasswordReset } from './entities/password-reset.entity';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { JwtService } from './jwt/jwt.service';
 import { EmailService } from './email/email.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class UsersService {
@@ -27,6 +31,8 @@ export class UsersService {
         private readonly sessionRepository: Repository<Session>,
         @InjectRepository(Notification)
         private readonly notificationRepository: Repository<Notification>,
+        @InjectRepository(PasswordReset)
+        private readonly passwordResetRepository: Repository<PasswordReset>,
         private readonly jwtService: JwtService,
         private readonly emailService: EmailService,
     ) { }
@@ -156,6 +162,80 @@ export class UsersService {
             token_type: 'Bearer',
             expires_in: 86400,
         };
+    }
+
+    /**
+     * Demande de réinitialisation du mot de passe
+     */
+    async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+        const user = await this.findByEmail(dto.email);
+        if (!user) {
+            return;
+        }
+
+        await this.passwordResetRepository.update({ user_id: user.id, used: false }, { used: true, used_at: new Date() });
+
+        const code = this.generateSixDigitCode();
+        const codeHash = await bcrypt.hash(code, 12);
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+        const record = this.passwordResetRepository.create({
+            user_id: user.id,
+            code_hash: codeHash,
+            expires_at: expiresAt,
+            used: false,
+            used_at: null,
+        });
+        await this.passwordResetRepository.save(record);
+
+        await this.emailService.sendPasswordResetCode(user.email, code);
+    }
+
+    /**
+     * Vérifie un code OTP sans changer le mot de passe
+     */
+    async verifyOtp(dto: VerifyOtpDto): Promise<void> {
+        const user = await this.findByEmail(dto.email);
+        if (!user) {
+            throw new BadRequestException('Code invalide');
+        }
+        const latest = await this.passwordResetRepository.findOne({
+            where: { user_id: user.id, used: false },
+            order: { created_at: 'DESC' },
+        });
+        if (!latest) throw new BadRequestException('Code invalide');
+        if (latest.expires_at.getTime() < Date.now()) throw new BadRequestException('Code expiré');
+        const match = await bcrypt.compare(dto.code, latest.code_hash);
+        if (!match) throw new BadRequestException('Code invalide');
+    }
+
+    /**
+     * Réinitialise le mot de passe après vérification du code OTP
+     */
+    async resetPassword(dto: ResetPasswordDto): Promise<void> {
+        const user = await this.findByEmail(dto.email);
+        if (!user) {
+            throw new BadRequestException('Opération invalide');
+        }
+        const latest = await this.passwordResetRepository.findOne({
+            where: { user_id: user.id, used: false },
+            order: { created_at: 'DESC' },
+        });
+        if (!latest) throw new BadRequestException('Code invalide');
+        if (latest.expires_at.getTime() < Date.now()) throw new BadRequestException('Code expiré');
+        const match = await bcrypt.compare(dto.code, latest.code_hash);
+        if (!match) throw new BadRequestException('Code invalide');
+
+        const newHash = await bcrypt.hash(dto.nouveau_mot_de_passe, 12);
+        await this.userRepository.update(user.id, { mot_de_passe: newHash });
+
+        await this.passwordResetRepository.update(latest.id, { used: true, used_at: new Date() });
+        await this.invalidateAllUserSessions(user.id);
+    }
+
+    private generateSixDigitCode(): string {
+        const n = Math.floor(Math.random() * 1000000);
+        return n.toString().padStart(6, '0');
     }
 
     /**

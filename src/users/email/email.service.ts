@@ -57,6 +57,36 @@ export class EmailService {
         }
     }
 
+  async sendPasswordResetCode(email: string, code: string): Promise<void> {
+    const mailOptions = {
+      from: {
+        name: 'SAARFLEX',
+        address: this.configService.get('SMTP_USER'),
+      },
+      to: email,
+      subject: 'Code de réinitialisation de mot de passe',
+      html: this.getPasswordResetTemplate(code),
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Code de réinitialisation envoyé à ${email}: ${result.messageId}`);
+    } catch (error) {
+      this.logger.error(`Erreur lors de l'envoi du code à ${email}:`, error);
+      throw error;
+    }
+  }
+
+  private getPasswordResetTemplate(code: string): string {
+    return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2>Réinitialisation de votre mot de passe</h2>
+        <p>Utilisez le code ci-dessous pour réinitialiser votre mot de passe. Ce code est valable 15 minutes.</p>
+        <div style="font-size: 28px; font-weight: bold; letter-spacing: 6px; background: #f8f9fa; border: 1px solid #e9ecef; padding: 16px; text-align: center;">${code}</div>
+        <p>Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.</p>
+      </div>`;
+  }
+
     private getWelcomeEmailTemplate(user: User): string {
         return `
         <!DOCTYPE html>

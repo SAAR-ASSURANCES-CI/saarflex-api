@@ -22,6 +22,9 @@ import { UsersService } from './users.service';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -371,5 +374,38 @@ export class UsersController {
                 error: error.message,
             };
         }
+    }
+
+    /**
+     * Démarre le flux mot de passe oublié: envoie un code OTP 6 chiffres (expire en 15 min)
+     */
+    @Post('forgot-password')
+    @ApiOperation({ summary: 'Mot de passe oublié - envoi du code OTP' })
+    @ApiBody({ type: ForgotPasswordDto })
+    async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ status: string; message: string; }> {
+        await this.userService.forgotPassword(dto);
+        return { status: 'success', message: 'Si un compte existe pour cet email, un code a été envoyé.' };
+    }
+
+    /**
+     * Vérifie un code OTP
+     */
+    @Post('verify-otp')
+    @ApiOperation({ summary: 'Vérifier le code OTP' })
+    @ApiBody({ type: VerifyOtpDto })
+    async verifyOtp(@Body() dto: VerifyOtpDto): Promise<{ status: string; message: string; }> {
+        await this.userService.verifyOtp(dto);
+        return { status: 'success', message: 'Code valide' };
+    }
+
+    /**
+     * Réinitialise le mot de passe via code OTP
+     */
+    @Post('reset-password')
+    @ApiOperation({ summary: 'Réinitialiser le mot de passe via code OTP' })
+    @ApiBody({ type: ResetPasswordDto })
+    async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ status: string; message: string; }> {
+        await this.userService.resetPassword(dto);
+        return { status: 'success', message: 'Mot de passe mis à jour avec succès' };
     }
 }
