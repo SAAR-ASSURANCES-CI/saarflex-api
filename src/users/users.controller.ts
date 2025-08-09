@@ -137,6 +137,7 @@ export class UsersController {
     @ApiBody({ type: LoginDto })
     @ApiResponse({ status: 200, description: 'Connexion réussie', type: LoginResponseDto })
     @ApiResponse({ status: 400, description: 'Identifiants invalides' })
+    @ApiResponse({ status: 403, description: 'Compte bloqué' })
     async login(
         @Body() loginDto: LoginDto,
         @Ip() ipAddress: string,

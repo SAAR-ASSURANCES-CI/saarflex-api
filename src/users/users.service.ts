@@ -5,6 +5,7 @@ import {
     NotFoundException,
     InternalServerErrorException,
     UnauthorizedException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -135,7 +136,7 @@ export class UsersService {
         }
 
         if (!user.statut) {
-            throw new BadRequestException("Compte désactivé. Veuillez contacter le support.");
+            throw new ForbiddenException('Compte bloqué. Veuillez contacter le support.');
         }
 
         await this.updateLastLogin(user.id);
