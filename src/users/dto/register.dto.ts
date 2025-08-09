@@ -36,7 +36,7 @@ export class RegisterDto {
     @IsString({ message: 'Le téléphone doit être une chaîne de caractères' })
     @Matches(/^\+?\d{1,3}[\s.-]?\d{1,14}$/, { message: 'Le numéro de téléphone doit être valide et contenir uniquement des chiffres.' })
     @IsOptional()
-    telephone?: string;
+    telephone?: string | null;
 
     @ApiProperty({
         description: 'Mot de passe (minimum 8 caractères)',
