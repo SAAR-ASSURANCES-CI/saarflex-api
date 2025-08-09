@@ -8,6 +8,7 @@ import { APP_PIPE } from '@nestjs/core';
 import { User } from './users/entities/user.entity';
 import { Notification } from './users/entities/notification.entity';
 import { Session } from './users/entities/session.entity';
+import { PasswordReset } from './users/entities/password-reset.entity';
 import { EmailModule } from './users/email/email.module';
 
 @Module({
@@ -26,7 +27,7 @@ import { EmailModule } from './users/email/email.module';
         username: configService.get('DB_USERNAME') ?? '',
         password: configService.get('DB_PASSWORD') ?? '',
         database: configService.get('DB_NAME') ?? '',
-        entities: [User, Session, Notification],
+        entities: [User, Session, Notification, PasswordReset],
         migrations: ['dist/migrations/*.js'], 
         migrationsRun: true,
         synchronize: false,

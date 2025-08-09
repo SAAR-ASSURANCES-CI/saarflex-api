@@ -7,12 +7,13 @@ import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
+import { PasswordReset } from './entities/password-reset.entity';
 import { JwtService as CustomJwtService } from '../users/jwt/jwt.service'; 
 import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Session, Notification]),
+    TypeOrmModule.forFeature([User, Session, Notification, PasswordReset]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
