@@ -28,7 +28,7 @@ export class User {
     email: string;
 
     @Column({ type: 'varchar', length: 20, nullable: true, unique: true })
-    telephone: string;
+    telephone: string | null;
 
     @Column({ type: 'varchar', length: 255 })
     mot_de_passe: string;

@@ -10,6 +10,7 @@ import {
     Request,
     Ip,
     Headers,
+    Patch,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -25,6 +26,9 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './jwt/jwt-auth.guard';
+import { ProfileDto } from './dto/profile.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -407,5 +411,37 @@ export class UsersController {
     async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ status: string; message: string; }> {
         await this.userService.resetPassword(dto);
         return { status: 'success', message: 'Mot de passe mis à jour avec succès' };
+    }
+
+    /**
+     * Récupère le profil de l'utilisateur connecté
+     */
+    @Get('me')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Mon profil' })
+    @ApiResponse({ status: 200, type: ProfileDto })
+    async getMe(@Request() req: any): Promise<{ status: string; data: ProfileDto }> {
+        const userId = req.user?.id as string;
+        const data = await this.userService.getProfile(userId);
+        return { status: 'success', data };
+    }
+
+    /**
+     * Met à jour le profil de l'utilisateur connecté (nom, téléphone)
+     */
+    @Patch('me')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Mettre à jour mon profil' })
+    @ApiBody({ type: UpdateProfileDto })
+    @ApiResponse({ status: 200, type: ProfileDto })
+    async updateMe(
+        @Request() req: any,
+        @Body() dto: UpdateProfileDto,
+    ): Promise<{ status: string; message: string; data: ProfileDto }> {
+        const userId = req.user?.id as string;
+        const data = await this.userService.updateProfile(userId, dto);
+        return { status: 'success', message: 'Profil mis à jour avec succès', data };
     }
 }

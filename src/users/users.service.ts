@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserType } from './entities/user.entity';
+import { Profile } from './entities/profile.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
 import { PasswordReset } from './entities/password-reset.entity';
@@ -21,12 +22,16 @@ import { EmailService } from './email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ProfileDto } from './dto/profile.dto';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        @InjectRepository(Profile)
+        private readonly profileRepository: Repository<Profile>,
         @InjectRepository(Session)
         private readonly sessionRepository: Repository<Session>,
         @InjectRepository(Notification)
@@ -100,7 +105,7 @@ export class UsersService {
                 id: savedUser.id,
                 nom: savedUser.nom,
                 email: savedUser.email,
-                telephone: savedUser.telephone,
+                telephone: savedUser.telephone ?? undefined,
                 type_utilisateur: savedUser.type_utilisateur,
                 statut: savedUser.statut,
                 date_creation: savedUser.date_creation,
@@ -231,6 +236,104 @@ export class UsersService {
 
         await this.passwordResetRepository.update(latest.id, { used: true, used_at: new Date() });
         await this.invalidateAllUserSessions(user.id);
+    }
+
+    /**
+     * Retourne le profil de l'utilisateur courant (sans mot de passe)
+     */
+    async getProfile(userId: string): Promise<ProfileDto> {
+        const user = await this.findById(userId);
+        let profile = await this.profileRepository.findOne({ where: { user_id: user.id } });
+        if (!profile) {
+            // Créer un profil vide à la volée pour simplifier le flux
+            profile = await this.profileRepository.save(
+                this.profileRepository.create({ user_id: user.id })
+            );
+        }
+        return {
+            id: user.id,
+            nom: user.nom,
+            email: user.email,
+            telephone: user.telephone,
+            type_utilisateur: user.type_utilisateur,
+            statut: user.statut,
+            date_creation: user.date_creation,
+            date_modification: user.date_modification,
+            lieu_naissance: profile.lieu_naissance ?? undefined,
+            sexe: profile.sexe ?? undefined,
+            nationalite: profile.nationalite ?? undefined,
+            profession: profile.profession ?? undefined,
+            adresse: profile.adresse ?? undefined,
+            numero_piece_identite: profile.numero_piece_identite ?? undefined,
+            type_piece_identite: profile.type_piece_identite ?? undefined,
+        };
+    }
+
+    /**
+     * Met à jour le profil: nom et téléphone
+     */
+    async updateProfile(userId: string, dto: UpdateProfileDto): Promise<ProfileDto> {
+        const user = await this.findById(userId);
+
+        if (typeof dto.nom !== 'undefined') {
+            user.nom = dto.nom.trim();
+        }
+        if (typeof dto.telephone !== 'undefined') {
+            const newPhone = dto.telephone?.trim() ?? null;
+            if (newPhone) {
+                const exists = await this.userRepository.findOne({ where: { telephone: newPhone } });
+                if (exists && exists.id !== user.id) {
+                    throw new ConflictException('Ce numéro de téléphone est déjà utilisé');
+                }
+            }
+            user.telephone = newPhone;
+        }
+        if (typeof dto.email !== 'undefined') {
+            const newEmail = dto.email?.toLowerCase().trim() ?? null;
+            if (newEmail) {
+                const existsEmail = await this.userRepository.findOne({ where: { email: newEmail } });
+                if (existsEmail && existsEmail.id !== user.id) {
+                    throw new ConflictException('Cet email est déjà utilisé');
+                }
+                user.email = newEmail;
+            }
+        }
+        
+        let profile = await this.profileRepository.findOne({ where: { user_id: user.id } });
+        if (!profile) {
+            profile = this.profileRepository.create({ user_id: user.id });
+        }
+
+        if (typeof dto.lieu_naissance !== 'undefined') profile.lieu_naissance = dto.lieu_naissance?.trim() ?? null;
+        if (typeof dto.sexe !== 'undefined') profile.sexe = dto.sexe?.trim() ?? null;
+        if (typeof dto.nationalite !== 'undefined') profile.nationalite = dto.nationalite?.trim() ?? null;
+        if (typeof dto.profession !== 'undefined') profile.profession = dto.profession?.trim() ?? null;
+        if (typeof dto.adresse !== 'undefined') profile.adresse = dto.adresse?.trim() ?? null;
+        if (typeof dto.numero_piece_identite !== 'undefined') profile.numero_piece_identite = dto.numero_piece_identite?.trim() ?? null;
+        if (typeof dto.type_piece_identite !== 'undefined') profile.type_piece_identite = dto.type_piece_identite?.trim() ?? null;
+
+        const [savedUser, savedProfile] = await Promise.all([
+            this.userRepository.save(user),
+            this.profileRepository.save(profile),
+        ]);
+
+        return {
+            id: savedUser.id,
+            nom: savedUser.nom,
+            email: savedUser.email,
+            telephone: savedUser.telephone ?? undefined,
+            type_utilisateur: savedUser.type_utilisateur,
+            statut: savedUser.statut,
+            date_creation: savedUser.date_creation,
+            date_modification: savedUser.date_modification,
+            lieu_naissance: savedProfile.lieu_naissance ?? undefined,
+            sexe: savedProfile.sexe ?? undefined,
+            nationalite: savedProfile.nationalite ?? undefined,
+            profession: savedProfile.profession ?? undefined,
+            adresse: savedProfile.adresse ?? undefined,
+            numero_piece_identite: savedProfile.numero_piece_identite ?? undefined,
+            type_piece_identite: savedProfile.type_piece_identite ?? undefined,
+        };
     }
 
     private generateSixDigitCode(): string {

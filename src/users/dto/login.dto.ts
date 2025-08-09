@@ -25,8 +25,8 @@ export class LoginResponseDto {
   @ApiProperty()
   email: string;
 
-  @ApiProperty({ required: false })
-  telephone?: string;
+  @ApiProperty({ required: false, nullable: true })
+  telephone?: string | null;
 
   @ApiProperty({ enum: UserType })
   type_utilisateur: UserType;
