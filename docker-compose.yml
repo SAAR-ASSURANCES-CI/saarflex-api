@@ -1,9 +1,13 @@
+version: '3.8'
+
 services:
   api:
-    build: .
+    build: 
+      context: .
+      target: development
     container_name: saarflex-api
     ports:
-      - "0.0.0.0:3000:3000"
+      - "3000:3000"
     env_file:
       - .env
     depends_on:
@@ -12,62 +16,99 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./:/app
+      - ./src:/app/src:cached
+      - ./package.json:/app/package.json:cached
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:cached
+      - ./tsconfig.json:/app/tsconfig.json:cached
+      - ./nest-cli.json:/app/nest-cli.json:cached
       - api_node_modules:/app/node_modules
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-    command: ["sh", "wait-for-mysql.sh"]
-
+      start_period: 60s
+    restart: unless-stopped
+    command: 
+      - sh
+      - -c
+      - |
+        echo "Waiting for dependencies..."
+        dockerize -wait tcp://users-db:3306 -timeout 120s -wait-retry-interval 5s
+        dockerize -wait tcp://redis:6379 -timeout 60s -wait-retry-interval 2s
+        echo "All services ready. Starting application..."
+        exec pnpm run start:dev
+    networks:
+      - saarflex-network
 
   users-db:
     image: mysql:8.0
     container_name: users-db
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${DB_NAME:-user_db}
-      MYSQL_USER: ${DB_USERNAME:-saarflex_users}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-saarflex}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "0.0.0.0:3307:3306"
+      - "3307:3306"
     volumes:
       - users_db_data:/var/lib/mysql
+   
+    command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${DB_ROOT_PASSWORD:-root}"]
-      interval: 5s
-      timeout: 3s
-      retries: 40
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - saarflex-network
     
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin
+    image: phpmyadmin/phpmyadmin:latest
     container_name: saarflex-phpmyadmin
-    restart: always
+    restart: unless-stopped
     ports:
-      - "0.0.0.0:8080:80"
+      - "8080:80"
     environment:
-      PMA_HOST: ${PMA_HOST}
-      PMA_PORT: ${PMA_PORT}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      PMA_HOST: users-db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_ROOT_PASSWORD}
+      PMA_ARBITRARY: 1
     depends_on:
       users-db:
         condition: service_healthy
-
+    networks:
+      - saarflex-network
 
   redis:
     image: redis:7-alpine
     container_name: saarflex-redis
     ports:
-      - "0.0.0.0:6379:6379"
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 40
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - saarflex-network
 
 volumes:
   users_db_data:
+    driver: local
   api_node_modules:
+    driver: local
+  redis_data:
+    driver: local
 
-
+networks:
+  saarflex-network:
+    driver: bridge

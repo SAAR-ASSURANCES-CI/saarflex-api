@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
+import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @ApiTags('Users')
@@ -101,6 +102,86 @@ export class UsersController {
                 },
                 HttpStatus.INTERNAL_SERVER_ERROR,
             );
+        }
+    }
+
+    /**
+     * Connexion d'un utilisateur via HTTP.
+     * 
+     * @param loginDto Les identifiants de connexion de l'utilisateur (email, mot de passe)
+     * @param ipAddress L'adresse IP de l'utilisateur (injectée automatiquement)
+     * @returns Un objet contenant :
+     *   - status: 'success' si la connexion est réussie, sinon 'error'
+     *   - message: un message de succès ou d'erreur
+     *   - data: un objet LoginResponseDto contenant :
+     *       - id: string (identifiant de l'utilisateur)
+     *       - nom: string (nom de l'utilisateur)
+     *       - email: string (email de l'utilisateur)
+     *       - telephone?: string (téléphone de l'utilisateur, optionnel)
+     *       - type_utilisateur: UserType (type d'utilisateur)
+     *       - statut: boolean (statut du compte)
+     *       - date_creation: Date (date de création du compte)
+     *       - token: string (JWT généré)
+     *       - token_type: string (ex: 'Bearer')
+     *       - expires_in: number (durée de validité du token en secondes)
+     *   En cas d'erreur, une exception HttpException est levée avec :
+     *     - status: 'error'
+     *     - message: message d'erreur
+     *     - error: détail de l'erreur
+     */
+    @Post('login')
+    @ApiOperation({
+        summary: 'Connexion utilisateur',
+        description: 'Vérifie les identifiants, génère un token JWT, crée une session et renvoie les informations de connexion.'
+    })
+    @ApiBody({ type: LoginDto })
+    @ApiResponse({ status: 200, description: 'Connexion réussie', type: LoginResponseDto })
+    @ApiResponse({ status: 400, description: 'Identifiants invalides' })
+    @ApiResponse({ status: 403, description: 'Compte bloqué' })
+    async login(
+        @Body() loginDto: LoginDto,
+        @Ip() ipAddress: string,
+    ): Promise<{
+        status: string;
+        message: string;
+        data: LoginResponseDto;
+    }> {
+        try {
+            const result = await this.userService.login(loginDto, ipAddress);
+            return {
+                status: 'success',
+                message: 'Connexion réussie',
+                data: result,
+            };
+        } catch (error) {
+            if (error instanceof HttpException) {
+                throw error;
+            }
+            throw new HttpException(
+                {
+                    status: 'error',
+                    message: 'Erreur lors de la connexion',
+                    error: error.message,
+                },
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    /**
+     * Connexion via microservice (MessagePattern)
+     */
+    @MessagePattern('user.login')
+    async handleUserLogin(@Payload() data: { loginDto: LoginDto; ipAddress?: string; userAgent?: string }): Promise<{
+        success: boolean;
+        data?: LoginResponseDto;
+        error?: string;
+    }> {
+        try {
+            const result = await this.userService.login(data.loginDto, data.ipAddress, data.userAgent);
+            return { success: true, data: result };
+        } catch (error) {
+            return { success: false, error: error.message };
         }
     }
 
