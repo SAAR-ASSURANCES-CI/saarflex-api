@@ -4,6 +4,7 @@ import {
     BadRequestException,
     NotFoundException,
     InternalServerErrorException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,6 +13,7 @@ import { User, UserType } from './entities/user.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
+import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { JwtService } from './jwt/jwt.service';
 import { EmailService } from './email/email.service';
 
@@ -111,6 +113,48 @@ export class UsersService {
                 'Erreur lors de la création du compte utilisateur'
             );
         }
+    }
+
+    /**
+     * Connecte un utilisateur existant.
+     * - Vérifie l'existence de l'utilisateur
+     * - Compare le mot de passe (bcrypt)
+     * - Vérifie que l'utilisateur est actif
+     * - Met à jour la dernière connexion
+     * - Génère un JWT et crée une session
+     */
+    async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string): Promise<LoginResponseDto> {
+        const user = await this.findByEmail(loginDto.email);
+        if (!user) {
+            throw new UnauthorizedException('Identifiants invalides');
+        }
+
+        const isPasswordValid = await bcrypt.compare(loginDto.mot_de_passe, user.mot_de_passe);
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Identifiants invalides');
+        }
+
+        if (!user.statut) {
+            throw new BadRequestException("Compte désactivé. Veuillez contacter le support.");
+        }
+
+        await this.updateLastLogin(user.id);
+
+        const token = this.jwtService.generateToken(user);
+        await this.createUserSession(user.id, token, ipAddress, userAgent);
+
+        return {
+            id: user.id,
+            nom: user.nom,
+            email: user.email,
+            telephone: user.telephone,
+            type_utilisateur: user.type_utilisateur,
+            statut: user.statut,
+            date_creation: user.date_creation,
+            token,
+            token_type: 'Bearer',
+            expires_in: 86400,
+        };
     }
 
     /**
