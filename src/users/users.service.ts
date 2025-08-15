@@ -138,12 +138,12 @@ export class UsersService {
     async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string): Promise<LoginResponseDto> {
         const user = await this.findByEmail(loginDto.email);
         if (!user) {
-            throw new UnauthorizedException('Identifiants invalides');
+            throw new UnauthorizedException('Adresse email incorrecte');
         }
 
         const isPasswordValid = await bcrypt.compare(loginDto.mot_de_passe, user.mot_de_passe);
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Identifiants invalides');
+            throw new UnauthorizedException('Mot de passe incorrect');
         }
 
         if (!user.statut) {
@@ -264,6 +264,7 @@ export class UsersService {
             nationalite: profile.nationalite ?? undefined,
             profession: profile.profession ?? undefined,
             adresse: profile.adresse ?? undefined,
+            date_naissance: profile.date_naissance ? this.formatDateDDMMYYYY(profile.date_naissance) : undefined,
             numero_piece_identite: profile.numero_piece_identite ?? undefined,
             type_piece_identite: profile.type_piece_identite ?? undefined,
         };
@@ -311,6 +312,7 @@ export class UsersService {
         if (typeof dto.adresse !== 'undefined') profile.adresse = dto.adresse?.trim() ?? null;
         if (typeof dto.numero_piece_identite !== 'undefined') profile.numero_piece_identite = dto.numero_piece_identite?.trim() ?? null;
         if (typeof dto.type_piece_identite !== 'undefined') profile.type_piece_identite = dto.type_piece_identite?.trim() ?? null;
+        if (typeof dto.date_naissance !== 'undefined') profile.date_naissance = dto.date_naissance ? this.parseDDMMYYYY(dto.date_naissance) : null;
 
         const [savedUser, savedProfile] = await Promise.all([
             this.userRepository.save(user),
@@ -331,9 +333,31 @@ export class UsersService {
             nationalite: savedProfile.nationalite ?? undefined,
             profession: savedProfile.profession ?? undefined,
             adresse: savedProfile.adresse ?? undefined,
+            date_naissance: savedProfile.date_naissance ? this.formatDateDDMMYYYY(savedProfile.date_naissance) : undefined,
             numero_piece_identite: savedProfile.numero_piece_identite ?? undefined,
             type_piece_identite: savedProfile.type_piece_identite ?? undefined,
         };
+    }
+
+    private parseDDMMYYYY(input: string): Date | null {
+        const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(input);
+        if (!match) return null;
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10);
+        const year = parseInt(match[3], 10);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+            return null;
+        }
+        return date;
+    }
+
+    private formatDateDDMMYYYY(date: Date): string {
+        const d = new Date(date);
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const year = d.getUTCFullYear();
+        return `${day}-${month}-${year}`;
     }
 
     private generateSixDigitCode(): string {

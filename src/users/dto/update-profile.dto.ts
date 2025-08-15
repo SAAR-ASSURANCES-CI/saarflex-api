@@ -49,6 +49,12 @@ export class UpdateProfileDto {
   @Length(1, 255)
   adresse?: string | null;
 
+  @ApiPropertyOptional({ description: 'Date de naissance (format DD-MM-YYYY)', example: '20-05-1990' })
+  @IsOptional()
+  @Matches(/^\d{2}-\d{2}-\d{4}$/,
+    { message: 'La date de naissance doit être au format DD-MM-YYYY' })
+  date_naissance?: string | null;
+
   @ApiPropertyOptional({ description: "Numéro de pièce d'identité", example: 'CNI123456789' })
   @IsOptional()
   @IsString()
