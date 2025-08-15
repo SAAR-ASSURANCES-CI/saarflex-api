@@ -36,6 +36,9 @@ export class Profile {
   @Column({ type: 'varchar', length: 255, nullable: true })
   adresse: string | null;
 
+  @Column({ type: 'date', nullable: true })
+  date_naissance: Date | null;
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   numero_piece_identite: string | null;
 

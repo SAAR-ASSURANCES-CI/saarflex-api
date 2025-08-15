@@ -35,6 +35,9 @@ export class ProfileDto {
   @ApiProperty({ required: false, nullable: true })
   adresse?: string | null;
 
+  @ApiProperty({ required: false, nullable: true, description: 'Date de naissance formatée DD-MM-YYYY' })
+  date_naissance?: string | null;
+
   @ApiProperty({ required: false, nullable: true })
   numero_piece_identite?: string | null;
 
