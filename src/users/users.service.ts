@@ -4,26 +4,42 @@ import {
     BadRequestException,
     NotFoundException,
     InternalServerErrorException,
+    UnauthorizedException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserType } from './entities/user.entity';
+import { Profile } from './entities/profile.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
+import { PasswordReset } from './entities/password-reset.entity';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
+import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { JwtService } from './jwt/jwt.service';
+import { EmailService } from './email/email.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ProfileDto } from './dto/profile.dto';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        @InjectRepository(Profile)
+        private readonly profileRepository: Repository<Profile>,
         @InjectRepository(Session)
         private readonly sessionRepository: Repository<Session>,
         @InjectRepository(Notification)
         private readonly notificationRepository: Repository<Notification>,
+        @InjectRepository(PasswordReset)
+        private readonly passwordResetRepository: Repository<PasswordReset>,
         private readonly jwtService: JwtService,
+        private readonly emailService: EmailService,
     ) { }
 
     /**
@@ -83,11 +99,13 @@ export class UsersService {
 
             await this.createWelcomeNotification(savedUser.id);
 
+            this.sendWelcomeEmailAsync(savedUser);
+
             return {
                 id: savedUser.id,
                 nom: savedUser.nom,
                 email: savedUser.email,
-                telephone: savedUser.telephone,
+                telephone: savedUser.telephone ?? undefined,
                 type_utilisateur: savedUser.type_utilisateur,
                 statut: savedUser.statut,
                 date_creation: savedUser.date_creation,
@@ -110,11 +128,260 @@ export class UsersService {
     }
 
     /**
+     * Connecte un utilisateur existant.
+     * - Vérifie l'existence de l'utilisateur
+     * - Compare le mot de passe (bcrypt)
+     * - Vérifie que l'utilisateur est actif
+     * - Met à jour la dernière connexion
+     * - Génère un JWT et crée une session
+     */
+    async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string): Promise<LoginResponseDto> {
+        const user = await this.findByEmail(loginDto.email);
+        if (!user) {
+            throw new UnauthorizedException('Adresse email incorrecte');
+        }
+
+        const isPasswordValid = await bcrypt.compare(loginDto.mot_de_passe, user.mot_de_passe);
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Mot de passe incorrect');
+        }
+
+        if (!user.statut) {
+            throw new ForbiddenException('Compte bloqué. Veuillez contacter le support.');
+        }
+
+        await this.updateLastLogin(user.id);
+
+        const token = this.jwtService.generateToken(user);
+        await this.createUserSession(user.id, token, ipAddress, userAgent);
+
+        return {
+            id: user.id,
+            nom: user.nom,
+            email: user.email,
+            telephone: user.telephone,
+            type_utilisateur: user.type_utilisateur,
+            statut: user.statut,
+            date_creation: user.date_creation,
+            token,
+            token_type: 'Bearer',
+            expires_in: 86400,
+        };
+    }
+
+    /**
+     * Demande de réinitialisation du mot de passe
+     */
+    async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+        const user = await this.findByEmail(dto.email);
+        if (!user) {
+            return;
+        }
+
+        await this.passwordResetRepository.update({ user_id: user.id, used: false }, { used: true, used_at: new Date() });
+
+        const code = this.generateSixDigitCode();
+        const codeHash = await bcrypt.hash(code, 12);
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+        const record = this.passwordResetRepository.create({
+            user_id: user.id,
+            code_hash: codeHash,
+            expires_at: expiresAt,
+            used: false,
+            used_at: null,
+        });
+        await this.passwordResetRepository.save(record);
+
+        await this.emailService.sendPasswordResetCode(user.email, code);
+    }
+
+    /**
+     * Vérifie un code OTP sans changer le mot de passe
+     */
+    async verifyOtp(dto: VerifyOtpDto): Promise<void> {
+        const user = await this.findByEmail(dto.email);
+        if (!user) {
+            throw new BadRequestException('Code invalide');
+        }
+        const latest = await this.passwordResetRepository.findOne({
+            where: { user_id: user.id, used: false },
+            order: { created_at: 'DESC' },
+        });
+        if (!latest) throw new BadRequestException('Code invalide');
+        if (latest.expires_at.getTime() < Date.now()) throw new BadRequestException('Code expiré');
+        const match = await bcrypt.compare(dto.code, latest.code_hash);
+        if (!match) throw new BadRequestException('Code invalide');
+    }
+
+    /**
+     * Réinitialise le mot de passe après vérification du code OTP
+     */
+    async resetPassword(dto: ResetPasswordDto): Promise<void> {
+        const user = await this.findByEmail(dto.email);
+        if (!user) {
+            throw new BadRequestException('Opération invalide');
+        }
+        const latest = await this.passwordResetRepository.findOne({
+            where: { user_id: user.id, used: false },
+            order: { created_at: 'DESC' },
+        });
+        if (!latest) throw new BadRequestException('Code invalide');
+        if (latest.expires_at.getTime() < Date.now()) throw new BadRequestException('Code expiré');
+        const match = await bcrypt.compare(dto.code, latest.code_hash);
+        if (!match) throw new BadRequestException('Code invalide');
+
+        const newHash = await bcrypt.hash(dto.nouveau_mot_de_passe, 12);
+        await this.userRepository.update(user.id, { mot_de_passe: newHash });
+
+        await this.passwordResetRepository.update(latest.id, { used: true, used_at: new Date() });
+        await this.invalidateAllUserSessions(user.id);
+    }
+
+    /**
+     * Retourne le profil de l'utilisateur courant (sans mot de passe)
+     */
+    async getProfile(userId: string): Promise<ProfileDto> {
+        const user = await this.findById(userId);
+        let profile = await this.profileRepository.findOne({ where: { user_id: user.id } });
+        if (!profile) {
+            // Créer un profil vide à la volée pour simplifier le flux
+            profile = await this.profileRepository.save(
+                this.profileRepository.create({ user_id: user.id })
+            );
+        }
+        return {
+            id: user.id,
+            nom: user.nom,
+            email: user.email,
+            telephone: user.telephone,
+            type_utilisateur: user.type_utilisateur,
+            statut: user.statut,
+            date_creation: user.date_creation,
+            date_modification: user.date_modification,
+            lieu_naissance: profile.lieu_naissance ?? undefined,
+            sexe: profile.sexe ?? undefined,
+            nationalite: profile.nationalite ?? undefined,
+            profession: profile.profession ?? undefined,
+            adresse: profile.adresse ?? undefined,
+            date_naissance: profile.date_naissance ? this.formatDateDDMMYYYY(profile.date_naissance) : undefined,
+            numero_piece_identite: profile.numero_piece_identite ?? undefined,
+            type_piece_identite: profile.type_piece_identite ?? undefined,
+        };
+    }
+
+    /**
+     * Met à jour le profil: nom et téléphone
+     */
+    async updateProfile(userId: string, dto: UpdateProfileDto): Promise<ProfileDto> {
+        const user = await this.findById(userId);
+
+        if (typeof dto.nom !== 'undefined') {
+            user.nom = dto.nom.trim();
+        }
+        if (typeof dto.telephone !== 'undefined') {
+            const newPhone = dto.telephone?.trim() ?? null;
+            if (newPhone) {
+                const exists = await this.userRepository.findOne({ where: { telephone: newPhone } });
+                if (exists && exists.id !== user.id) {
+                    throw new ConflictException('Ce numéro de téléphone est déjà utilisé');
+                }
+            }
+            user.telephone = newPhone;
+        }
+        if (typeof dto.email !== 'undefined') {
+            const newEmail = dto.email?.toLowerCase().trim() ?? null;
+            if (newEmail) {
+                const existsEmail = await this.userRepository.findOne({ where: { email: newEmail } });
+                if (existsEmail && existsEmail.id !== user.id) {
+                    throw new ConflictException('Cet email est déjà utilisé');
+                }
+                user.email = newEmail;
+            }
+        }
+        
+        let profile = await this.profileRepository.findOne({ where: { user_id: user.id } });
+        if (!profile) {
+            profile = this.profileRepository.create({ user_id: user.id });
+        }
+
+        if (typeof dto.lieu_naissance !== 'undefined') profile.lieu_naissance = dto.lieu_naissance?.trim() ?? null;
+        if (typeof dto.sexe !== 'undefined') profile.sexe = dto.sexe?.trim() ?? null;
+        if (typeof dto.nationalite !== 'undefined') profile.nationalite = dto.nationalite?.trim() ?? null;
+        if (typeof dto.profession !== 'undefined') profile.profession = dto.profession?.trim() ?? null;
+        if (typeof dto.adresse !== 'undefined') profile.adresse = dto.adresse?.trim() ?? null;
+        if (typeof dto.numero_piece_identite !== 'undefined') profile.numero_piece_identite = dto.numero_piece_identite?.trim() ?? null;
+        if (typeof dto.type_piece_identite !== 'undefined') profile.type_piece_identite = dto.type_piece_identite?.trim() ?? null;
+        if (typeof dto.date_naissance !== 'undefined') profile.date_naissance = dto.date_naissance ? this.parseDDMMYYYY(dto.date_naissance) : null;
+
+        const [savedUser, savedProfile] = await Promise.all([
+            this.userRepository.save(user),
+            this.profileRepository.save(profile),
+        ]);
+
+        return {
+            id: savedUser.id,
+            nom: savedUser.nom,
+            email: savedUser.email,
+            telephone: savedUser.telephone ?? undefined,
+            type_utilisateur: savedUser.type_utilisateur,
+            statut: savedUser.statut,
+            date_creation: savedUser.date_creation,
+            date_modification: savedUser.date_modification,
+            lieu_naissance: savedProfile.lieu_naissance ?? undefined,
+            sexe: savedProfile.sexe ?? undefined,
+            nationalite: savedProfile.nationalite ?? undefined,
+            profession: savedProfile.profession ?? undefined,
+            adresse: savedProfile.adresse ?? undefined,
+            date_naissance: savedProfile.date_naissance ? this.formatDateDDMMYYYY(savedProfile.date_naissance) : undefined,
+            numero_piece_identite: savedProfile.numero_piece_identite ?? undefined,
+            type_piece_identite: savedProfile.type_piece_identite ?? undefined,
+        };
+    }
+
+    private parseDDMMYYYY(input: string): Date | null {
+        const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(input);
+        if (!match) return null;
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10);
+        const year = parseInt(match[3], 10);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+            return null;
+        }
+        return date;
+    }
+
+    private formatDateDDMMYYYY(date: Date): string {
+        const d = new Date(date);
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const year = d.getUTCFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
+    private generateSixDigitCode(): string {
+        const n = Math.floor(Math.random() * 1000000);
+        return n.toString().padStart(6, '0');
+    }
+
+    /**
+     * Envoie l'email de bienvenue de manière asynchrone
+     * @param user Utilisateur nouvellement inscrit
+     */
+    private async sendWelcomeEmailAsync(user: User): Promise<void> {
+        try {
+            await this.emailService.sendWelcomeEmail(user);
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi de l\'email de bienvenue:', error);
+        }
+    }
+
+    /**
      * Crée une session utilisateur.
      * @param userId ID de l'utilisateur
      * @param token Token JWT
      * @param ipAddress Adresse IP optionnelle
-     * @param userAgent User agent optionnel
      * @returns Session (objet session créée)
      */
     private async createUserSession(

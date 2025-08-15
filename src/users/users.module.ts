@@ -5,13 +5,22 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
+import { Profile } from './entities/profile.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
-import { JwtService as CustomJwtService } from '../users/jwt/jwt.service'; 
+import { PasswordReset } from './entities/password-reset.entity';
+import { JwtService as CustomJwtService } from '../users/jwt/jwt.service';
+import { JwtAuthGuard } from './jwt/jwt-auth.guard';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Session, Notification]),
+    TypeOrmModule.forFeature([
+      User, 
+      Profile, 
+      Session, Notification, 
+      PasswordReset
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,9 +31,10 @@ import { JwtService as CustomJwtService } from '../users/jwt/jwt.service';
         },
       }),
     }),
+    EmailModule,
   ],
   controllers: [UsersController],
-  providers: [UsersService, CustomJwtService],
+  providers: [UsersService, CustomJwtService, JwtAuthGuard],
   exports: [UsersService, CustomJwtService, TypeOrmModule],
 })
-export class UsersModule {}
+export class UsersModule { }

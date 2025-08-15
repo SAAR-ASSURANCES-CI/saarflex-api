@@ -10,6 +10,7 @@ import {
     Request,
     Ip,
     Headers,
+    Patch,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -20,7 +21,14 @@ import {
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
+import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './jwt/jwt-auth.guard';
+import { ProfileDto } from './dto/profile.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -101,6 +109,86 @@ export class UsersController {
                 },
                 HttpStatus.INTERNAL_SERVER_ERROR,
             );
+        }
+    }
+
+    /**
+     * Connexion d'un utilisateur via HTTP.
+     * 
+     * @param loginDto Les identifiants de connexion de l'utilisateur (email, mot de passe)
+     * @param ipAddress L'adresse IP de l'utilisateur (injectée automatiquement)
+     * @returns Un objet contenant :
+     *   - status: 'success' si la connexion est réussie, sinon 'error'
+     *   - message: un message de succès ou d'erreur
+     *   - data: un objet LoginResponseDto contenant :
+     *       - id: string (identifiant de l'utilisateur)
+     *       - nom: string (nom de l'utilisateur)
+     *       - email: string (email de l'utilisateur)
+     *       - telephone?: string (téléphone de l'utilisateur, optionnel)
+     *       - type_utilisateur: UserType (type d'utilisateur)
+     *       - statut: boolean (statut du compte)
+     *       - date_creation: Date (date de création du compte)
+     *       - token: string (JWT généré)
+     *       - token_type: string (ex: 'Bearer')
+     *       - expires_in: number (durée de validité du token en secondes)
+     *   En cas d'erreur, une exception HttpException est levée avec :
+     *     - status: 'error'
+     *     - message: message d'erreur
+     *     - error: détail de l'erreur
+     */
+    @Post('login')
+    @ApiOperation({
+        summary: 'Connexion utilisateur',
+        description: 'Vérifie les identifiants, génère un token JWT, crée une session et renvoie les informations de connexion.'
+    })
+    @ApiBody({ type: LoginDto })
+    @ApiResponse({ status: 200, description: 'Connexion réussie', type: LoginResponseDto })
+    @ApiResponse({ status: 400, description: 'Identifiants invalides' })
+    @ApiResponse({ status: 403, description: 'Compte bloqué' })
+    async login(
+        @Body() loginDto: LoginDto,
+        @Ip() ipAddress: string,
+    ): Promise<{
+        status: string;
+        message: string;
+        data: LoginResponseDto;
+    }> {
+        try {
+            const result = await this.userService.login(loginDto, ipAddress);
+            return {
+                status: 'success',
+                message: 'Connexion réussie',
+                data: result,
+            };
+        } catch (error) {
+            if (error instanceof HttpException) {
+                throw error;
+            }
+            throw new HttpException(
+                {
+                    status: 'error',
+                    message: 'Erreur lors de la connexion',
+                    error: error.message,
+                },
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    /**
+     * Connexion via microservice (MessagePattern)
+     */
+    @MessagePattern('user.login')
+    async handleUserLogin(@Payload() data: { loginDto: LoginDto; ipAddress?: string; userAgent?: string }): Promise<{
+        success: boolean;
+        data?: LoginResponseDto;
+        error?: string;
+    }> {
+        try {
+            const result = await this.userService.login(data.loginDto, data.ipAddress, data.userAgent);
+            return { success: true, data: result };
+        } catch (error) {
+            return { success: false, error: error.message };
         }
     }
 
@@ -290,5 +378,70 @@ export class UsersController {
                 error: error.message,
             };
         }
+    }
+
+    /**
+     * Démarre le flux mot de passe oublié: envoie un code OTP 6 chiffres (expire en 15 min)
+     */
+    @Post('forgot-password')
+    @ApiOperation({ summary: 'Mot de passe oublié - envoi du code OTP' })
+    @ApiBody({ type: ForgotPasswordDto })
+    async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ status: string; message: string; }> {
+        await this.userService.forgotPassword(dto);
+        return { status: 'success', message: 'Si un compte existe pour cet email, un code a été envoyé.' };
+    }
+
+    /**
+     * Vérifie un code OTP
+     */
+    @Post('verify-otp')
+    @ApiOperation({ summary: 'Vérifier le code OTP' })
+    @ApiBody({ type: VerifyOtpDto })
+    async verifyOtp(@Body() dto: VerifyOtpDto): Promise<{ status: string; message: string; }> {
+        await this.userService.verifyOtp(dto);
+        return { status: 'success', message: 'Code valide' };
+    }
+
+    /**
+     * Réinitialise le mot de passe via code OTP
+     */
+    @Post('reset-password')
+    @ApiOperation({ summary: 'Réinitialiser le mot de passe via code OTP' })
+    @ApiBody({ type: ResetPasswordDto })
+    async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ status: string; message: string; }> {
+        await this.userService.resetPassword(dto);
+        return { status: 'success', message: 'Mot de passe mis à jour avec succès' };
+    }
+
+    /**
+     * Récupère le profil de l'utilisateur connecté
+     */
+    @Get('me')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Mon profil' })
+    @ApiResponse({ status: 200, type: ProfileDto })
+    async getMe(@Request() req: any): Promise<{ status: string; data: ProfileDto }> {
+        const userId = req.user?.id as string;
+        const data = await this.userService.getProfile(userId);
+        return { status: 'success', data };
+    }
+
+    /**
+     * Met à jour le profil de l'utilisateur connecté (nom, téléphone)
+     */
+    @Patch('me')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Mettre à jour mon profil' })
+    @ApiBody({ type: UpdateProfileDto })
+    @ApiResponse({ status: 200, type: ProfileDto })
+    async updateMe(
+        @Request() req: any,
+        @Body() dto: UpdateProfileDto,
+    ): Promise<{ status: string; message: string; data: ProfileDto }> {
+        const userId = req.user?.id as string;
+        const data = await this.userService.updateProfile(userId, dto);
+        return { status: 'success', message: 'Profil mis à jour avec succès', data };
     }
 }
