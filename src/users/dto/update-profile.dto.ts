@@ -66,6 +66,12 @@ export class UpdateProfileDto {
   @IsString()
   @Length(1, 50)
   type_piece_identite?: string | null;
+
+  @ApiPropertyOptional({ description: 'Date d\'expiration de la pièce d\'identité (format DD-MM-YYYY)', example: '20-05-1990' })
+  @IsOptional()
+  @Matches(/^\d{2}-\d{2}-\d{4}$/,
+    { message: 'La date d\'expiration de la pièce d\'identité doit être au format DD-MM-YYYY' })
+  date_expiration_piece_identite?: string | null;
 }
 
 

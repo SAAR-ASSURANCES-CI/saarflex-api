@@ -44,6 +44,9 @@ export class ProfileDto {
   @ApiProperty({ required: false, nullable: true })
   type_piece_identite?: string | null;
 
+  @ApiProperty({ required: false, nullable: true, description: 'Date d\'expiration de la pièce d\'identité' })
+  date_expiration_piece_identite?: Date | null;
+
   @ApiProperty()
   date_creation: Date;
 
