@@ -45,6 +45,9 @@ export class Profile {
   @Column({ type: 'varchar', length: 50, nullable: true })
   type_piece_identite: string | null;
 
+  @Column({ type: 'date', nullable: true })
+  date_expiration_piece_identite: Date | null;
+
   @CreateDateColumn({ type: 'timestamp' })
   date_creation: Date;
 
