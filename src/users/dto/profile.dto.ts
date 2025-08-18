@@ -35,7 +35,7 @@ export class ProfileDto {
   @ApiProperty({ required: false, nullable: true })
   adresse?: string | null;
 
-  @ApiProperty({ required: false, nullable: true, description: 'Date de naissance formatée DD-MM-YYYY' })
+  @ApiProperty({ required: false, nullable: true, description: 'Date de naissance (format DD-MM-YYYY)' })
   date_naissance?: string | null;
 
   @ApiProperty({ required: false, nullable: true })
@@ -44,8 +44,8 @@ export class ProfileDto {
   @ApiProperty({ required: false, nullable: true })
   type_piece_identite?: string | null;
 
-  @ApiProperty({ required: false, nullable: true, description: 'Date d\'expiration de la pièce d\'identité' })
-  date_expiration_piece_identite?: Date | null;
+  @ApiProperty({ required: false, nullable: true, description: 'Date d\'expiration de la pièce d\'identité (format DD-MM-YYYY)' })
+  date_expiration_piece_identite?: string | null;
 
   @ApiProperty()
   date_creation: Date;

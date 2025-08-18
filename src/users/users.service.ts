@@ -245,7 +245,6 @@ export class UsersService {
         const user = await this.findById(userId);
         let profile = await this.profileRepository.findOne({ where: { user_id: user.id } });
         if (!profile) {
-            // Créer un profil vide à la volée pour simplifier le flux
             profile = await this.profileRepository.save(
                 this.profileRepository.create({ user_id: user.id })
             );
@@ -267,6 +266,7 @@ export class UsersService {
             date_naissance: profile.date_naissance ? this.formatDateDDMMYYYY(profile.date_naissance) : undefined,
             numero_piece_identite: profile.numero_piece_identite ?? undefined,
             type_piece_identite: profile.type_piece_identite ?? undefined,
+            date_expiration_piece_identite: profile.date_expiration_piece_identite ? this.formatDateDDMMYYYY(profile.date_expiration_piece_identite) : undefined,
         };
     }
 
@@ -312,7 +312,34 @@ export class UsersService {
         if (typeof dto.adresse !== 'undefined') profile.adresse = dto.adresse?.trim() ?? null;
         if (typeof dto.numero_piece_identite !== 'undefined') profile.numero_piece_identite = dto.numero_piece_identite?.trim() ?? null;
         if (typeof dto.type_piece_identite !== 'undefined') profile.type_piece_identite = dto.type_piece_identite?.trim() ?? null;
-        if (typeof dto.date_naissance !== 'undefined') profile.date_naissance = dto.date_naissance ? this.parseDDMMYYYY(dto.date_naissance) : null;
+        if (typeof dto.date_naissance !== 'undefined') {
+            if (dto.date_naissance) {
+                const parsedDate = this.parseDDMMYYYY(dto.date_naissance);
+                if (!parsedDate) {
+                    throw new BadRequestException('Format de date de naissance invalide. Utilisez le format DD-MM-YYYY');
+                }
+                if (parsedDate >= new Date()) {
+                    throw new BadRequestException('La date de naissance doit être dans le passé');
+                }
+                profile.date_naissance = parsedDate;
+            } else {
+                profile.date_naissance = null;
+            }
+        }
+        if (typeof dto.date_expiration_piece_identite !== 'undefined') {
+            if (dto.date_expiration_piece_identite) {
+                const parsedDate = this.parseDDMMYYYY(dto.date_expiration_piece_identite);
+                if (!parsedDate) {
+                    throw new BadRequestException('Format de date d\'expiration invalide. Utilisez le format DD-MM-YYYY');
+                }
+                if (parsedDate <= new Date()) {
+                    throw new BadRequestException('La date d\'expiration de la pièce d\'identité doit être dans le futur');
+                }
+                profile.date_expiration_piece_identite = parsedDate;
+            } else {
+                profile.date_expiration_piece_identite = null;
+            }
+        }
 
         const [savedUser, savedProfile] = await Promise.all([
             this.userRepository.save(user),
@@ -336,19 +363,31 @@ export class UsersService {
             date_naissance: savedProfile.date_naissance ? this.formatDateDDMMYYYY(savedProfile.date_naissance) : undefined,
             numero_piece_identite: savedProfile.numero_piece_identite ?? undefined,
             type_piece_identite: savedProfile.type_piece_identite ?? undefined,
+            date_expiration_piece_identite: savedProfile.date_expiration_piece_identite ? this.formatDateDDMMYYYY(savedProfile.date_expiration_piece_identite) : undefined,
         };
     }
 
     private parseDDMMYYYY(input: string): Date | null {
+        if (!input || typeof input !== 'string') return null;
+        
         const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(input);
         if (!match) return null;
+        
         const day = parseInt(match[1], 10);
         const month = parseInt(match[2], 10);
         const year = parseInt(match[3], 10);
+        
+        
+        if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100) {
+            return null;
+        }
+        
         const date = new Date(Date.UTC(year, month - 1, day));
+        
         if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
             return null;
         }
+        
         return date;
     }
 
