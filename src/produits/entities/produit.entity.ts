@@ -1,0 +1,75 @@
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { BrancheProduit } from './branche-produit.entity';
+import { CritereTarification } from './critere-tarification.entity';
+import { GrilleTarifaire } from './grille-tarifaire.entity';
+import { FormuleCalcul } from './formule-calcul.entity';
+import { DevisSimule } from './devis-simule.entity';
+
+export enum TypeProduit {
+  VIE = 'vie',
+  NON_VIE = 'non-vie'
+}
+
+export enum StatutProduit {
+  ACTIF = 'actif',
+  INACTIF = 'inactif',
+  BROUILLON = 'brouillon'
+}
+
+@Entity('produits')
+export class Produit {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  nom: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  icon: string;
+
+  @Column({ 
+    type: 'enum', 
+    enum: TypeProduit, 
+    nullable: false 
+  })
+  type: TypeProduit;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  conditions_pdf: string;
+
+  @Column({ 
+    type: 'enum', 
+    enum: StatutProduit, 
+    default: StatutProduit.BROUILLON 
+  })
+  statut: StatutProduit;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @Column({ type: 'uuid', nullable: false })
+  created_by: string;
+
+  // Relations
+  @ManyToOne(() => BrancheProduit, { nullable: true })
+  @JoinColumn({ name: 'branch_id' })
+  branche: BrancheProduit;
+
+  @OneToMany(() => CritereTarification, critere => critere.produit, { cascade: true })
+  criteres: CritereTarification[];
+
+  @OneToMany(() => GrilleTarifaire, grille => grille.produit, { cascade: true })
+  grilles: GrilleTarifaire[];
+
+  @OneToMany(() => FormuleCalcul, formule => formule.produit, { cascade: true })
+  formules: FormuleCalcul[];
+
+  @OneToMany(() => DevisSimule, devis => devis.produit, { cascade: true })
+  devis: DevisSimule[];
+}

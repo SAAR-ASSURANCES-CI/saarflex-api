@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     depends_on:
-      users-db:
+      saarflex-db:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -32,16 +32,16 @@ services:
       - -c
       - |
         echo "Waiting for dependencies..."
-        dockerize -wait tcp://users-db:3306 -timeout 120s -wait-retry-interval 5s
+        dockerize -wait tcp://saarflex-db:3306 -timeout 120s -wait-retry-interval 5s
         dockerize -wait tcp://redis:6379 -timeout 60s -wait-retry-interval 2s
         echo "All services ready. Starting application..."
         exec pnpm run start:dev
     networks:
       - saarflex-network
 
-  users-db:
+  saarflex-db:
     image: mysql:8.0
-    container_name: users-db
+    container_name: saarflex-db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
@@ -50,7 +50,7 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - users_db_data:/var/lib/mysql
+      - saarflex_db_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
@@ -61,7 +61,7 @@ services:
     restart: unless-stopped
     networks:
       - saarflex-network
-    
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: saarflex-phpmyadmin
@@ -70,12 +70,13 @@ services:
       - "8080:80"
     environment:
       PMA_HOST: ${DB_HOST}
-      PMA_PORT: ${DB_PORT}
-      PMA_USER: ${PMA_USER}
+      PMA_PORT: 3306
+      PMA_USER: root
       PMA_PASSWORD: ${DB_ROOT_PASSWORD}
       PMA_ARBITRARY: 1
+      MYSQL_ALLOW_EMPTY_PASSWORD: 0
     depends_on:
-      users-db:
+      saarflex-db:
         condition: service_healthy
     networks:
       - saarflex-network
@@ -157,7 +158,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  users_db_data:
+  saarflex_db_data:
     driver: local
   api_node_modules:
     driver: local
