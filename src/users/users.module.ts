@@ -18,7 +18,8 @@ import { EmailModule } from './email/email.module';
     TypeOrmModule.forFeature([
       User, 
       Profile, 
-      Session, Notification, 
+      Session, 
+      Notification, 
       PasswordReset
     ]),
     JwtModule.registerAsync({
@@ -35,6 +36,6 @@ import { EmailModule } from './email/email.module';
   ],
   controllers: [UsersController],
   providers: [UsersService, CustomJwtService, JwtAuthGuard],
-  exports: [UsersService, CustomJwtService, TypeOrmModule],
+  exports: [UsersService, CustomJwtService, JwtAuthGuard, TypeOrmModule],
 })
 export class UsersModule { }
