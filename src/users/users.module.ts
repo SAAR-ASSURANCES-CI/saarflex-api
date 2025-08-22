@@ -11,6 +11,7 @@ import { Notification } from './entities/notification.entity';
 import { PasswordReset } from './entities/password-reset.entity';
 import { JwtService as CustomJwtService } from '../users/jwt/jwt.service';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
+import { AdminGuard } from './guards/admin.guard';
 import { EmailModule } from './email/email.module';
 
 @Module({
@@ -35,7 +36,7 @@ import { EmailModule } from './email/email.module';
     EmailModule,
   ],
   controllers: [UsersController],
-  providers: [UsersService, CustomJwtService, JwtAuthGuard],
-  exports: [UsersService, CustomJwtService, JwtAuthGuard, TypeOrmModule],
+  providers: [UsersService, CustomJwtService, JwtAuthGuard, AdminGuard],
+  exports: [UsersService, CustomJwtService, JwtAuthGuard, AdminGuard, TypeOrmModule],
 })
 export class UsersModule { }

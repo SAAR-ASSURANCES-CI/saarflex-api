@@ -10,6 +10,9 @@ import { FormuleCalcul } from './entities/formule-calcul.entity';
 import { DevisSimule } from './entities/devis-simule.entity';
 import { ProduitsService } from './produits.service';
 import { ProduitsController } from './produits.controller';
+import { BranchesAdminService } from './branches-admin.service';
+import { BranchesAdminController } from './branches-admin.controller';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -23,9 +26,10 @@ import { ProduitsController } from './produits.controller';
       FormuleCalcul,
       DevisSimule
     ]),
+    UsersModule,
   ],
-  controllers: [ProduitsController],
-  providers: [ProduitsService],
-  exports: [TypeOrmModule, ProduitsService],
+  controllers: [ProduitsController, BranchesAdminController],
+  providers: [ProduitsService, BranchesAdminService],
+  exports: [TypeOrmModule, ProduitsService, BranchesAdminService],
 })
 export class ProduitsModule {}
