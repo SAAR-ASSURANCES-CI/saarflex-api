@@ -14,6 +14,8 @@ import { BranchesAdminService } from './branches-admin.service';
 import { BranchesAdminController } from './branches-admin.controller';
 import { ProduitsAdminService } from './produits-admin.service';
 import { ProduitsAdminController } from './produits-admin.controller';
+import { CriteresAdminService } from './criteres-admin.service';
+import { CriteresAdminController } from './criteres-admin.controller';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -30,8 +32,8 @@ import { UsersModule } from '../users/users.module';
     ]),
     UsersModule,
   ],
-  controllers: [ProduitsController, BranchesAdminController, ProduitsAdminController],
-  providers: [ProduitsService, BranchesAdminService, ProduitsAdminService],
-  exports: [TypeOrmModule, ProduitsService, BranchesAdminService, ProduitsAdminService],
+  controllers: [ProduitsController, BranchesAdminController, ProduitsAdminController, CriteresAdminController],
+  providers: [ProduitsService, BranchesAdminService, ProduitsAdminService, CriteresAdminService],
+  exports: [TypeOrmModule, ProduitsService, BranchesAdminService, ProduitsAdminService, CriteresAdminService],
 })
 export class ProduitsModule {}

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TypeProduit, StatutProduit } from '../entities/produit.entity';
-import { BrancheProduitDto } from './branche-produit.dto';
+import { BrancheProduitDto, BrancheProduitNullableDto } from './branche-produit.dto';
 
 export class ProduitDto {
   @ApiProperty({ description: 'ID unique du produit' })
@@ -33,30 +33,11 @@ export class ProduitDto {
   @ApiProperty({ description: 'Date de création' })
   created_at: Date;
 
-  @ApiProperty({ description: 'Branche du produit' })
-  branche: BrancheProduitDto;
+  @ApiProperty({ description: 'Branche du produit', required: false })
+  branche: BrancheProduitNullableDto | null;
 }
 
-export class ProduitQueryDto {
-  @ApiProperty({ 
-    required: false, 
-    enum: TypeProduit, 
-    description: 'Filtrer par type de produit' 
-  })
-  type?: TypeProduit;
-
-  @ApiProperty({ 
-    required: false, 
-    description: 'Filtrer par branche (ID)' 
-  })
-  branche_id?: string;
-
-  @ApiProperty({ 
-    required: false, 
-    description: 'Recherche textuelle dans le nom et description' 
-  })
-  search?: string;
-
+export class PaginationQueryDto {
   @ApiProperty({ 
     required: false, 
     default: 1, 
@@ -70,21 +51,6 @@ export class ProduitQueryDto {
     description: 'Nombre d\'éléments par page' 
   })
   limit?: number = 10;
-
-  @ApiProperty({ 
-    required: false, 
-    default: 'created_at', 
-    description: 'Champ de tri' 
-  })
-  sort_by?: string = 'created_at';
-
-  @ApiProperty({ 
-    required: false, 
-    enum: ['ASC', 'DESC'], 
-    default: 'DESC', 
-    description: 'Ordre de tri' 
-  })
-  sort_order?: 'ASC' | 'DESC' = 'DESC';
 }
 
 export class ProduitsResponseDto {

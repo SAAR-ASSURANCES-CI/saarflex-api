@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, ParseUUIDPipe, ParseEnumPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ProduitsService } from './produits.service';
-import { ProduitDto, ProduitQueryDto, ProduitsResponseDto } from './dto/produit.dto';
+import { ProduitDto, PaginationQueryDto, ProduitsResponseDto } from './dto/produit.dto';
 import { BrancheProduitDto } from './dto/branche-produit.dto';
 import { TypeProduit } from './entities/produit.entity';
 import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
@@ -16,68 +16,19 @@ export class ProduitsController {
     @Get()
     @ApiOperation({ 
         summary: 'Récupérer tous les produits actifs',
-        description: 'Endpoint protégé pour consulter tous les produits d\'assurance disponibles avec pagination et filtres. Authentification requise.'
+        description: 'Endpoint protégé pour consulter tous les produits d\'assurance actifs disponibles pour les utilisateurs. Authentification requise.'
     })
     @ApiResponse({ 
         status: 200, 
         description: 'Liste des produits récupérée avec succès',
-        type: ProduitsResponseDto
-    })
-    @ApiResponse({ 
-        status: 400, 
-        description: 'Paramètres de requête invalides' 
+        type: [ProduitDto]
     })
     @ApiResponse({ 
         status: 401, 
         description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
     })
-    @ApiQuery({ 
-        name: 'type', 
-        enum: TypeProduit, 
-        required: false, 
-        description: 'Filtrer par type de produit (vie ou non-vie)',
-        example: 'vie'
-    })
-    @ApiQuery({ 
-        name: 'branche_id', 
-        required: false, 
-        description: 'Filtrer par branche (UUID)',
-        example: '123e4567-e89b-12d3-a456-426614174000'
-    })
-    @ApiQuery({ 
-        name: 'search', 
-        required: false, 
-        description: 'Recherche textuelle dans le nom et description',
-        example: 'assurance retraite'
-    })
-    @ApiQuery({ 
-        name: 'page', 
-        required: false, 
-        description: 'Numéro de page (défaut: 1)',
-        example: 1
-    })
-    @ApiQuery({ 
-        name: 'limit', 
-        required: false, 
-        description: 'Nombre d\'éléments par page (défaut: 10)',
-        example: 10
-    })
-    @ApiQuery({ 
-        name: 'sort_by', 
-        required: false, 
-        description: 'Champ de tri (défaut: created_at)',
-        enum: ['nom', 'type', 'created_at', 'branche.ordre'],
-        example: 'nom'
-    })
-    @ApiQuery({ 
-        name: 'sort_order', 
-        enum: ['ASC', 'DESC'], 
-        required: false, 
-        description: 'Ordre de tri (défaut: DESC)',
-        example: 'ASC'
-    })
-    async findAll(@Query() query: ProduitQueryDto): Promise<ProduitsResponseDto> {
-        return this.produitsService.findAll(query);
+    async findAll(): Promise<ProduitDto[]> {
+        return this.produitsService.findAll();
     }
 
     @Get('type/:type')
