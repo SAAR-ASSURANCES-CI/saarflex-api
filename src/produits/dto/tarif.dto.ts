@@ -136,3 +136,20 @@ export class TarifsWithGrilleResponseDto {
   @ApiProperty({ description: 'Taille de la page' })
   limit: number;
 }
+
+export class CalculPrimeResponseDto {
+  @ApiProperty({ description: 'Tarif utilisé pour le calcul' })
+  tarif: TarifDto;
+
+  @ApiProperty({ description: 'Prime calculée' })
+  prime_calculee: number;
+
+  @ApiProperty({ description: 'Montant utilisé dans le calcul', required: false })
+  montant_calcule?: number;
+
+  @ApiProperty({ description: 'Pourcentage utilisé dans le calcul', required: false })
+  pourcentage_calcule?: number;
+
+  @ApiProperty({ description: 'Formule utilisée pour le calcul', required: false })
+  formule_utilisee?: string;
+}

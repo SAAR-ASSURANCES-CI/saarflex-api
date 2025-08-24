@@ -18,6 +18,13 @@ export class FormuleCalcul {
   @Column({ type: 'json', nullable: false })
   variables: Record<string, any>;
 
+  @Column({ 
+    type: 'enum', 
+    enum: ['actif', 'inactif'], 
+    default: 'actif' 
+  })
+  statut: string;
+
   @CreateDateColumn()
   created_at: Date;
 

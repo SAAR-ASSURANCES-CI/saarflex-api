@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tarif } from '../../entities/tarif.entity';
 import { GrilleTarifaire, StatutGrille } from '../../entities/grille-tarifaire.entity';
+import { FormulesCalculAdminService } from './formules-calcul-admin.service';
 import { 
   CreateTarifDto, 
   UpdateTarifDto, 
@@ -19,6 +20,7 @@ export class TarifsAdminService {
     private tarifRepository: Repository<Tarif>,
     @InjectRepository(GrilleTarifaire)
     private grilleRepository: Repository<GrilleTarifaire>,
+    private readonly formulesCalculService: FormulesCalculAdminService
   ) {}
 
   async create(createTarifDto: CreateTarifDto): Promise<TarifWithGrilleDto> {
@@ -160,6 +162,7 @@ export class TarifsAdminService {
     prime_calculee: number;
     montant_calcule: number | undefined;
     pourcentage_calcule: number | undefined;
+    formule_utilisee?: string;
   }> {
     const tarifs = await this.findTarifsByCriteres(grilleId, criteres);
     
@@ -167,22 +170,55 @@ export class TarifsAdminService {
       throw new NotFoundException('Aucun tarif trouvé pour les critères donnés');
     }
 
-    const tarif = tarifs[0];
+    const tarifDto = tarifs[0];
+    
+    const tarif = await this.tarifRepository.findOne({ 
+      where: { id: tarifDto.id },
+      relations: ['grilleTarifaire', 'grilleTarifaire.produit', 'grilleTarifaire.produit.branche']
+    });
+    
+    if (!tarif) {
+      throw new NotFoundException('Erreur lors de la récupération du tarif');
+    }
 
     let prime_calculee = 0;
-    if (tarif.montant) {
-      prime_calculee += tarif.montant;
-    }
-    if (tarif.pourcentage) {
-      prime_calculee *= (1 + tarif.pourcentage / 100);
+    let formule_utilisee: string | undefined;
+
+    if (tarif.formule && tarif.formule.trim()) {
+      try {
+        prime_calculee = await this.formulesCalculService.evaluate(tarif.formule, {
+          ...criteres,
+          montant: tarif.montant,
+          pourcentage: tarif.pourcentage
+        });
+        formule_utilisee = tarif.formule;
+      } catch (error) {
+        console.warn(`Formule échouée pour le tarif ${tarif.id}, utilisation du calcul simple: ${error.message}`);
+        prime_calculee = this.calculatePrimeSimple(tarif);
+      }
+    } else {
+
+      prime_calculee = this.calculatePrimeSimple(tarif);
     }
 
     return {
       tarif,
       prime_calculee: Math.round(prime_calculee * 100) / 100,
       montant_calcule: tarif.montant,
-      pourcentage_calcule: tarif.pourcentage
+      pourcentage_calcule: tarif.pourcentage,
+      formule_utilisee
     };
+  }
+
+  private calculatePrimeSimple(tarif: Tarif): number {
+    let prime = 0;
+    if (tarif.montant) {
+      prime += tarif.montant;
+    }
+    if (tarif.pourcentage) {
+      prime *= (1 + tarif.pourcentage / 100);
+    }
+    return prime;
   }
 
   private mapToDto(tarif: Tarif): TarifDto {
