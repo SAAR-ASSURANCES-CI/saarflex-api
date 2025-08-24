@@ -6,3 +6,6 @@ export * from './grille-tarifaire.entity';
 export * from './tarif.entity';
 export * from './formule-calcul.entity';
 export * from './devis-simule.entity';
+export * from './garantie.entity';
+export * from './garantie-critere.entity';
+export * from './tarif-garantie.entity';

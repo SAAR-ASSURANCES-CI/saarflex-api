@@ -4,6 +4,7 @@ import { CritereTarification } from './critere-tarification.entity';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
 import { FormuleCalcul } from './formule-calcul.entity';
 import { DevisSimule } from './devis-simule.entity';
+import { Garantie } from './garantie.entity';
 
 export enum TypeProduit {
   VIE = 'vie',
@@ -56,7 +57,6 @@ export class Produit {
   @Column({ type: 'uuid', nullable: false })
   created_by: string;
 
-  // Relations
   @ManyToOne(() => BrancheProduit, { nullable: true })
   @JoinColumn({ name: 'branch_id' })
   branche: BrancheProduit;
@@ -72,4 +72,7 @@ export class Produit {
 
   @OneToMany(() => DevisSimule, devis => devis.produit, { cascade: true })
   devis: DevisSimule[];
+
+  @OneToMany(() => Garantie, garantie => garantie.produit, { cascade: true })
+  garanties: Garantie[];
 }

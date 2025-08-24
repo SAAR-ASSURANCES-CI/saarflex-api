@@ -20,6 +20,9 @@ import { GrilleTarifaire } from './produits/entities/grille-tarifaire.entity';
 import { Tarif } from './produits/entities/tarif.entity';
 import { FormuleCalcul } from './produits/entities/formule-calcul.entity';
 import { DevisSimule } from './produits/entities/devis-simule.entity';
+import { Garantie } from './produits/entities/garantie.entity';
+import { GarantieCritere } from './produits/entities/garantie-critere.entity';
+import { TarifGarantie } from './produits/entities/tarif-garantie.entity';
 
 @Module({
   imports: [
@@ -53,7 +56,10 @@ import { DevisSimule } from './produits/entities/devis-simule.entity';
           GrilleTarifaire,
           Tarif,
           FormuleCalcul,
-          DevisSimule
+          DevisSimule,
+          Garantie,
+          GarantieCritere,
+          TarifGarantie
         ],
         migrations: ['dist/migrations/*.js'],
         migrationsRun: true,

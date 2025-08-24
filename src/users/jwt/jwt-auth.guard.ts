@@ -26,7 +26,14 @@ export class JwtAuthGuard implements CanActivate {
     const payload = this.jwtService.verifyToken(token);
     const user = await this.usersService.findById(payload.sub);
 
-    (request as any).user = { id: user.id };
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    (request as any).user = { 
+      id: user.id,
+      type_utilisateur: user.type_utilisateur,
+    };
     return true;
   }
 }

@@ -13,6 +13,9 @@ import { GrilleTarifaire } from './src/produits/entities/grille-tarifaire.entity
 import { Tarif } from './src/produits/entities/tarif.entity';
 import { FormuleCalcul } from './src/produits/entities/formule-calcul.entity';
 import { DevisSimule } from './src/produits/entities/devis-simule.entity';
+import { Garantie } from './src/produits/entities/garantie.entity';
+import { GarantieCritere } from './src/produits/entities/garantie-critere.entity';
+import { TarifGarantie } from './src/produits/entities/tarif-garantie.entity';
 
 dotenv.config();
 
@@ -38,7 +41,10 @@ export default new DataSource({
     GrilleTarifaire,
     Tarif,
     FormuleCalcul,
-    DevisSimule
+    DevisSimule,
+    Garantie,
+    GarantieCritere,
+    TarifGarantie
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,
