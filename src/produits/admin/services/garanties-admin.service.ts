@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Garantie } from './entities/garantie.entity';
-import { GarantieCritere } from './entities/garantie-critere.entity';
-import { TarifGarantie } from './entities/tarif-garantie.entity';
-import { Produit } from './entities/produit.entity';
+import { Garantie } from '../../entities/garantie.entity';
+import { GarantieCritere } from '../../entities/garantie-critere.entity';
+import { TarifGarantie } from '../../entities/tarif-garantie.entity';
+import { Produit } from '../../entities/produit.entity';
 import { 
   CreateGarantieDto, 
   UpdateGarantieDto, 
@@ -18,7 +18,7 @@ import {
   TarifGarantieDto,
   GarantieWithProduitDto,
   GarantiesWithProduitResponseDto
-} from './dto/garanties-index.dto';
+} from '../../dto/garanties-index.dto';
 
 @Injectable()
 export class GarantiesAdminService {

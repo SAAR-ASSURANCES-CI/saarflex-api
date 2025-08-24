@@ -1,11 +1,11 @@
 import { Controller, Get, Param, Query, ParseUUIDPipe, ParseEnumPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
-import { ProduitsService } from './produits.service';
-import { ProduitDto, PaginationQueryDto, ProduitsResponseDto } from './dto/produit.dto';
-import { BrancheProduitDto } from './dto/branche-produit.dto';
-import { GarantieWithProduitDto } from './dto/garanties-index.dto';
-import { TypeProduit } from './entities/produit.entity';
-import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
+import { ProduitsService } from '../services/produits.service';
+import { ProduitDto, PaginationQueryDto, ProduitsResponseDto } from '../../dto/produit.dto';
+import { BrancheProduitDto } from '../../dto/branche-produit.dto';
+import { GarantieWithProduitDto } from '../../dto/garanties-index.dto';
+import { TypeProduit } from '../../entities/produit.entity';
+import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
 
 @ApiTags('Produits')
 @Controller('produits')

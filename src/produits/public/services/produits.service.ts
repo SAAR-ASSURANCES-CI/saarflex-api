@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Like, ILike } from 'typeorm';
-import { Produit, TypeProduit, StatutProduit } from './entities/produit.entity';
-import { BrancheProduit } from './entities/branche-produit.entity';
-import { Garantie, StatutGarantie } from './entities/garantie.entity';
-import { ProduitDto } from './dto/produit.dto';
-import { BrancheProduitDto } from './dto/branche-produit.dto';
-import { GarantieWithProduitDto } from './dto/garanties-index.dto';
+import { Produit, TypeProduit, StatutProduit } from '../../entities/produit.entity';
+import { BrancheProduit } from '../../entities/branche-produit.entity';
+import { Garantie, StatutGarantie } from '../../entities/garantie.entity';
+import { ProduitDto } from '../../dto/produit.dto';
+import { BrancheProduitDto } from '../../dto/branche-produit.dto';
+import { GarantieWithProduitDto } from '../../dto/garanties-index.dto';
 
 @Injectable()
 export class ProduitsService {

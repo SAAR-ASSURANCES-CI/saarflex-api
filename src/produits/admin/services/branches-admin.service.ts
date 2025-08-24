@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { BrancheProduit } from './entities/branche-produit.entity';
-import { Produit } from './entities/produit.entity';
+import { BrancheProduit } from '../../entities/branche-produit.entity';
+import { Produit } from '../../entities/produit.entity';
 import { 
   CreateBrancheProduitDto, 
   UpdateBrancheProduitDto, 
   BrancheProduitAdminDto,
   BranchesResponseDto 
-} from './dto/branche-produit-admin.dto';
+} from '../../dto/branche-produit-admin.dto';
 
 @Injectable()
 export class BranchesAdminService {

@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { CritereTarification } from './critere-tarification.entity';
+import { Tarif } from './tarif.entity';
 
 @Entity('valeurs_criteres')
 export class ValeurCritere {
@@ -28,4 +29,7 @@ export class ValeurCritere {
   @ManyToOne(() => CritereTarification, critere => critere.valeurs, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'critere_id' })
   critere: CritereTarification;
+
+  @OneToMany(() => Tarif, tarif => tarif.valeurCritere, { cascade: true })
+  tarifs: Tarif[];
 }
