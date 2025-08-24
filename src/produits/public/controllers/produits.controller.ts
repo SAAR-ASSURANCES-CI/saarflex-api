@@ -1,10 +1,8 @@
-import { Controller, Get, Param, Query, ParseUUIDPipe, ParseEnumPipe, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { ProduitsService } from '../services/produits.service';
-import { ProduitDto, PaginationQueryDto, ProduitsResponseDto } from '../../dto/produit.dto';
-import { BrancheProduitDto } from '../../dto/branche-produit.dto';
+import { ProduitDto } from '../../dto/produit.dto';
 import { GarantieWithProduitDto } from '../../dto/garanties-index.dto';
-import { TypeProduit } from '../../entities/produit.entity';
 import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
 
 @ApiTags('Produits')
@@ -32,64 +30,7 @@ export class ProduitsController {
         return this.produitsService.findAll();
     }
 
-    @Get('type/:type')
-    @ApiOperation({ 
-        summary: 'Récupérer les produits par type',
-        description: 'Endpoint protégé pour consulter tous les produits d\'un type spécifique (vie ou non-vie). Authentification requise.'
-    })
-    @ApiParam({ 
-        name: 'type', 
-        enum: TypeProduit, 
-        description: 'Type de produit (vie ou non-vie)',
-        example: 'vie'
-    })
-    @ApiResponse({ 
-        status: 200, 
-        description: 'Liste des produits du type spécifié',
-        type: [ProduitDto]
-    })
-    @ApiResponse({ 
-        status: 400, 
-        description: 'Type de produit invalide' 
-    })
-    @ApiResponse({ 
-        status: 401, 
-        description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
-    })
-    async findByType(
-        @Param('type', new ParseEnumPipe(TypeProduit)) type: TypeProduit
-    ): Promise<ProduitDto[]> {
-        return this.produitsService.findByType(type);
-    }
 
-    @Get('branche/:brancheId')
-    @ApiOperation({ 
-        summary: 'Récupérer les produits par branche',
-        description: 'Endpoint protégé pour consulter tous les produits d\'une branche spécifique. Authentification requise.'
-    })
-    @ApiParam({ 
-        name: 'brancheId', 
-        description: 'ID de la branche (UUID)',
-        example: '123e4567-e89b-12d3-a456-426614174000'
-    })
-    @ApiResponse({ 
-        status: 200, 
-        description: 'Liste des produits de la branche spécifiée',
-        type: [ProduitDto]
-    })
-    @ApiResponse({ 
-        status: 400, 
-        description: 'ID de branche invalide' 
-    })
-    @ApiResponse({ 
-        status: 401, 
-        description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
-    })
-    async findByBranche(
-        @Param('brancheId', ParseUUIDPipe) brancheId: string
-    ): Promise<ProduitDto[]> {
-        return this.produitsService.findByBranche(brancheId);
-    }
 
     @Get(':id')
     @ApiOperation({ 
@@ -122,49 +63,9 @@ export class ProduitsController {
         return this.produitsService.findOne(id);
     }
 
-    @Get('branches/all')
-    @ApiOperation({ 
-        summary: 'Récupérer toutes les branches',
-        description: 'Endpoint protégé pour consulter toutes les branches de produits disponibles. Authentification requise.'
-    })
-    @ApiResponse({ 
-        status: 200, 
-        description: 'Liste des branches récupérée avec succès',
-        type: [BrancheProduitDto]
-    })
-    @ApiResponse({ 
-        status: 401, 
-        description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
-    })
-    @ApiResponse({ 
-        status: 500, 
-        description: 'Erreur serveur interne' 
-    })
-    async findAllBranches(): Promise<BrancheProduitDto[]> {
-        return this.produitsService.findAllBranches();
-    }
 
-    @Get('garanties/all')
-    @ApiOperation({ 
-        summary: 'Récupérer toutes les garanties actives avec données du produit',
-        description: 'Endpoint protégé pour consulter toutes les garanties actives avec les informations complètes du produit associé. Authentification requise.'
-    })
-    @ApiResponse({ 
-        status: 200, 
-        description: 'Liste des garanties avec données du produit récupérée avec succès',
-        type: [GarantieWithProduitDto]
-    })
-    @ApiResponse({ 
-        status: 401, 
-        description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
-    })
-    @ApiResponse({ 
-        status: 500, 
-        description: 'Erreur serveur interne' 
-    })
-    async findAllGarantiesWithProduit(): Promise<GarantieWithProduitDto[]> {
-        return this.produitsService.findAllGarantiesWithProduit();
-    }
+
+
 
     @Get('produit/:produitId/garanties')
     @ApiOperation({ 
