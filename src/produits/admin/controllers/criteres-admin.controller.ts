@@ -20,18 +20,18 @@ import {
     ApiBearerAuth,
     ApiBody 
 } from '@nestjs/swagger';
-import { CriteresAdminService } from './criteres-admin.service';
+import { CriteresAdminService } from '../services/criteres-admin.service';
 import { 
-    CreateCritereTarificationDto, 
-    UpdateCritereTarificationDto,
-    CreateValeurCritereDto,
-    UpdateValeurCritereDto,
-    CritereTarificationAdminDto,
-    ValeurCritereDto,
-    CriteresAdminResponseDto
-} from './dto/critere-tarification-admin.dto';
-import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
-import { AdminGuard } from '../users/guards/admin.guard';
+  CreateCritereTarificationDto, 
+  UpdateCritereTarificationDto,
+  CreateValeurCritereDto,
+  UpdateValeurCritereDto,
+  CritereTarificationAdminDto,
+  ValeurCritereDto,
+  CriteresAdminResponseDto
+} from '../../dto/critere-tarification-admin.dto';
+import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
+import { AdminGuard } from '../../../users/guards/admin.guard';
 
 @ApiTags('Administration - Critères de Tarification')
 @Controller('admin/criteres')

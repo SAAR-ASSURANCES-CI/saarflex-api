@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, On
 import { Produit } from './produit.entity';
 import { ValeurCritere } from './valeur-critere.entity';
 import { GarantieCritere } from './garantie-critere.entity';
+import { Tarif } from './tarif.entity';
 
 export enum TypeCritere {
   NUMERIQUE = 'numerique',
@@ -49,4 +50,7 @@ export class CritereTarification {
 
   @OneToMany(() => GarantieCritere, garantieCritere => garantieCritere.critere, { cascade: true })
   garanties_criteres: GarantieCritere[];
+
+  @OneToMany(() => Tarif, tarif => tarif.critere, { cascade: true })
+  tarifs: Tarif[];
 }

@@ -20,15 +20,15 @@ import {
   ApiBearerAuth,
   ApiBody 
 } from '@nestjs/swagger';
-import { ProduitsAdminService } from './produits-admin.service';
+import { ProduitsAdminService } from '../services/produits-admin.service';
 import { 
   CreateProduitDto, 
   UpdateProduitDto, 
   ProduitAdminDto,
   ProduitsAdminResponseDto
-} from './dto/produit-admin.dto';
-import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
-import { AdminGuard } from '../users/guards/admin.guard';
+} from '../../dto/produit-admin.dto';
+import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
+import { AdminGuard } from '../../../users/guards/admin.guard';
 
 @ApiTags('Administration - Produits d\'Assurance')
 @Controller('admin/produits')

@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
-import { CritereTarification, TypeCritere } from './entities/critere-tarification.entity';
-import { ValeurCritere } from './entities/valeur-critere.entity';
-import { Produit } from './entities/produit.entity';
+import { CritereTarification, TypeCritere } from '../../entities/critere-tarification.entity';
+import { ValeurCritere } from '../../entities/valeur-critere.entity';
+import { Produit } from '../../entities/produit.entity';
 import { 
     CreateCritereTarificationDto, 
     UpdateCritereTarificationDto,
@@ -12,7 +12,7 @@ import {
     CritereTarificationAdminDto,
     ValeurCritereDto,
     CriteresAdminResponseDto
-} from './dto/critere-tarification-admin.dto';
+} from '../../dto/critere-tarification-admin.dto';
 
 @Injectable()
 export class CriteresAdminService {

@@ -1,43 +1,44 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
+import { CritereTarification } from './critere-tarification.entity';
+import { ValeurCritere } from './valeur-critere.entity';
 
 @Entity('tarifs')
 export class Tarif {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid', nullable: false })
-  grille_tarifaire_id: string;
+  @Column({ type: 'uuid', nullable: true })
+  grille_id: string;
 
-  @Column({ type: 'json', nullable: false })
-  critere_combinaison: Record<string, any>;
+  @Column({ type: 'uuid', nullable: true })
+  critere_id: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
-  prime_base: number;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  franchise: number;
+  @Column({ type: 'uuid', nullable: true })
+  valeur_critere_id: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  plafond: number;
+  montant: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 4, default: 1.0000 })
-  coefficient_majoration: number;
-
-  @Column({ type: 'decimal', precision: 5, scale: 4, default: 1.0000 })
-  coefficient_reduction: number;
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  pourcentage: number;
 
   @Column({ type: 'text', nullable: true })
-  conditions_speciales: string;
+  formule: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
-
-  @UpdateDateColumn()
-  updated_at: Date;
 
   // Relations
   @ManyToOne(() => GrilleTarifaire, grille => grille.tarifs, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'grille_tarifaire_id' })
+  @JoinColumn({ name: 'grille_id' })
   grilleTarifaire: GrilleTarifaire;
+
+  @ManyToOne(() => CritereTarification, critere => critere.tarifs, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'critere_id' })
+  critere: CritereTarification;
+
+  @ManyToOne(() => ValeurCritere, valeurCritere => valeurCritere.tarifs, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'valeur_critere_id' })
+  valeurCritere: ValeurCritere;
 }

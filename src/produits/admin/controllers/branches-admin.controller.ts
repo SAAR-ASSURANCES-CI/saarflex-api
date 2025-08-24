@@ -19,15 +19,15 @@ import {
   ApiBearerAuth,
   ApiBody 
 } from '@nestjs/swagger';
-import { BranchesAdminService } from './branches-admin.service';
+import { BranchesAdminService } from '../services/branches-admin.service';
 import { 
   CreateBrancheProduitDto, 
   UpdateBrancheProduitDto, 
   BrancheProduitAdminDto,
-  BranchesResponseDto 
-} from './dto/branche-produit-admin.dto';
-import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
-import { AdminGuard } from '../users/guards/admin.guard';
+  BranchesResponseDto
+} from '../../dto/branche-produit-admin.dto';
+import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
+import { AdminGuard } from '../../../users/guards/admin.guard';
 
 @ApiTags('Administration - Branches de Produits')
 @Controller('admin/branches')

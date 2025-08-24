@@ -19,7 +19,7 @@ import {
   ApiParam,
   ApiQuery
 } from '@nestjs/swagger';
-import { GarantiesAdminService } from './garanties-admin.service';
+import { GarantiesAdminService } from '../services/garanties-admin.service';
 import { 
   CreateGarantieDto, 
   UpdateGarantieDto, 
@@ -33,9 +33,9 @@ import {
   TarifGarantieDto,
   GarantieWithProduitDto,
   GarantiesWithProduitResponseDto
-} from './dto/garanties-index.dto';
-import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
-import { AdminGuard } from '../users/guards/admin.guard';
+} from '../../dto/garanties-index.dto';
+import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
+import { AdminGuard } from '../../../users/guards/admin.guard';
 
 @ApiTags('Administration - Gestion des Garanties')
 @ApiBearerAuth()

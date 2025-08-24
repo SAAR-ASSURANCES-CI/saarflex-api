@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Produit, StatutProduit } from './entities/produit.entity';
-import { BrancheProduit } from './entities/branche-produit.entity';
-import { CritereTarification } from './entities/critere-tarification.entity';
-import { GrilleTarifaire } from './entities/grille-tarifaire.entity';
-import { FormuleCalcul } from './entities/formule-calcul.entity';
-import { DevisSimule } from './entities/devis-simule.entity';
+import { Produit, StatutProduit } from '../../entities/produit.entity';
+import { BrancheProduit } from '../../entities/branche-produit.entity';
+import { CritereTarification } from '../../entities/critere-tarification.entity';
+import { GrilleTarifaire } from '../../entities/grille-tarifaire.entity';
+import { FormuleCalcul } from '../../entities/formule-calcul.entity';
+import { DevisSimule } from '../../entities/devis-simule.entity';
 import { 
     CreateProduitDto, 
     UpdateProduitDto, 
     ProduitAdminDto,
     ProduitsAdminResponseDto
-} from './dto/produit-admin.dto';
+} from '../../dto/produit-admin.dto';
 
 @Injectable()
 export class ProduitsAdminService {
