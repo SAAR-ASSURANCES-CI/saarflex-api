@@ -7,6 +7,7 @@ import { CriteresAdminController } from './admin/controllers/criteres-admin.cont
 import { GarantiesAdminController } from './admin/controllers/garanties-admin.controller';
 import { GrillesTarifairesAdminController } from './admin/controllers/grilles-tarifaires-admin.controller';
 import { TarifsAdminController } from './admin/controllers/tarifs-admin.controller';
+import { FormulesCalculAdminController } from './admin/controllers/formules-calcul-admin.controller';
 import { ProduitsController } from './public/controllers/produits.controller';
 import { ProduitsAdminService } from './admin/services/produits-admin.service';
 import { BranchesAdminService } from './admin/services/branches-admin.service';
@@ -14,6 +15,7 @@ import { CriteresAdminService } from './admin/services/criteres-admin.service';
 import { GarantiesAdminService } from './admin/services/garanties-admin.service';
 import { GrillesTarifairesAdminService } from './admin/services/grilles-tarifaires-admin.service';
 import { TarifsAdminService } from './admin/services/tarifs-admin.service';
+import { FormulesCalculAdminService } from './admin/services/formules-calcul-admin.service';
 import { ProduitsService } from './public/services/produits.service';
 import { Produit } from './entities/produit.entity';
 import { BrancheProduit } from './entities/branche-produit.entity';
@@ -51,6 +53,7 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GarantiesAdminController,
     GrillesTarifairesAdminController,
     TarifsAdminController,
+    FormulesCalculAdminController,
     ProduitsController
   ],
   providers: [
@@ -60,6 +63,7 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GarantiesAdminService,
     GrillesTarifairesAdminService,
     TarifsAdminService,
+    FormulesCalculAdminService,
     ProduitsService
   ],
   exports: [
@@ -69,6 +73,7 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GarantiesAdminService,
     GrillesTarifairesAdminService,
     TarifsAdminService,
+    FormulesCalculAdminService,
     ProduitsService
   ]
 })

@@ -26,7 +26,8 @@ import {
   TarifDto,
   TarifsResponseDto,
   TarifWithGrilleDto,
-  TarifsWithGrilleResponseDto
+  TarifsWithGrilleResponseDto,
+  CalculPrimeResponseDto
 } from '../../dto/tarif.dto';
 import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
 import { AdminGuard } from '../../../users/guards/admin.guard';
@@ -273,7 +274,7 @@ export class TarifsAdminController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Prime calculée avec succès',
-    type: 'object'
+    type: CalculPrimeResponseDto
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
