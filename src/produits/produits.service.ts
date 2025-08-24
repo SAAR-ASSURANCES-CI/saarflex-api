@@ -3,8 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Like, ILike } from 'typeorm';
 import { Produit, TypeProduit, StatutProduit } from './entities/produit.entity';
 import { BrancheProduit } from './entities/branche-produit.entity';
+import { Garantie, StatutGarantie } from './entities/garantie.entity';
 import { ProduitDto } from './dto/produit.dto';
 import { BrancheProduitDto } from './dto/branche-produit.dto';
+import { GarantieWithProduitDto } from './dto/garanties-index.dto';
 
 @Injectable()
 export class ProduitsService {
@@ -13,6 +15,8 @@ export class ProduitsService {
     private readonly produitRepository: Repository<Produit>,
     @InjectRepository(BrancheProduit)
     private readonly brancheRepository: Repository<BrancheProduit>,
+    @InjectRepository(Garantie)
+    private readonly garantieRepository: Repository<Garantie>,
   ) {}
 
   /**
@@ -90,6 +94,51 @@ export class ProduitsService {
   }
 
   /**
+   * Récupère toutes les garanties actives d'un produit avec les données du produit
+   */
+  async findGarantiesByProduit(produitId: string): Promise<GarantieWithProduitDto[]> {
+    const garanties = await this.garantieRepository.find({
+      where: { 
+        produit_id: produitId, 
+        statut: StatutGarantie.ACTIVE 
+      },
+      relations: ['produit', 'produit.branche'],
+      order: { ordre: 'ASC', created_at: 'DESC' }
+    });
+
+    return garanties.map(garantie => this.mapGarantieToDtoWithProduit(garantie));
+  }
+
+  /**
+   * Récupère toutes les garanties actives avec les données du produit associé
+   */
+  async findAllGarantiesWithProduit(): Promise<GarantieWithProduitDto[]> {
+    const garanties = await this.garantieRepository.find({
+      where: { statut: StatutGarantie.ACTIVE },
+      relations: ['produit', 'produit.branche'],
+      order: { ordre: 'ASC', created_at: 'DESC' }
+    });
+
+    return garanties.map(garantie => this.mapGarantieToDtoWithProduit(garantie));
+  }
+
+  /**
+   * Récupère une garantie active par ID avec les données du produit
+   */
+  async findGarantieWithProduit(id: string): Promise<GarantieWithProduitDto> {
+    const garantie = await this.garantieRepository.findOne({
+      where: { id, statut: StatutGarantie.ACTIVE },
+      relations: ['produit', 'produit.branche']
+    });
+
+    if (!garantie) {
+      throw new NotFoundException(`Garantie non trouvée`);
+    }
+
+    return this.mapGarantieToDtoWithProduit(garantie);
+  }
+
+  /**
    * Transforme une entité Produit en DTO
    */
   private mapToDto(produit: Produit): ProduitDto {
@@ -108,6 +157,40 @@ export class ProduitsService {
         description: produit.branche.description,
         ordre: produit.branche.ordre
       } : null
+    };
+  }
+
+  /**
+   * Transforme une entité Garantie en DTO avec données du produit
+   */
+  private mapGarantieToDtoWithProduit(garantie: Garantie): GarantieWithProduitDto {
+    return {
+      id: garantie.id,
+      nom: garantie.nom,
+      description: garantie.description,
+      type: garantie.type,
+      montant_garanti: garantie.montant_garanti,
+      franchise: garantie.franchise,
+      ordre: garantie.ordre,
+      produit_id: garantie.produit_id,
+      statut: garantie.statut,
+      created_by: garantie.created_by,
+      created_at: garantie.created_at,
+      updated_at: garantie.updated_at,
+      produit: {
+        id: garantie.produit.id,
+        nom: garantie.produit.nom,
+        icon: garantie.produit.icon,
+        type: garantie.produit.type,
+        description: garantie.produit.description,
+        statut: garantie.produit.statut,
+        branche: garantie.produit.branche ? {
+          id: garantie.produit.branche.id,
+          nom: garantie.produit.branche.nom,
+          type: garantie.produit.branche.type,
+          description: garantie.produit.branche.description
+        } : undefined
+      }
     };
   }
 }

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth }
 import { ProduitsService } from './produits.service';
 import { ProduitDto, PaginationQueryDto, ProduitsResponseDto } from './dto/produit.dto';
 import { BrancheProduitDto } from './dto/branche-produit.dto';
+import { GarantieWithProduitDto } from './dto/garanties-index.dto';
 import { TypeProduit } from './entities/produit.entity';
 import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
 
@@ -141,5 +142,89 @@ export class ProduitsController {
     })
     async findAllBranches(): Promise<BrancheProduitDto[]> {
         return this.produitsService.findAllBranches();
+    }
+
+    @Get('garanties/all')
+    @ApiOperation({ 
+        summary: 'Récupérer toutes les garanties actives avec données du produit',
+        description: 'Endpoint protégé pour consulter toutes les garanties actives avec les informations complètes du produit associé. Authentification requise.'
+    })
+    @ApiResponse({ 
+        status: 200, 
+        description: 'Liste des garanties avec données du produit récupérée avec succès',
+        type: [GarantieWithProduitDto]
+    })
+    @ApiResponse({ 
+        status: 401, 
+        description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
+    })
+    @ApiResponse({ 
+        status: 500, 
+        description: 'Erreur serveur interne' 
+    })
+    async findAllGarantiesWithProduit(): Promise<GarantieWithProduitDto[]> {
+        return this.produitsService.findAllGarantiesWithProduit();
+    }
+
+    @Get('produit/:produitId/garanties')
+    @ApiOperation({ 
+        summary: 'Récupérer les garanties d\'un produit avec données du produit',
+        description: 'Endpoint protégé pour consulter toutes les garanties actives d\'un produit spécifique avec les informations complètes du produit. Authentification requise.'
+    })
+    @ApiParam({ 
+        name: 'produitId', 
+        description: 'ID du produit (UUID)',
+        example: '123e4567-e89b-12d3-a456-426614174000'
+    })
+    @ApiResponse({ 
+        status: 200, 
+        description: 'Garanties du produit avec données du produit récupérées avec succès',
+        type: [GarantieWithProduitDto]
+    })
+    @ApiResponse({ 
+        status: 400, 
+        description: 'ID de produit invalide' 
+    })
+    @ApiResponse({ 
+        status: 401, 
+        description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
+    })
+    @ApiResponse({ 
+        status: 404, 
+        description: 'Produit non trouvé' 
+    })
+    async findGarantiesByProduit(@Param('produitId', ParseUUIDPipe) produitId: string): Promise<GarantieWithProduitDto[]> {
+        return this.produitsService.findGarantiesByProduit(produitId);
+    }
+
+    @Get('garanties/:id')
+    @ApiOperation({ 
+        summary: 'Récupérer une garantie par ID avec données du produit',
+        description: 'Endpoint protégé pour consulter les détails d\'une garantie active avec les informations complètes du produit associé. Authentification requise.'
+    })
+    @ApiParam({ 
+        name: 'id', 
+        description: 'ID de la garantie (UUID)',
+        example: '123e4567-e89b-12d3-a456-426614174000'
+    })
+    @ApiResponse({ 
+        status: 200, 
+        description: 'Garantie avec données du produit récupérée avec succès',
+        type: GarantieWithProduitDto
+    })
+    @ApiResponse({ 
+        status: 400, 
+        description: 'ID de garantie invalide' 
+    })
+    @ApiResponse({ 
+        status: 401, 
+        description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
+    })
+    @ApiResponse({ 
+        status: 404, 
+        description: 'Garantie non trouvée' 
+    })
+    async findGarantieWithProduit(@Param('id', ParseUUIDPipe) id: string): Promise<GarantieWithProduitDto> {
+        return this.produitsService.findGarantieWithProduit(id);
     }
 }
