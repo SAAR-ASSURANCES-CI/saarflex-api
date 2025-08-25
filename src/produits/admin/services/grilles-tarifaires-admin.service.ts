@@ -32,19 +32,19 @@ export class GrillesTarifairesAdminService {
       throw new NotFoundException('Produit non trouvé');
     }
 
-    if (createGrilleDto.statut === StatutGrille.ACTIF) {
-      const conflitGrille = await this.grilleRepository.findOne({
-        where: {
-          produit_id: createGrilleDto.produit_id,
-          statut: StatutGrille.ACTIF,
-          date_debut: new Date(createGrilleDto.date_debut)
-        }
-      });
+    // if (createGrilleDto.statut === StatutGrille.ACTIF) {
+    //   const conflitGrille = await this.grilleRepository.findOne({
+    //     where: {
+    //       produit_id: createGrilleDto.produit_id,
+    //       statut: StatutGrille.ACTIF,
+    //       date_debut: new Date(createGrilleDto.date_debut)
+    //     }
+    //   });
 
-      if (conflitGrille) {
-        throw new ConflictException('Une grille active existe déjà pour cette date de début');
-      }
-    }
+    //   if (conflitGrille) {
+    //     throw new ConflictException('Une grille active existe déjà pour cette date de début');
+    //   }
+    // }
 
     const grille = this.grilleRepository.create({
       ...createGrilleDto,
