@@ -66,14 +66,14 @@ export class GarantieCritere {
   created_at: Date;
 
   // Relations
-  @ManyToOne(() => Garantie, garantie => garantie.garanties_criteres, {
+  @ManyToOne(() => Garantie, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
   })
   @JoinColumn({ name: 'garantie_id' })
   garantie: Garantie;
 
-  @ManyToOne(() => CritereTarification, critere => critere.garanties_criteres, {
+  @ManyToOne(() => CritereTarification, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
   })

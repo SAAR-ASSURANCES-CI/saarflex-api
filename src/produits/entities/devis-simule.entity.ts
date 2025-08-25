@@ -42,7 +42,13 @@ export class DevisSimule {
   statut: StatutDevis;
 
   @Column({ type: 'timestamp', nullable: true })
-  expires_at: Date;
+  expires_at: Date | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  nom_personnalise: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  notes: string | null;
 
   @CreateDateColumn()
   created_at: Date;
