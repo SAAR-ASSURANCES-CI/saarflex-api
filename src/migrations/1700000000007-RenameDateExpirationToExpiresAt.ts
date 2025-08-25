@@ -4,28 +4,27 @@ export class RenameDateExpirationToExpiresAt1700000000007 implements MigrationIn
   name = 'RenameDateExpirationToExpiresAt1700000000007';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Vérifier si la colonne date_expiration existe
     const hasDateExpiration = await queryRunner.hasColumn('devis_simules', 'date_expiration');
     
     if (hasDateExpiration) {
-      // Supprimer l'ancien index sur date_expiration
-      await queryRunner.query(`
-        DROP INDEX IF EXISTS IDX_devis_date_expiration ON devis_simules
-      `);
+      const indexExists = await this.checkIndexExists(queryRunner, 'devis_simules', 'IDX_devis_date_expiration');
       
-      // Renommer la colonne date_expiration en expires_at
+      if (indexExists) {
+        await queryRunner.query(`
+          DROP INDEX IDX_devis_date_expiration ON devis_simules
+        `);
+      }
+      
       await queryRunner.query(`
         ALTER TABLE devis_simules 
         CHANGE COLUMN date_expiration expires_at TIMESTAMP NULL
       `);
       
-      // Recréer l'index avec le nouveau nom
       await queryRunner.query(`
         CREATE INDEX IDX_devis_expires_at ON devis_simules (expires_at)
       `);
     }
     
-    // Vérifier et ajouter les colonnes manquantes selon notre entité actuelle
     const hasNomPersonnalise = await queryRunner.hasColumn('devis_simules', 'nom_personnalise');
     if (!hasNomPersonnalise) {
       await queryRunner.query(`
@@ -42,7 +41,6 @@ export class RenameDateExpirationToExpiresAt1700000000007 implements MigrationIn
       `);
     }
     
-    // Vérifier et renommer les colonnes si nécessaire
     const hasUserId = await queryRunner.hasColumn('devis_simules', 'user_id');
     const hasUtilisateurId = await queryRunner.hasColumn('devis_simules', 'utilisateur_id');
     
@@ -73,7 +71,6 @@ export class RenameDateExpirationToExpiresAt1700000000007 implements MigrationIn
       `);
     }
     
-    // Ajouter les colonnes manquantes pour la franchise et le plafond
     const hasFranchiseCalculee = await queryRunner.hasColumn('devis_simules', 'franchise_calculee');
     if (!hasFranchiseCalculee) {
       await queryRunner.query(`
@@ -90,7 +87,6 @@ export class RenameDateExpirationToExpiresAt1700000000007 implements MigrationIn
       `);
     }
     
-    // Ajouter la colonne grille_tarifaire_id si elle n'existe pas
     const hasGrilleTarifaireId = await queryRunner.hasColumn('devis_simules', 'grille_tarifaire_id');
     if (!hasGrilleTarifaireId) {
       await queryRunner.query(`
@@ -99,7 +95,6 @@ export class RenameDateExpirationToExpiresAt1700000000007 implements MigrationIn
       `);
     }
     
-    // Mettre à jour l'index sur le statut pour inclure les nouvelles valeurs
     await queryRunner.query(`
       ALTER TABLE devis_simules 
       MODIFY COLUMN statut ENUM('simulation', 'sauvegarde', 'expire') DEFAULT 'simulation'
@@ -107,31 +102,61 @@ export class RenameDateExpirationToExpiresAt1700000000007 implements MigrationIn
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Restaurer la structure originale
-    await queryRunner.query(`
-      DROP INDEX IF EXISTS IDX_devis_expires_at ON devis_simules
-    `);
+    const indexExists = await this.checkIndexExists(queryRunner, 'devis_simules', 'IDX_devis_expires_at');
     
-    await queryRunner.query(`
-      ALTER TABLE devis_simules 
-      CHANGE COLUMN expires_at date_expiration TIMESTAMP NULL
-    `);
+    if (indexExists) {
+      await queryRunner.query(`
+        DROP INDEX IDX_devis_expires_at ON devis_simules
+      `);
+    }
     
-    await queryRunner.query(`
-      CREATE INDEX IDX_devis_date_expiration ON devis_simules (date_expiration)
-    `);
+    const hasExpiresAt = await queryRunner.hasColumn('devis_simules', 'expires_at');
+    if (hasExpiresAt) {
+      await queryRunner.query(`
+        ALTER TABLE devis_simules 
+        CHANGE COLUMN expires_at date_expiration TIMESTAMP NULL
+      `);
+      
+      await queryRunner.query(`
+        CREATE INDEX IDX_devis_date_expiration ON devis_simules (date_expiration)
+      `);
+    }
     
-    // Supprimer les colonnes ajoutées
-    await queryRunner.query(`
-      ALTER TABLE devis_simules 
-      DROP COLUMN IF EXISTS nom_personnalise,
-      DROP COLUMN IF EXISTS notes,
-      DROP COLUMN IF EXISTS franchise_calculee,
-      DROP COLUMN IF EXISTS plafond_calcule,
-      DROP COLUMN IF EXISTS grille_tarifaire_id
-    `);
+    const hasNomPersonnalise = await queryRunner.hasColumn('devis_simules', 'nom_personnalise');
+    if (hasNomPersonnalise) {
+      await queryRunner.query(`
+        ALTER TABLE devis_simules DROP COLUMN nom_personnalise
+      `);
+    }
     
-    // Restaurer les noms de colonnes originaux
+    const hasNotes = await queryRunner.hasColumn('devis_simules', 'notes');
+    if (hasNotes) {
+      await queryRunner.query(`
+        ALTER TABLE devis_simules DROP COLUMN notes
+      `);
+    }
+    
+    const hasFranchiseCalculee = await queryRunner.hasColumn('devis_simules', 'franchise_calculee');
+    if (hasFranchiseCalculee) {
+      await queryRunner.query(`
+        ALTER TABLE devis_simules DROP COLUMN franchise_calculee
+      `);
+    }
+    
+    const hasPlafondCalcule = await queryRunner.hasColumn('devis_simules', 'plafond_calcule');
+    if (hasPlafondCalcule) {
+      await queryRunner.query(`
+        ALTER TABLE devis_simules DROP COLUMN plafond_calcule
+      `);
+    }
+    
+    const hasGrilleTarifaireId = await queryRunner.hasColumn('devis_simules', 'grille_tarifaire_id');
+    if (hasGrilleTarifaireId) {
+      await queryRunner.query(`
+        ALTER TABLE devis_simules DROP COLUMN grille_tarifaire_id
+      `);
+    }
+    
     const hasUtilisateurId = await queryRunner.hasColumn('devis_simules', 'utilisateur_id');
     if (hasUtilisateurId) {
       await queryRunner.query(`
@@ -156,10 +181,24 @@ export class RenameDateExpirationToExpiresAt1700000000007 implements MigrationIn
       `);
     }
     
-    // Restaurer l'ancien enum de statut
     await queryRunner.query(`
       ALTER TABLE devis_simules 
       MODIFY COLUMN statut ENUM('brouillon','envoye','accepte','refuse') DEFAULT 'brouillon'
     `);
+  }
+
+  /**
+   * Vérifier si un index existe
+   */
+  private async checkIndexExists(queryRunner: QueryRunner, tableName: string, indexName: string): Promise<boolean> {
+    const result = await queryRunner.query(`
+      SELECT COUNT(*) as count 
+      FROM INFORMATION_SCHEMA.STATISTICS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = '${tableName}' 
+      AND INDEX_NAME = '${indexName}'
+    `);
+    
+    return result[0].count > 0;
   }
 }
