@@ -48,9 +48,6 @@ export class CritereTarification {
   @OneToMany(() => ValeurCritere, valeur => valeur.critere, { cascade: true })
   valeurs: ValeurCritere[];
 
-  @OneToMany(() => GarantieCritere, garantieCritere => garantieCritere.critere, { cascade: true })
-  garanties_criteres: GarantieCritere[];
-
   @OneToMany(() => Tarif, tarif => tarif.critere, { cascade: true })
   tarifs: Tarif[];
 }

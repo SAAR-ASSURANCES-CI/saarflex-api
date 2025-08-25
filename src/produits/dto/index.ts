@@ -22,3 +22,6 @@ export * from './grille-tarifaire.dto';
 
 // DTOs des tarifs
 export * from './tarif.dto';
+
+// DTOs de simulation et devis
+export * from './simulation-devis.dto';

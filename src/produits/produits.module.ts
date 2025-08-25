@@ -9,6 +9,7 @@ import { GrillesTarifairesAdminController } from './admin/controllers/grilles-ta
 import { TarifsAdminController } from './admin/controllers/tarifs-admin.controller';
 import { FormulesCalculAdminController } from './admin/controllers/formules-calcul-admin.controller';
 import { ProduitsController } from './public/controllers/produits.controller';
+import { SimulationDevisController } from './public/controllers/simulation-devis.controller';
 import { ProduitsAdminService } from './admin/services/produits-admin.service';
 import { BranchesAdminService } from './admin/services/branches-admin.service';
 import { CriteresAdminService } from './admin/services/criteres-admin.service';
@@ -17,6 +18,9 @@ import { GrillesTarifairesAdminService } from './admin/services/grilles-tarifair
 import { TarifsAdminService } from './admin/services/tarifs-admin.service';
 import { FormulesCalculAdminService } from './admin/services/formules-calcul-admin.service';
 import { ProduitsService } from './public/services/produits.service';
+import { SimulationDevisService } from './public/services/simulation-devis.service';
+import { DevisSauvegardeService } from './public/services/devis-sauvegarde.service';
+import { TachePlanifieeService } from './services/tache-planifiee.service';
 import { Produit } from './entities/produit.entity';
 import { BrancheProduit } from './entities/branche-produit.entity';
 import { CritereTarification } from './entities/critere-tarification.entity';
@@ -54,7 +58,8 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GrillesTarifairesAdminController,
     TarifsAdminController,
     FormulesCalculAdminController,
-    ProduitsController
+    ProduitsController,
+    SimulationDevisController
   ],
   providers: [
     ProduitsAdminService,
@@ -64,7 +69,10 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GrillesTarifairesAdminService,
     TarifsAdminService,
     FormulesCalculAdminService,
-    ProduitsService
+    ProduitsService,
+    SimulationDevisService,
+    DevisSauvegardeService,
+    TachePlanifieeService
   ],
   exports: [
     ProduitsAdminService,
@@ -74,7 +82,9 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GrillesTarifairesAdminService,
     TarifsAdminService,
     FormulesCalculAdminService,
-    ProduitsService
+    ProduitsService,
+    SimulationDevisService,
+    DevisSauvegardeService
   ]
 })
 export class ProduitsModule {}
