@@ -6,11 +6,9 @@ import {
     InternalServerErrorException,
     UnauthorizedException,
     ForbiddenException,
-    Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { User, UserType } from './entities/user.entity';
 import { Profile } from './entities/profile.entity';
@@ -39,7 +37,6 @@ export class UsersService {
         @InjectRepository(Notification)
         private readonly notificationRepository: Repository<Notification>,
         @InjectRepository(PasswordReset)
-        @Inject('REDIS_CLIENT') private readonly redisClient: ClientProxy,
         private readonly passwordResetRepository: Repository<PasswordReset>,
         private readonly jwtService: JwtService,
         private readonly emailService: EmailService,
@@ -560,36 +557,5 @@ export class UsersService {
         });
 
         await this.notificationRepository.save(notification);
-    }
-
-    async loginWithRedisLogging(loginDto: LoginDto, ipAddress?: string, userAgent?: string): Promise<LoginResponseDto> {
-        await this.redisClient.send('log.login.attempt', {
-            email: loginDto.email,
-            ipAddress,
-            userAgent,
-            timestamp: new Date().toISOString()
-        }).toPromise();
-
-        try {
-            const result = await this.login(loginDto, ipAddress, userAgent);
-
-            await this.redisClient.send('log.login.success', {
-                userId: result.id,
-                email: loginDto.email,
-                ipAddress,
-                timestamp: new Date().toISOString()
-            }).toPromise();
-
-            return result;
-        } catch (error) {
-            await this.redisClient.send('log.login.failure', {
-                email: loginDto.email,
-                error: error.message,
-                ipAddress,
-                timestamp: new Date().toISOString()
-            }).toPromise();
-
-            throw error;
-        }
     }
 }

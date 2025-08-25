@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DB_HOST=${DB_HOST:-users-db}
+DB_HOST=${DB_HOST:-saarflex-db}
 DB_PORT=${DB_PORT:-3306}
 
 echo "En attente de MySQL sur $DB_HOST:$DB_PORT..."

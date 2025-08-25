@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateProfilesTable1754667171902 implements MigrationInterface {
-  name = 'CreateProfilesTable1754667171902';
+export class CreateProfilesTable1700000000001 implements MigrationInterface {
+  name = 'CreateProfilesTable1700000000001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE TABLE \`profiles\` (
@@ -18,7 +18,7 @@ export class CreateProfilesTable1754667171902 implements MigrationInterface {
       \`date_modification\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
       UNIQUE INDEX \`IDX_profiles_user_unique\` (\`user_id\`),
       PRIMARY KEY (\`id\`)
-    ) ENGINE=InnoDB`);
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
     await queryRunner.query(`ALTER TABLE \`profiles\` ADD CONSTRAINT \`FK_profiles_user\` FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
   }
