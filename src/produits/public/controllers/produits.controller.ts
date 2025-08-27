@@ -1,8 +1,9 @@
-import { Controller, Get, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Param, ParseUUIDPipe, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ProduitsService } from '../services/produits.service';
 import { ProduitDto } from '../../dto/produit.dto';
 import { GarantieWithProduitDto } from '../../dto/garanties-index.dto';
+import { CriteresPublicResponseDto } from '../../dto/critere-tarification-public.dto';
 import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
 
 @ApiTags('Produits')
@@ -127,5 +128,52 @@ export class ProduitsController {
     })
     async findGarantieWithProduit(@Param('id', ParseUUIDPipe) id: string): Promise<GarantieWithProduitDto> {
         return this.produitsService.findGarantieWithProduit(id);
+    }
+
+    @Get(':produitId/criteres')
+    @ApiOperation({ 
+        summary: 'Récupérer les critères de tarification d\'un produit',
+        description: 'Endpoint protégé pour consulter tous les critères de tarification d\'un produit spécifique avec leurs valeurs possibles. Authentification requise.'
+    })
+    @ApiParam({ 
+        name: 'produitId', 
+        description: 'ID du produit (UUID)',
+        example: '123e4567-e89b-12d3-a456-426614174000'
+    })
+    @ApiQuery({ 
+        name: 'page', 
+        required: false, 
+        description: 'Numéro de page (défaut: 1)',
+        example: 1
+    })
+    @ApiQuery({ 
+        name: 'limit', 
+        required: false, 
+        description: 'Nombre d\'éléments par page (défaut: 10)',
+        example: 10
+    })
+    @ApiResponse({ 
+        status: 200, 
+        description: 'Critères du produit récupérés avec succès',
+        type: CriteresPublicResponseDto
+    })
+    @ApiResponse({ 
+        status: 400, 
+        description: 'ID de produit invalide' 
+    })
+    @ApiResponse({ 
+        status: 401, 
+        description: 'Non autorisé - Token d\'authentification manquant ou invalide' 
+    })
+    @ApiResponse({ 
+        status: 404, 
+        description: 'Produit non trouvé ou inactif' 
+    })
+    async findCriteresByProduit(
+        @Param('produitId', ParseUUIDPipe) produitId: string,
+        @Query('page', ParseIntPipe) page: number = 1,
+        @Query('limit', ParseIntPipe) limit: number = 10
+    ): Promise<CriteresPublicResponseDto> {
+        return this.produitsService.findCriteresByProduit(produitId, page, limit);
     }
 }
