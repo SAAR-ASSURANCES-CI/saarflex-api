@@ -4,9 +4,16 @@ import { Repository, SelectQueryBuilder, Like, ILike } from 'typeorm';
 import { Produit, TypeProduit, StatutProduit } from '../../entities/produit.entity';
 import { BrancheProduit } from '../../entities/branche-produit.entity';
 import { Garantie, StatutGarantie } from '../../entities/garantie.entity';
+import { CritereTarification } from '../../entities/critere-tarification.entity';
+import { ValeurCritere } from '../../entities/valeur-critere.entity';
 import { ProduitDto } from '../../dto/produit.dto';
 import { BrancheProduitDto } from '../../dto/branche-produit.dto';
 import { GarantieWithProduitDto } from '../../dto/garanties-index.dto';
+import { 
+  CritereTarificationPublicDto, 
+  ValeurCriterePublicDto, 
+  CriteresPublicResponseDto 
+} from '../../dto/critere-tarification-public.dto';
 
 @Injectable()
 export class ProduitsService {
@@ -17,6 +24,10 @@ export class ProduitsService {
     private readonly brancheRepository: Repository<BrancheProduit>,
     @InjectRepository(Garantie)
     private readonly garantieRepository: Repository<Garantie>,
+    @InjectRepository(CritereTarification)
+    private readonly critereRepository: Repository<CritereTarification>,
+    @InjectRepository(ValeurCritere)
+    private readonly valeurRepository: Repository<ValeurCritere>,
   ) {}
 
   /**
@@ -139,6 +150,51 @@ export class ProduitsService {
   }
 
   /**
+   * Récupère tous les critères d'un produit avec pagination
+   */
+  async findCriteresByProduit(
+    produitId: string, 
+    page: number = 1, 
+    limit: number = 10
+  ): Promise<CriteresPublicResponseDto> {
+    const skip = (page - 1) * limit;
+
+    const produit = await this.produitRepository.findOne({
+      where: { id: produitId, statut: StatutProduit.ACTIF }
+    });
+
+    if (!produit) {
+      throw new NotFoundException(`Produit avec l'ID ${produitId} non trouvé ou inactif`);
+    }
+
+    const [criteres, total] = await this.critereRepository
+      .createQueryBuilder('critere')
+      .where('critere.produit_id = :produitId', { produitId })
+      .orderBy('critere.ordre', 'ASC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const criteresDto = await Promise.all(
+      criteres.map(async (critere) => {
+        const valeurs = await this.valeurRepository.find({
+          where: { critere_id: critere.id },
+          order: { ordre: 'ASC' }
+        });
+        return this.mapCritereToPublicDto(critere, valeurs);
+      })
+    );
+
+    return {
+      criteres: criteresDto,
+      total,
+      page,
+      limit,
+      total_pages: Math.ceil(total / limit)
+    };
+  }
+
+  /**
    * Transforme une entité Produit en DTO
    */
   private mapToDto(produit: Produit): ProduitDto {
@@ -191,6 +247,30 @@ export class ProduitsService {
           description: garantie.produit.branche.description
         } : undefined
       }
+    };
+  }
+
+  /**
+   * Transforme une entité CritereTarification en DTO public
+   */
+  private mapCritereToPublicDto(critere: CritereTarification, valeurs: ValeurCritere[]): CritereTarificationPublicDto {
+    const valeursDto: ValeurCriterePublicDto[] = valeurs.map(valeur => ({
+      id: valeur.id,
+      valeur: valeur.valeur,
+      valeur_min: valeur.valeur_min,
+      valeur_max: valeur.valeur_max,
+      ordre: valeur.ordre
+    }));
+
+    return {
+      id: critere.id,
+      nom: critere.nom,
+      type: critere.type,
+      unite: critere.unite,
+      ordre: critere.ordre,
+      obligatoire: critere.obligatoire,
+      valeurs: valeursDto,
+      nombre_valeurs: valeurs.length
     };
   }
 }
