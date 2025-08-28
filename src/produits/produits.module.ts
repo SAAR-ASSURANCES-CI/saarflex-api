@@ -10,6 +10,7 @@ import { TarifsAdminController } from './admin/controllers/tarifs-admin.controll
 import { FormulesCalculAdminController } from './admin/controllers/formules-calcul-admin.controller';
 import { ProduitsController } from './public/controllers/produits.controller';
 import { SimulationDevisController } from './public/controllers/simulation-devis.controller';
+import { GrillesTarifairesController } from './public/controllers/grilles-tarifaires.controller';
 import { ProduitsAdminService } from './admin/services/produits-admin.service';
 import { BranchesAdminService } from './admin/services/branches-admin.service';
 import { CriteresAdminService } from './admin/services/criteres-admin.service';
@@ -20,6 +21,7 @@ import { FormulesCalculAdminService } from './admin/services/formules-calcul-adm
 import { ProduitsService } from './public/services/produits.service';
 import { SimulationDevisService } from './public/services/simulation-devis.service';
 import { DevisSauvegardeService } from './public/services/devis-sauvegarde.service';
+import { GrillesTarifairesService } from './public/services/grilles-tarifaires.service';
 import { TachePlanifieeService } from './services/tache-planifiee.service';
 import { Produit } from './entities/produit.entity';
 import { BrancheProduit } from './entities/branche-produit.entity';
@@ -59,7 +61,8 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     TarifsAdminController,
     FormulesCalculAdminController,
     ProduitsController,
-    SimulationDevisController
+    SimulationDevisController,
+    GrillesTarifairesController
   ],
   providers: [
     ProduitsAdminService,
@@ -72,6 +75,7 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     ProduitsService,
     SimulationDevisService,
     DevisSauvegardeService,
+    GrillesTarifairesService,
     TachePlanifieeService
   ],
   exports: [
@@ -84,7 +88,8 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     FormulesCalculAdminService,
     ProduitsService,
     SimulationDevisService,
-    DevisSauvegardeService
+    DevisSauvegardeService,
+    GrillesTarifairesService
   ]
 })
 export class ProduitsModule {}
