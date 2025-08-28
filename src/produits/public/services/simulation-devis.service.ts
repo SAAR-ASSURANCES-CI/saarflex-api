@@ -9,11 +9,11 @@ import { Tarif } from '../../entities/tarif.entity';
 import { CritereTarification } from '../../entities/critere-tarification.entity';
 import { ValeurCritere } from '../../entities/valeur-critere.entity';
 import { SimulationDevisDto, SimulationResponseDto } from '../../dto/simulation-devis.dto';
-import { 
-  FORMULES_CALCUL_DEFAUT, 
-  FRANCHISES_DEFAUT, 
+import {
+  FORMULES_CALCUL_DEFAUT,
+  FRANCHISES_DEFAUT,
   PLAFONDS_DEFAUT,
-  DUREE_VALIDITE_SIMULATION 
+  DUREE_VALIDITE_SIMULATION
 } from '../../config/formules-calcul.config';
 
 @Injectable()
@@ -33,7 +33,7 @@ export class SimulationDevisService {
     private critereTarificationRepository: Repository<CritereTarification>,
     @InjectRepository(ValeurCritere)
     private valeurCritereRepository: Repository<ValeurCritere>,
-  ) {}
+  ) { }
 
   async simulerDevis(
     simulationDto: SimulationDevisDto,
@@ -49,12 +49,12 @@ export class SimulationDevisService {
     }
 
     const grilleTarifaire = await this.grilleTarifaireRepository.findOne({
-      where: { 
-        id: simulationDto.grille_tarifaire_id, 
+      where: {
+        id: simulationDto.grille_tarifaire_id,
         produit_id: simulationDto.produit_id,
         statut: StatutGrille.ACTIF
       },
-      relations: ['tarifs']
+      relations: ['tarifs', 'tarifs.critere', 'tarifs.valeurCritere']
     });
 
     if (!grilleTarifaire) {
@@ -104,7 +104,7 @@ export class SimulationDevisService {
   ): Promise<void> {
     for (const critere of criteresProduit) {
       const valeurUtilisateur = criteresUtilisateur[critere.nom];
-      
+
       if (critere.obligatoire && valeurUtilisateur === undefined) {
         throw new BadRequestException(`Le critere '${critere.nom}' est obligatoire`);
       }
@@ -141,7 +141,7 @@ export class SimulationDevisService {
     };
   }> {
     const formuleCalcul = produit.formules.find(f => f.statut === 'actif');
-    
+
     const variablesCalculees = await this.calculerVariables(
       criteresUtilisateur,
       grilleTarifaire.tarifs,
@@ -158,18 +158,30 @@ export class SimulationDevisService {
         franchise = this.calculerFranchisePersonnalisee(variablesCalculees, produit.type);
         plafond = this.calculerPlafondPersonnalisee(variablesCalculees, produit.type);
       } else {
-        const typeProduit = this.determinerTypeAssurance(produit.nom, produit.type);
-        const formuleDefaut = FORMULES_CALCUL_DEFAUT[typeProduit];
-        
-        if (formuleDefaut) {
-          prime = this.evaluerFormulePersonnalisee(formuleDefaut.formule, variablesCalculees);
-          franchise = FRANCHISES_DEFAUT[typeProduit] || 0;
-          plafond = PLAFONDS_DEFAUT[typeProduit] ? 
-            variablesCalculees.montant_assurance * PLAFONDS_DEFAUT[typeProduit] : undefined;
+        const montantFixe = this.calculerPrimeMontantFixe(
+          grilleTarifaire.tarifs,
+          criteresUtilisateur,
+          produit.criteres
+        );
+
+        if (montantFixe !== null) {
+          prime = montantFixe;
+          franchise = this.calculerFranchisePersonnalisee(variablesCalculees, produit.type);
+          plafond = this.calculerPlafondPersonnalisee(variablesCalculees, produit.type);
         } else {
-          prime = this.calculerPrimeFallback(variablesCalculees);
-          franchise = this.calculerFranchiseFallback(variablesCalculees);
-          plafond = this.calculerPlafondFallback(variablesCalculees);
+          const typeProduit = this.determinerTypeAssurance(produit.nom, produit.type);
+          const formuleDefaut = FORMULES_CALCUL_DEFAUT[typeProduit];
+
+          if (formuleDefaut) {
+            prime = this.evaluerFormulePersonnalisee(formuleDefaut.formule, variablesCalculees);
+            franchise = FRANCHISES_DEFAUT[typeProduit] || 0;
+            plafond = PLAFONDS_DEFAUT[typeProduit] ?
+              variablesCalculees.montant_assurance * PLAFONDS_DEFAUT[typeProduit] : undefined;
+          } else {
+            prime = this.calculerPrimeFallback(variablesCalculees);
+            franchise = this.calculerFranchiseFallback(variablesCalculees);
+            plafond = this.calculerPlafondFallback(variablesCalculees);
+          }
         }
       }
     } catch (error) {
@@ -200,7 +212,7 @@ export class SimulationDevisService {
         const critere = criteres.find(c => c.id === tarif.critere_id);
         if (critere && criteresUtilisateur[critere.nom] !== undefined) {
           const valeur = criteresUtilisateur[critere.nom];
-          
+
           if (tarif.montant) {
             variables[`tarif_${critere.nom}`] = tarif.montant;
           }
@@ -218,7 +230,7 @@ export class SimulationDevisService {
       const dateNaissance = new Date(variables.date_naissance);
       const aujourdHui = new Date();
       variables.age = aujourdHui.getFullYear() - dateNaissance.getFullYear();
-      
+
       if (aujourdHui < new Date(aujourdHui.getFullYear(), dateNaissance.getMonth(), dateNaissance.getDate())) {
         variables.age--;
       }
@@ -262,12 +274,12 @@ export class SimulationDevisService {
 
   private determinerTypeAssurance(nomProduit: string, typeProduit: string): string {
     const nomLower = nomProduit.toLowerCase();
-    
+
     if (nomLower.includes('vie') || typeProduit === 'vie') return 'assurance_vie';
     if (nomLower.includes('auto') || nomLower.includes('vehicule')) return 'assurance_auto';
     if (nomLower.includes('sante') || nomLower.includes('medical')) return 'assurance_sante';
     if (nomLower.includes('habitation') || nomLower.includes('maison')) return 'assurance_habitation';
-    
+
     return 'assurance_vie';
   }
 
@@ -277,7 +289,7 @@ export class SimulationDevisService {
   ): number {
     try {
       let formuleEvaluee = formule;
-      
+
       for (const [key, value] of Object.entries(variables)) {
         if (typeof value === 'number') {
           formuleEvaluee = formuleEvaluee.replace(new RegExp(`\\b${key}\\b`, 'g'), value.toString());
@@ -295,9 +307,9 @@ export class SimulationDevisService {
     typeProduit: string
   ): number {
     if (typeProduit === 'vie') return 0;
-    
+
     let franchise = variables.franchise_base || 100;
-    
+
     if (variables.montant_assurance) {
       franchise = Math.min(variables.montant_assurance * 0.05, 500);
     }
@@ -315,9 +327,9 @@ export class SimulationDevisService {
     typeProduit: string
   ): number | undefined {
     if (!variables.montant_assurance) return undefined;
-    
+
     let plafond = variables.montant_assurance;
-    
+
     if (typeProduit === 'vie') {
       plafond *= 1.5;
     } else if (typeProduit === 'non-vie') {
@@ -329,11 +341,11 @@ export class SimulationDevisService {
 
   private calculerPrimeFallback(variables: Record<string, any>): number {
     let prime = variables.prime_base || 100;
-    
+
     if (variables.coef_age) prime *= variables.coef_age;
     if (variables.coef_profession) prime *= variables.coef_profession;
     if (variables.coef_zone) prime *= variables.coef_zone;
-    
+
     if (variables.montant_assurance) {
       prime += (variables.montant_assurance / 10000) * 10;
     }
@@ -343,7 +355,7 @@ export class SimulationDevisService {
 
   private calculerFranchiseFallback(variables: Record<string, any>): number {
     let franchise = 100;
-    
+
     if (variables.montant_assurance) {
       franchise = Math.min(variables.montant_assurance * 0.05, 500);
     }
@@ -361,25 +373,59 @@ export class SimulationDevisService {
     franchise: number
   ): string {
     let explication = `Calcul base sur les criteres fournis. `;
-    
+
     if (variables.age) {
       explication += `Age: ${variables.age} ans. `;
     }
-    
+
     if (variables.profession) {
       explication += `Profession: ${variables.profession}. `;
     }
-    
+
     if (variables.montant_assurance) {
       explication += `Montant assure: ${variables.montant_assurance}€. `;
     }
-    
+
     if (variables.zone_geographique) {
       explication += `Zone: ${variables.zone_geographique}. `;
     }
-    
-    explication += `Prime calculee: ${prime}€, Franchise: ${franchise}€.`;
-    
+
+    explication += `Prime calculee: ${prime} FCFA, Franchise: ${franchise} FCFA.`;
+
     return explication;
+  }
+
+
+
+  private calculerPrimeMontantFixe(
+    tarifs: Tarif[],
+    criteresUtilisateur: Record<string, any>,
+    criteres: CritereTarification[]
+  ): number | null {
+
+    const tarifsCapital: Tarif[] = [];
+
+    for (const tarif of tarifs) {
+      if (tarif.critere_id && tarif.montant && !tarif.formule) {
+        const critere = criteres.find(c => c.id === tarif.critere_id);
+
+        if (critere && critere.nom === "Capital assuré" &&
+          criteresUtilisateur[critere.nom] !== undefined) {
+          if (tarif.valeur_critere_id && tarif.valeurCritere) {
+            if (tarif.valeurCritere.valeur === criteresUtilisateur[critere.nom]) {
+              tarifsCapital.push(tarif);
+            }
+          }
+        }
+      }
+    }
+    if (tarifsCapital.length > 0) {
+      tarifsCapital.sort((a: Tarif, b: Tarif) => {
+        return Number(b.montant) - Number(a.montant);
+      });
+      return Number(tarifsCapital[0].montant);
+    }
+
+    return null;
   }
 }
