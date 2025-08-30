@@ -9,12 +9,8 @@ import { Tarif } from '../../entities/tarif.entity';
 import { CritereTarification } from '../../entities/critere-tarification.entity';
 import { ValeurCritere } from '../../entities/valeur-critere.entity';
 import { SimulationDevisDto, SimulationResponseDto } from '../../dto/simulation-devis.dto';
-import {
-  FORMULES_CALCUL_DEFAUT,
-  FRANCHISES_DEFAUT,
-  PLAFONDS_DEFAUT,
-  DUREE_VALIDITE_SIMULATION
-} from '../../config/formules-calcul.config';
+
+const DUREE_VALIDITE_SIMULATION = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class SimulationDevisService {
@@ -39,15 +35,17 @@ export class SimulationDevisService {
     simulationDto: SimulationDevisDto,
     utilisateurId?: string
   ): Promise<SimulationResponseDto> {
+    // 1. Vérifier le produit
     const produit = await this.produitRepository.findOne({
       where: { id: simulationDto.produit_id, statut: StatutProduit.ACTIF },
       relations: ['criteres', 'formules', 'grilles']
     });
 
     if (!produit) {
-      throw new NotFoundException('Produit non trouve ou inactif');
+      throw new NotFoundException('Produit non trouvé ou inactif');
     }
 
+    // 2. Vérifier la grille tarifaire
     const grilleTarifaire = await this.grilleTarifaireRepository.findOne({
       where: {
         id: simulationDto.grille_tarifaire_id,
@@ -58,20 +56,33 @@ export class SimulationDevisService {
     });
 
     if (!grilleTarifaire) {
-      throw new NotFoundException('Grille tarifaire non trouvee ou inactive');
+      throw new NotFoundException('Grille tarifaire non trouvée ou inactive');
     }
 
+    // 3. Vérifier qu'une formule existe
+    const formuleCalcul = produit.formules.find(f => f.statut === 'actif');
+    if (!formuleCalcul) {
+      throw new BadRequestException(
+        `Aucune formule de calcul configurée pour le produit "${produit.nom}". ` +
+        `Veuillez contacter l'administrateur pour configurer une formule.`
+      );
+    }
+
+    // 4. Valider les critères utilisateur
     await this.validerCriteresUtilisateur(
       simulationDto.criteres_utilisateur,
       produit.criteres
     );
 
-    const resultatCalcul = await this.calculerPrime(
-      produit,
+    // 5. Calculer la prime avec la formule
+    const resultatCalcul = await this.calculerPrimeAvecFormule(
+      formuleCalcul,
       grilleTarifaire,
-      simulationDto.criteres_utilisateur
+      simulationDto.criteres_utilisateur,
+      produit.criteres
     );
 
+    // 6. Sauvegarder le devis
     const devisSimule = this.devisSimuleRepository.create({
       produit_id: simulationDto.produit_id,
       grille_tarifaire_id: simulationDto.grille_tarifaire_id,
@@ -106,7 +117,7 @@ export class SimulationDevisService {
       const valeurUtilisateur = criteresUtilisateur[critere.nom];
 
       if (critere.obligatoire && valeurUtilisateur === undefined) {
-        throw new BadRequestException(`Le critere '${critere.nom}' est obligatoire`);
+        throw new BadRequestException(`Le critère '${critere.nom}' est obligatoire`);
       }
 
       if (valeurUtilisateur !== undefined) {
@@ -118,7 +129,7 @@ export class SimulationDevisService {
           const valeursValides = valeursAutorisees.map(v => v.valeur);
           if (!valeursValides.includes(valeurUtilisateur)) {
             throw new BadRequestException(
-              `Valeur invalide pour le critere '${critere.nom}'. Valeurs autorisees: ${valeursValides.join(', ')}`
+              `Valeur invalide pour le critère '${critere.nom}'. Valeurs autorisées: ${valeursValides.join(', ')}`
             );
           }
         }
@@ -126,10 +137,11 @@ export class SimulationDevisService {
     }
   }
 
-  private async calculerPrime(
-    produit: Produit,
+  private async calculerPrimeAvecFormule(
+    formuleCalcul: FormuleCalcul,
     grilleTarifaire: GrilleTarifaire,
-    criteresUtilisateur: Record<string, any>
+    criteresUtilisateur: Record<string, any>,
+    criteresProduit: CritereTarification[]
   ): Promise<{
     prime: number;
     franchise: number;
@@ -140,92 +152,68 @@ export class SimulationDevisService {
       explication: string;
     };
   }> {
-    const formuleCalcul = produit.formules.find(f => f.statut === 'actif');
-
-    const variablesCalculees = await this.calculerVariables(
-      criteresUtilisateur,
-      grilleTarifaire.tarifs,
-      produit.criteres
-    );
-
-    let prime = 0;
-    let franchise = 0;
-    let plafond: number | undefined;
-
     try {
-      if (formuleCalcul) {
-        prime = this.evaluerFormulePersonnalisee(formuleCalcul.formule, variablesCalculees);
-        franchise = this.calculerFranchisePersonnalisee(variablesCalculees, produit.type);
-        plafond = this.calculerPlafondPersonnalisee(variablesCalculees, produit.type);
-      } else {
-        const montantFixe = this.calculerPrimeMontantFixe(
-          grilleTarifaire.tarifs,
-          criteresUtilisateur,
-          produit.criteres
-        );
+      // Préparations de toutes les variables pour la formule
+      const variablesCalculees = await this.preparerVariables(
+        criteresUtilisateur,
+        grilleTarifaire.tarifs,
+        criteresProduit
+      );
 
-        if (montantFixe !== null) {
-          prime = montantFixe;
-          franchise = this.calculerFranchisePersonnalisee(variablesCalculees, produit.type);
-          plafond = this.calculerPlafondPersonnalisee(variablesCalculees, produit.type);
-        } else {
-          const typeProduit = this.determinerTypeAssurance(produit.nom, produit.type);
-          const formuleDefaut = FORMULES_CALCUL_DEFAUT[typeProduit];
+      // Évaluer la formule principale pour la prime
+      const prime = this.evaluerFormule(formuleCalcul.formule, variablesCalculees);
+      
+      // Pour la franchise et le plafond, on peut avoir des formules séparées ou des valeurs par défaut
+      const franchise = this.calculerFranchise(variablesCalculees, formuleCalcul);
+      const plafond = this.calculerPlafond(variablesCalculees, formuleCalcul);
 
-          if (formuleDefaut) {
-            prime = this.evaluerFormulePersonnalisee(formuleDefaut.formule, variablesCalculees);
-            franchise = FRANCHISES_DEFAUT[typeProduit] || 0;
-            plafond = PLAFONDS_DEFAUT[typeProduit] ?
-              variablesCalculees.montant_assurance * PLAFONDS_DEFAUT[typeProduit] : undefined;
-          } else {
-            prime = this.calculerPrimeFallback(variablesCalculees);
-            franchise = this.calculerFranchiseFallback(variablesCalculees);
-            plafond = this.calculerPlafondFallback(variablesCalculees);
-          }
-        }
-      }
+      return {
+        prime: Math.round(prime * 100) / 100,
+        franchise: Math.round(franchise * 100) / 100,
+        plafond: plafond ? Math.round(plafond * 100) / 100 : undefined,
+        details: {
+          formule_utilisee: formuleCalcul.nom,
+          variables_calculees: variablesCalculees,
+          explication: this.genererExplication(variablesCalculees, prime, franchise),
+        },
+      };
     } catch (error) {
-      throw new BadRequestException(`Erreur lors du calcul de la prime: ${error.message}`);
+      throw new BadRequestException(
+        `Erreur lors du calcul avec la formule "${formuleCalcul.nom}": ${error.message}`
+      );
     }
-
-    return {
-      prime: Math.round(prime * 100) / 100,
-      franchise: Math.round(franchise * 100) / 100,
-      plafond: plafond ? Math.round(plafond * 100) / 100 : undefined,
-      details: {
-        formule_utilisee: formuleCalcul?.nom || 'Formule par defaut',
-        variables_calculees: variablesCalculees,
-        explication: this.genererExplicationCalcul(variablesCalculees, prime, franchise),
-      },
-    };
   }
 
-  private async calculerVariables(
+  private async preparerVariables(
     criteresUtilisateur: Record<string, any>,
     tarifs: Tarif[],
-    criteres: CritereTarification[]
+    criteresProduit: CritereTarification[]
   ): Promise<Record<string, any>> {
     const variables: Record<string, any> = { ...criteresUtilisateur };
 
+    // Ajouter les tarifs correspondants aux critères
     for (const tarif of tarifs) {
       if (tarif.critere_id) {
-        const critere = criteres.find(c => c.id === tarif.critere_id);
+        const critere = criteresProduit.find(c => c.id === tarif.critere_id);
         if (critere && criteresUtilisateur[critere.nom] !== undefined) {
-          const valeur = criteresUtilisateur[critere.nom];
+          const valeurUtilisateur = criteresUtilisateur[critere.nom];
 
-          if (tarif.montant) {
-            variables[`tarif_${critere.nom}`] = tarif.montant;
-          }
-          if (tarif.pourcentage) {
-            variables[`pourcentage_${critere.nom}`] = tarif.pourcentage;
-          }
-          if (tarif.formule) {
-            variables[`formule_${critere.nom}`] = tarif.formule;
+          // Vérifier si ce tarif correspond à la valeur utilisateur
+          if (tarif.valeur_critere_id && tarif.valeurCritere) {
+            if (tarif.valeurCritere.valeur === valeurUtilisateur) {
+              if (tarif.montant) variables[`tarif_${critere.nom}`] = tarif.montant;
+              if (tarif.pourcentage) variables[`pourcentage_${critere.nom}`] = tarif.pourcentage;
+            }
+          } else if (!tarif.valeur_critere_id) {
+            // Tarif général pour ce critère
+            if (tarif.montant) variables[`tarif_${critere.nom}`] = tarif.montant;
+            if (tarif.pourcentage) variables[`pourcentage_${critere.nom}`] = tarif.pourcentage;
           }
         }
       }
     }
 
+    // Calculer l'âge si date de naissance fournie
     if (variables.date_naissance) {
       const dateNaissance = new Date(variables.date_naissance);
       const aujourdHui = new Date();
@@ -236,196 +224,74 @@ export class SimulationDevisService {
       }
     }
 
-    this.appliquerCoefficientsDefaut(variables);
-
     return variables;
   }
 
-  private appliquerCoefficientsDefaut(variables: Record<string, any>): void {
-    if (variables.age) {
-      if (variables.age < 25) variables.coef_age = 1.2;
-      else if (variables.age < 35) variables.coef_age = 1.0;
-      else if (variables.age < 50) variables.coef_age = 0.9;
-      else if (variables.age < 65) variables.coef_age = 1.1;
-      else variables.coef_age = 1.4;
-    }
-
-    if (variables.profession) {
-      const coefProfession: Record<string, number> = {
-        'etudiant': 0.8,
-        'employe': 1.0,
-        'cadre': 1.1,
-        'dirigeant': 1.2,
-        'retraite': 1.3
-      };
-      variables.coef_profession = coefProfession[variables.profession] || 1.0;
-    }
-
-    if (variables.zone_geographique) {
-      const coefZone: Record<string, number> = {
-        'zone1': 1.0,
-        'zone2': 1.1,
-        'zone3': 1.2,
-        'zone4': 1.3
-      };
-      variables.coef_zone = coefZone[variables.zone_geographique] || 1.0;
-    }
-  }
-
-  private determinerTypeAssurance(nomProduit: string, typeProduit: string): string {
-    const nomLower = nomProduit.toLowerCase();
-
-    if (nomLower.includes('vie') || typeProduit === 'vie') return 'assurance_vie';
-    if (nomLower.includes('auto') || nomLower.includes('vehicule')) return 'assurance_auto';
-    if (nomLower.includes('sante') || nomLower.includes('medical')) return 'assurance_sante';
-    if (nomLower.includes('habitation') || nomLower.includes('maison')) return 'assurance_habitation';
-
-    return 'assurance_vie';
-  }
-
-  private evaluerFormulePersonnalisee(
-    formule: string,
-    variables: Record<string, any>
-  ): number {
+  private evaluerFormule(formule: string, variables: Record<string, any>): number {
     try {
       let formuleEvaluee = formule;
 
+      // Remplacer les variables par leurs valeurs
       for (const [key, value] of Object.entries(variables)) {
         if (typeof value === 'number') {
           formuleEvaluee = formuleEvaluee.replace(new RegExp(`\\b${key}\\b`, 'g'), value.toString());
         }
       }
 
-      return eval(formuleEvaluee);
+      const resultat = eval(formuleEvaluee);
+      
+      if (typeof resultat !== 'number' || isNaN(resultat) || !isFinite(resultat)) {
+        throw new Error('La formule doit retourner un nombre valide');
+      }
+
+      return resultat;
     } catch (error) {
-      throw new Error(`Erreur dans la formule: ${error.message}`);
+      throw new Error(`Erreur dans l'évaluation de la formule: ${error.message}`);
     }
   }
 
-  private calculerFranchisePersonnalisee(
-    variables: Record<string, any>,
-    typeProduit: string
-  ): number {
-    if (typeProduit === 'vie') return 0;
-
-    let franchise = variables.franchise_base || 100;
-
-    if (variables.montant_assurance) {
-      franchise = Math.min(variables.montant_assurance * 0.05, 500);
+  private calculerFranchise(variables: Record<string, any>, formuleCalcul: FormuleCalcul): number {
+    // Si une formule spécifique pour la franchise existe dans les variables de la formule
+    if (formuleCalcul.variables?.formule_franchise) {
+      try {
+        return this.evaluerFormule(formuleCalcul.variables.formule_franchise, variables);
+      } catch (error) {
+        // Si erreur, utiliser valeur par défaut
+      }
     }
 
-    if (variables.age) {
-      if (variables.age > 65) franchise *= 1.2;
-      else if (variables.age < 25) franchise *= 1.1;
+    // Valeur par défaut de franchise
+    return variables.franchise || 0;
+  }
+
+  private calculerPlafond(variables: Record<string, any>, formuleCalcul: FormuleCalcul): number | undefined {
+    // Si une formule spécifique pour le plafond existe
+    if (formuleCalcul.variables?.formule_plafond) {
+      try {
+        return this.evaluerFormule(formuleCalcul.variables.formule_plafond, variables);
+      } catch (error) {
+        // Si erreur, pas de plafond
+      }
     }
 
-    return Math.round(franchise * 100) / 100;
+    // Pas de plafond par défaut
+    return variables.plafond || undefined;
   }
 
-  private calculerPlafondPersonnalisee(
-    variables: Record<string, any>,
-    typeProduit: string
-  ): number | undefined {
-    if (!variables.montant_assurance) return undefined;
-
-    let plafond = variables.montant_assurance;
-
-    if (typeProduit === 'vie') {
-      plafond *= 1.5;
-    } else if (typeProduit === 'non-vie') {
-      plafond *= 1.2;
-    }
-
-    return Math.round(plafond * 100) / 100;
-  }
-
-  private calculerPrimeFallback(variables: Record<string, any>): number {
-    let prime = variables.prime_base || 100;
-
-    if (variables.coef_age) prime *= variables.coef_age;
-    if (variables.coef_profession) prime *= variables.coef_profession;
-    if (variables.coef_zone) prime *= variables.coef_zone;
-
-    if (variables.montant_assurance) {
-      prime += (variables.montant_assurance / 10000) * 10;
-    }
-
-    return prime;
-  }
-
-  private calculerFranchiseFallback(variables: Record<string, any>): number {
-    let franchise = 100;
-
-    if (variables.montant_assurance) {
-      franchise = Math.min(variables.montant_assurance * 0.05, 500);
-    }
-
-    return franchise;
-  }
-
-  private calculerPlafondFallback(variables: Record<string, any>): number | undefined {
-    return variables.montant_assurance ? variables.montant_assurance * 1.2 : undefined;
-  }
-
-  private genererExplicationCalcul(
+  private genererExplication(
     variables: Record<string, any>,
     prime: number,
     franchise: number
   ): string {
-    let explication = `Calcul base sur les criteres fournis. `;
+    let explication = `Calcul basé sur les critères fournis. `;
 
-    if (variables.age) {
-      explication += `Age: ${variables.age} ans. `;
-    }
+    if (variables.age) explication += `Âge: ${variables.age} ans. `;
+    if (variables.profession) explication += `Profession: ${variables.profession}. `;
+    if (variables.montant_assurance) explication += `Montant assuré: ${variables.montant_assurance} FCFA. `;
+    if (variables.zone_geographique) explication += `Zone: ${variables.zone_geographique}. `;
 
-    if (variables.profession) {
-      explication += `Profession: ${variables.profession}. `;
-    }
-
-    if (variables.montant_assurance) {
-      explication += `Montant assure: ${variables.montant_assurance}€. `;
-    }
-
-    if (variables.zone_geographique) {
-      explication += `Zone: ${variables.zone_geographique}. `;
-    }
-
-    explication += `Prime calculee: ${prime} FCFA, Franchise: ${franchise} FCFA.`;
+    explication += `Prime calculée: ${prime} FCFA, Franchise: ${franchise} FCFA.`;
 
     return explication;
-  }
-
-
-
-  private calculerPrimeMontantFixe(
-    tarifs: Tarif[],
-    criteresUtilisateur: Record<string, any>,
-    criteres: CritereTarification[]
-  ): number | null {
-
-    const tarifsCapital: Tarif[] = [];
-
-    for (const tarif of tarifs) {
-      if (tarif.critere_id && tarif.montant && !tarif.formule) {
-        const critere = criteres.find(c => c.id === tarif.critere_id);
-
-        if (critere && critere.nom === "Capital assuré" &&
-          criteresUtilisateur[critere.nom] !== undefined) {
-          if (tarif.valeur_critere_id && tarif.valeurCritere) {
-            if (tarif.valeurCritere.valeur === criteresUtilisateur[critere.nom]) {
-              tarifsCapital.push(tarif);
-            }
-          }
-        }
-      }
-    }
-    if (tarifsCapital.length > 0) {
-      tarifsCapital.sort((a: Tarif, b: Tarif) => {
-        return Number(b.montant) - Number(a.montant);
-      });
-      return Number(tarifsCapital[0].montant);
-    }
-
-    return null;
   }
 }

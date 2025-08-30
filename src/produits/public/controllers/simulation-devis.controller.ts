@@ -11,7 +11,9 @@ import {
   Request,
   HttpCode,
   HttpStatus,
-  ValidationPipe
+  ValidationPipe,
+  DefaultValuePipe,
+  ParseIntPipe
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -33,6 +35,8 @@ import {
 
 @ApiTags('Simulation et Devis')
 @Controller('simulation-devis')
+@UseGuards(JwtAuthGuard) // Authentification obligatoire pour tout le controller
+@ApiBearerAuth()
 export class SimulationDevisController {
   constructor(
     private readonly simulationDevisService: SimulationDevisService,
@@ -43,7 +47,7 @@ export class SimulationDevisController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Simuler un devis d\'assurance',
-    description: 'Permet de simuler un devis en renseignant les critères utilisateur'
+    description: 'Simule un devis d\'assurance pour l\'utilisateur connecté en utilisant les formules configurées par l\'admin'
   })
   @ApiResponse({
     status: 200,
@@ -52,32 +56,17 @@ export class SimulationDevisController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Données invalides ou critères manquants'
+    description: 'Données invalides, critères manquants ou aucune formule configurée pour ce produit'
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token d\'authentification manquant ou invalide'
   })
   @ApiResponse({
     status: 404,
     description: 'Produit ou grille tarifaire non trouvé'
   })
   async simulerDevis(
-    @Body(new ValidationPipe()) simulationDto: SimulationDevisDto
-  ): Promise<SimulationResponseDto> {
-    return this.simulationDevisService.simulerDevis(simulationDto);
-  }
-
-  @Post('simuler-connecte')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Simuler un devis d\'assurance (utilisateur connecté)',
-    description: 'Simule un devis et l\'associe à l\'utilisateur connecté'
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Simulation réussie',
-    type: SimulationResponseDto
-  })
-  async simulerDevisConnecte(
     @Request() req: any,
     @Body(new ValidationPipe()) simulationDto: SimulationDevisDto
   ): Promise<SimulationResponseDto> {
@@ -88,12 +77,10 @@ export class SimulationDevisController {
   }
 
   @Post('sauvegarder')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Sauvegarder un devis simulé',
-    description: 'Sauvegarde un devis simulé dans l\'espace client de l\'utilisateur'
+    description: 'Sauvegarde un devis simulé dans l\'espace client de l\'utilisateur connecté'
   })
   @ApiResponse({
     status: 200,
@@ -105,8 +92,12 @@ export class SimulationDevisController {
     description: 'Devis expiré ou données invalides'
   })
   @ApiResponse({
+    status: 401,
+    description: 'Token d\'authentification manquant ou invalide'
+  })
+  @ApiResponse({
     status: 403,
-    description: 'Non autorisé à sauvegarder ce devis'
+    description: 'Non autorisé à sauvegarder ce devis (n\'appartient pas à l\'utilisateur)'
   })
   @ApiResponse({
     status: 404,
@@ -123,8 +114,6 @@ export class SimulationDevisController {
   }
 
   @Get('mes-devis')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Récupérer mes devis sauvegardés',
     description: 'Liste paginée des devis sauvegardés par l\'utilisateur connecté'
@@ -132,41 +121,54 @@ export class SimulationDevisController {
   @ApiQuery({
     name: 'page',
     required: false,
-    description: 'Numéro de page',
-    type: Number
+    description: 'Numéro de page (défaut: 1)',
+    type: Number,
+    example: 1
   })
   @ApiQuery({
     name: 'limit',
     required: false,
-    description: 'Nombre d\'éléments par page',
-    type: Number
+    description: 'Nombre d\'éléments par page (défaut: 10, max: 100)',
+    type: Number,
+    example: 10
   })
   @ApiResponse({
     status: 200,
     description: 'Liste des devis récupérée avec succès'
   })
+  @ApiResponse({
+    status: 401,
+    description: 'Token d\'authentification manquant ou invalide'
+  })
   async recupererMesDevis(
     @Request() req: any,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10
-  ) {
-    return this.devisSauvegardeService.recupererDevisSauvegardes(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ): Promise<{
+    devis: DevisSauvegardeDto[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const limitSafe = Math.min(limit, 100);
+    
+    return this.devisSauvegardeService.recupererDevisUtilisateur(
       req.user.id,
       page,
-      limit
+      limitSafe
     );
   }
 
-  @Get('mes-devis/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @Get('devis/:id')
   @ApiOperation({
     summary: 'Récupérer un devis spécifique',
-    description: 'Récupère les détails d\'un devis sauvegardé par son ID'
+    description: 'Récupère les détails d\'un devis sauvegardé par l\'utilisateur connecté'
   })
   @ApiParam({
     name: 'id',
-    description: 'ID du devis à récupérer'
+    description: 'ID du devis à récupérer',
+    example: '123e4567-e89b-12d3-a456-426614174000'
   })
   @ApiResponse({
     status: 200,
@@ -174,76 +176,91 @@ export class SimulationDevisController {
     type: DevisSauvegardeDto
   })
   @ApiResponse({
+    status: 401,
+    description: 'Token d\'authentification manquant ou invalide'
+  })
+  @ApiResponse({
     status: 403,
-    description: 'Non autorisé à voir ce devis'
+    description: 'Accès refusé - Ce devis n\'appartient pas à l\'utilisateur'
   })
   @ApiResponse({
     status: 404,
     description: 'Devis non trouvé'
   })
-  async recupererDevisParId(
+  async recupererDevis(
     @Request() req: any,
-    @Param('id') id: string
+    @Param('id') devisId: string
   ): Promise<DevisSauvegardeDto> {
-    return this.devisSauvegardeService.recupererDevisParId(id, req.user.id);
-  }
-
-  @Put('mes-devis/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Mettre à jour un devis sauvegardé',
-    description: 'Met à jour le nom personnalisé ou les notes d\'un devis'
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'ID du devis à mettre à jour'
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Devis mis à jour avec succès',
-    type: DevisSauvegardeDto
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Non autorisé à modifier ce devis'
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Devis non trouvé'
-  })
-  async mettreAJourDevis(
-    @Request() req: any,
-    @Param('id') id: string,
-    @Body() updates: Partial<SauvegardeDevisDto>
-  ): Promise<DevisSauvegardeDto> {
-    return this.devisSauvegardeService.mettreAJourDevis(
-      id,
-      req.user.id,
-      updates
+    return this.devisSauvegardeService.recupererDevisParId(
+      devisId,
+      req.user.id
     );
   }
 
-  @Delete('mes-devis/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @Put('devis/:id')
   @ApiOperation({
-    summary: 'Supprimer un devis sauvegardé',
-    description: 'Supprime définitivement un devis sauvegardé'
+    summary: 'Modifier un devis sauvegardé',
+    description: 'Modifie le nom ou les notes d\'un devis sauvegardé'
   })
   @ApiParam({
     name: 'id',
-    description: 'ID du devis à supprimer'
+    description: 'ID du devis à modifier',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Devis modifié avec succès',
+    type: DevisSauvegardeDto
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token d\'authentification manquant ou invalide'
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Accès refusé - Ce devis n\'appartient pas à l\'utilisateur'
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Devis non trouvé'
+  })
+  async modifierDevis(
+    @Request() req: any,
+    @Param('id') devisId: string,
+    @Body(new ValidationPipe()) updateData: {
+      nom_personnalise?: string;
+      notes?: string;
+    }
+  ): Promise<DevisSauvegardeDto> {
+    return this.devisSauvegardeService.modifierDevis(
+      devisId,
+      req.user.id,
+      updateData
+    );
+  }
+
+  @Delete('devis/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Supprimer un devis sauvegardé',
+    description: 'Supprime définitivement un devis sauvegardé de l\'utilisateur'
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID du devis à supprimer',
+    example: '123e4567-e89b-12d3-a456-426614174000'
   })
   @ApiResponse({
     status: 204,
     description: 'Devis supprimé avec succès'
   })
   @ApiResponse({
+    status: 401,
+    description: 'Token d\'authentification manquant ou invalide'
+  })
+  @ApiResponse({
     status: 403,
-    description: 'Non autorisé à supprimer ce devis'
+    description: 'Accès refusé - Ce devis n\'appartient pas à l\'utilisateur'
   })
   @ApiResponse({
     status: 404,
@@ -251,87 +268,11 @@ export class SimulationDevisController {
   })
   async supprimerDevis(
     @Request() req: any,
-    @Param('id') id: string
+    @Param('id') devisId: string
   ): Promise<void> {
-    return this.devisSauvegardeService.supprimerDevis(id, req.user.id);
-  }
-
-  @Get('rechercher')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Rechercher dans mes devis',
-    description: 'Recherche avancée dans les devis sauvegardés avec filtres'
-  })
-  @ApiQuery({
-    name: 'nom_produit',
-    required: false,
-    description: 'Nom du produit à rechercher'
-  })
-  @ApiQuery({
-    name: 'type_produit',
-    required: false,
-    description: 'Type de produit (vie, non-vie)'
-  })
-  @ApiQuery({
-    name: 'date_debut',
-    required: false,
-    description: 'Date de début pour filtrer'
-  })
-  @ApiQuery({
-    name: 'date_fin',
-    required: false,
-    description: 'Date de fin pour filtrer'
-  })
-  @ApiQuery({
-    name: 'prime_min',
-    required: false,
-    description: 'Prime minimum'
-  })
-  @ApiQuery({
-    name: 'prime_max',
-    required: false,
-    description: 'Prime maximum'
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: 'Numéro de page'
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Nombre d\'éléments par page'
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Recherche effectuée avec succès'
-  })
-  async rechercherDevis(
-    @Request() req: any,
-    @Query('nom_produit') nom_produit?: string,
-    @Query('type_produit') type_produit?: string,
-    @Query('date_debut') date_debut?: string,
-    @Query('date_fin') date_fin?: string,
-    @Query('prime_min') prime_min?: number,
-    @Query('prime_max') prime_max?: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10
-  ) {
-    const criteres = {
-      nom_produit,
-      type_produit,
-      date_debut: date_debut ? new Date(date_debut) : undefined,
-      date_fin: date_fin ? new Date(date_fin) : undefined,
-      prime_min,
-      prime_max
-    };
-
-    return this.devisSauvegardeService.rechercherDevis(
-      req.user.id,
-      criteres,
-      page,
-      limit
+    return this.devisSauvegardeService.supprimerDevis(
+      devisId,
+      req.user.id
     );
   }
 }
