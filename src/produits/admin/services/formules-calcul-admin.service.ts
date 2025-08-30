@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository } from 'typeorm';
 import { FormuleCalcul } from '../../entities/formule-calcul.entity';
 import { Produit } from '../../entities/produit.entity';
 import { 
@@ -31,7 +31,7 @@ export class FormulesCalculAdminService {
       throw new NotFoundException('Produit non trouvé');
     }
 
-    // Validation  la formule
+    // Validation de la formule
     try {
       await this.validateFormule(createFormuleDto.formule, createFormuleDto.variables);
     } catch (error) {
@@ -178,7 +178,8 @@ export class FormulesCalculAdminService {
   private createSafeEvaluator(variables: Record<string, any>): (formule: string) => number {
     const context = {
       ...variables,
-      // Fonctions mathématiques sécurisées
+      
+      // Fonctions mathématiques de base
       Math: {
         abs: Math.abs,
         ceil: Math.ceil,
@@ -187,9 +188,15 @@ export class FormulesCalculAdminService {
         min: Math.min,
         round: Math.round,
         sqrt: Math.sqrt,
-        pow: Math.pow
+        pow: Math.pow,
+        log: Math.log,
+        exp: Math.exp,
+        sin: Math.sin,
+        cos: Math.cos,
+        tan: Math.tan
       },
-      // Opérateurs conditionnels
+
+      // Alias pour les fonctions courantes (sans Math.)
       MAX: Math.max,
       MIN: Math.min,
       ABS: Math.abs,
@@ -197,38 +204,140 @@ export class FormulesCalculAdminService {
       FLOOR: Math.floor,
       ROUND: Math.round,
       SQRT: Math.sqrt,
-      POW: Math.pow
+      POW: Math.pow,
+
+      // Fonctions avancées pour les grilles tarifaires
+      LOOKUP: this.createLookupFunction(variables),
+      LOOKUP_TABLE: this.createLookupTableFunction(variables),
+      INTERPOLATE: this.createInterpolateFunction(),
+      IF: (condition: boolean, valueTrue: any, valueFalse: any) => condition ? valueTrue : valueFalse,
+      
+      // Fonctions pour les tranches
+      TRANCHE: this.createTrancheFunction(),
+      PROGRESSIVE: this.createProgressiveFunction(),
+      
+      // Fonctions pour les dates
+      YEARS_BETWEEN: (date1: Date, date2: Date) => {
+        const d1 = new Date(date1);
+        const d2 = new Date(date2);
+        return Math.floor((d2.getTime() - d1.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      },
+      
+      // Fonctions utilitaires
+      PERCENTAGE: (value: number, percent: number) => value * (percent / 100),
+      CLAMP: (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
     };
 
     return (formule: string): number => {
-      // Remplacement des opérateurs ternaires par des fonctions
-      const processedFormule = this.processTernaryOperators(formule);
+      // Traiter les opérateurs ternaires et les conditions
+      const processedFormule = this.processAdvancedOperators(formule);
       
-      // Création une fonction à partir de la formule
-      const functionBody = `return ${processedFormule};`;
-      const evaluator = new Function(...Object.keys(context), functionBody);
-      
-      return evaluator(...Object.values(context));
+      try {
+        // Créer une fonction sécurisée
+        const functionBody = `"use strict"; return ${processedFormule};`;
+        const evaluator = new Function(...Object.keys(context), functionBody);
+        
+        return evaluator(...Object.values(context));
+      } catch (error) {
+        throw new Error(`Erreur dans l'évaluation: ${error.message}`);
+      }
     };
   }
 
-  private processTernaryOperators(formule: string): string {
+  private processAdvancedOperators(formule: string): string {
+    // Remplacer les opérateurs de comparaison et logiques
+    return formule
+      .replace(/\band\b/gi, '&&')
+      .replace(/\bor\b/gi, '||')
+      .replace(/\bnot\b/gi, '!')
+      .replace(/=/g, '==');
+  }
 
-    return formule;
+  private createLookupFunction(variables: Record<string, any>) {
+    return (key: string, table: Record<string, any>) => {
+      if (typeof table === 'object' && table !== null) {
+        return table[key] || 0;
+      }
+      return 0;
+    };
+  }
+
+  private createLookupTableFunction(variables: Record<string, any>) {
+    return (row: any, col: any, table: any[][]) => {
+      if (Array.isArray(table) && table.length > row && Array.isArray(table[row]) && table[row].length > col) {
+        return table[row][col];
+      }
+      return 0;
+    };
+  }
+
+  private createInterpolateFunction() {
+    return (x: number, x1: number, y1: number, x2: number, y2: number) => {
+      if (x1 === x2) return y1;
+      return y1 + ((x - x1) * (y2 - y1)) / (x2 - x1);
+    };
+  }
+
+  private createTrancheFunction() {
+    return (value: number, tranches: Array<{min: number, max: number, rate: number}>) => {
+      for (const tranche of tranches) {
+        if (value >= tranche.min && value <= tranche.max) {
+          return tranche.rate;
+        }
+      }
+      return 0;
+    };
+  }
+
+  private createProgressiveFunction() {
+    return (value: number, tranches: Array<{limit: number, rate: number}>) => {
+      let result = 0;
+      let remaining = value;
+      
+      for (const tranche of tranches) {
+        if (remaining <= 0) break;
+        
+        const trancheAmount = Math.min(remaining, tranche.limit);
+        result += trancheAmount * tranche.rate;
+        remaining -= trancheAmount;
+      }
+      
+      return result;
+    };
   }
 
   private async validateFormule(formule: string, variables: Record<string, any>): Promise<void> {
-    // Test de validation avec des valeurs par défaut
     try {
       const testVariables: Record<string, any> = {};
       
+      // Préparer des variables de test
       for (const [key, config] of Object.entries(variables)) {
         if (typeof config === 'object' && config.default !== undefined) {
           testVariables[key] = config.default;
+        } else if (typeof config === 'object' && config.type) {
+          // Valeurs de test selon le type
+          switch (config.type) {
+            case 'number':
+              testVariables[key] = 100;
+              break;
+            case 'string':
+              testVariables[key] = 'test';
+              break;
+            case 'boolean':
+              testVariables[key] = true;
+              break;
+            default:
+              testVariables[key] = 0;
+          }
         } else {
-          testVariables[key] = 0; // Valeur par défaut pour les tests
+          testVariables[key] = 0;
         }
       }
+
+      // Ajouter des variables communes pour les tests
+      testVariables.age = 30;
+      testVariables.montant_assurance = 50000;
+      testVariables.prime_base = 100;
 
       await this.evaluate(formule, testVariables);
     } catch (error) {
