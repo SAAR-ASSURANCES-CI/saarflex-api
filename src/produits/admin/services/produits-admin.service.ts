@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Produit, StatutProduit } from '../../entities/produit.entity';
+import { Produit, StatutProduit, PeriodicitePrime } from '../../entities/produit.entity';
 import { BrancheProduit } from '../../entities/branche-produit.entity';
 import { CritereTarification } from '../../entities/critere-tarification.entity';
 import { GrilleTarifaire } from '../../entities/grille-tarifaire.entity';
@@ -56,7 +56,10 @@ export class ProduitsAdminService {
             conditions_pdf: createDto.conditions_pdf,
             statut: createDto.statut || StatutProduit.BROUILLON,
             created_by: userId,
-            branche: branche 
+            branche: branche,
+            necessite_beneficiaires: createDto.necessite_beneficiaires || false,
+            max_beneficiaires: createDto.max_beneficiaires || 0,
+            periodicite_prime: createDto.periodicite_prime || PeriodicitePrime.MENSUEL
         });
 
         const savedProduit = await this.produitRepository.save(produit);
@@ -157,7 +160,7 @@ export class ProduitsAdminService {
             });
 
             if (!branche) {
-                throw new NotFoundException(`Branche avec l'ID ${updateDto.branch_id} non trouvée`);
+                throw new NotFoundException(`Branche non trouvée`);
             }
         }
 
@@ -167,7 +170,7 @@ export class ProduitsAdminService {
             });
 
             if (existingProduit) {
-                throw new ConflictException(`Un produit avec le nom "${updateDto.nom}" existe déjà`);
+                throw new ConflictException(`Un produit existe déjà`);
             }
         }
 
@@ -177,13 +180,16 @@ export class ProduitsAdminService {
         if (updateDto.description !== undefined) produit.description = updateDto.description;
         if (updateDto.conditions_pdf !== undefined) produit.conditions_pdf = updateDto.conditions_pdf;
         if (updateDto.statut) produit.statut = updateDto.statut;
+        if (updateDto.necessite_beneficiaires !== undefined) produit.necessite_beneficiaires = updateDto.necessite_beneficiaires;
+        if (updateDto.max_beneficiaires !== undefined) produit.max_beneficiaires = updateDto.max_beneficiaires;
+        if (updateDto.periodicite_prime !== undefined) produit.periodicite_prime = updateDto.periodicite_prime;
         
         if (updateDto.branch_id && updateDto.branch_id !== produit.branche.id) {
             const brancheTrouvee = await this.brancheRepository.findOne({
                 where: { id: updateDto.branch_id }
             });
             if (!brancheTrouvee) {
-                throw new NotFoundException(`Branche avec l'ID ${updateDto.branch_id} non trouvée`);
+                throw new NotFoundException(`Branche non trouvée`);
             }
             produit.branche = brancheTrouvee;
         }
