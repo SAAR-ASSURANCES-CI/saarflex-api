@@ -2,7 +2,6 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { BrancheProduit } from './branche-produit.entity';
 import { CritereTarification } from './critere-tarification.entity';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
-import { FormuleCalcul } from './formule-calcul.entity';
 import { DevisSimule } from './devis-simule.entity';
 import { Garantie } from './garantie.entity';
 
@@ -15,6 +14,11 @@ export enum StatutProduit {
   ACTIF = 'actif',
   INACTIF = 'inactif',
   BROUILLON = 'brouillon'
+}
+
+export enum PeriodicitePrime {
+  MENSUEL = 'mensuel',
+  ANNUEL = 'annuel'
 }
 
 @Entity('produits')
@@ -57,6 +61,19 @@ export class Produit {
   @Column({ type: 'uuid', nullable: false })
   created_by: string;
 
+  @Column({ type: 'boolean', default: false })
+  necessite_beneficiaires: boolean;
+
+  @Column({ type: 'int', default: 0 })
+  max_beneficiaires: number;
+
+  @Column({ 
+    type: 'enum', 
+    enum: PeriodicitePrime, 
+    default: PeriodicitePrime.MENSUEL 
+  })
+  periodicite_prime: PeriodicitePrime;
+
   @ManyToOne(() => BrancheProduit, { nullable: true })
   @JoinColumn({ name: 'branch_id' })
   branche: BrancheProduit;
@@ -66,9 +83,6 @@ export class Produit {
 
   @OneToMany(() => GrilleTarifaire, grille => grille.produit, { cascade: true })
   grilles: GrilleTarifaire[];
-
-  @OneToMany(() => FormuleCalcul, formule => formule.produit, { cascade: true })
-  formules: FormuleCalcul[];
 
   @OneToMany(() => DevisSimule, devis => devis.produit, { cascade: true })
   devis: DevisSimule[];

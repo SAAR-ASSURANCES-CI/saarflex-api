@@ -23,5 +23,10 @@ export * from './grille-tarifaire.dto';
 // DTOs des tarifs
 export * from './tarif.dto';
 
-// DTOs de simulation et devis
-export * from './simulation-devis.dto';
+// DTOs de simulation et devis simplifiés
+export * from './simulation-devis-simplifie.dto';
+
+// DTOs des nouvelles entités
+export * from './beneficiaire.dto';
+export * from './document-identite.dto';
+export * from './devis-sauvegarde.dto';

@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tarif } from '../../entities/tarif.entity';
 import { GrilleTarifaire, StatutGrille } from '../../entities/grille-tarifaire.entity';
-import { FormulesCalculAdminService } from './formules-calcul-admin.service';
 import { 
   CreateTarifDto, 
   UpdateTarifDto, 
@@ -19,8 +18,7 @@ export class TarifsAdminService {
     @InjectRepository(Tarif)
     private tarifRepository: Repository<Tarif>,
     @InjectRepository(GrilleTarifaire)
-    private grilleRepository: Repository<GrilleTarifaire>,
-    private readonly formulesCalculService: FormulesCalculAdminService
+    private grilleRepository: Repository<GrilleTarifaire>
   ) {}
 
   async create(createTarifDto: CreateTarifDto): Promise<TarifWithGrilleDto> {
@@ -110,9 +108,7 @@ export class TarifsAdminService {
     if (updateTarifDto.grille_id !== undefined) tarif.grille_id = updateTarifDto.grille_id;
     if (updateTarifDto.critere_id !== undefined) tarif.critere_id = updateTarifDto.critere_id;
     if (updateTarifDto.valeur_critere_id !== undefined) tarif.valeur_critere_id = updateTarifDto.valeur_critere_id;
-    if (updateTarifDto.montant !== undefined) tarif.montant = updateTarifDto.montant;
-    if (updateTarifDto.pourcentage !== undefined) tarif.pourcentage = updateTarifDto.pourcentage;
-    if (updateTarifDto.formule !== undefined) tarif.formule = updateTarifDto.formule;
+    if (updateTarifDto.montant_fixe !== undefined) tarif.montant_fixe = updateTarifDto.montant_fixe;
 
     const updatedTarif = await this.tarifRepository.save(tarif);
     
@@ -160,9 +156,7 @@ export class TarifsAdminService {
   async calculatePrime(grilleId: string, criteres: Record<string, any>): Promise<{
     tarif: TarifDto;
     prime_calculee: number;
-    montant_calcule: number | undefined;
-    pourcentage_calcule: number | undefined;
-    formule_utilisee?: string;
+    montant_fixe: number;
   }> {
     const tarifs = await this.findTarifsByCriteres(grilleId, criteres);
     
@@ -181,45 +175,16 @@ export class TarifsAdminService {
       throw new NotFoundException('Erreur lors de la récupération du tarif');
     }
 
-    let prime_calculee = 0;
-    let formule_utilisee: string | undefined;
-
-    if (tarif.formule && tarif.formule.trim()) {
-      try {
-        prime_calculee = await this.formulesCalculService.evaluate(tarif.formule, {
-          ...criteres,
-          montant: tarif.montant,
-          pourcentage: tarif.pourcentage
-        });
-        formule_utilisee = tarif.formule;
-      } catch (error) {
-        console.warn(`Formule échouée pour le tarif ${tarif.id}, utilisation du calcul simple: ${error.message}`);
-        prime_calculee = this.calculatePrimeSimple(tarif);
-      }
-    } else {
-
-      prime_calculee = this.calculatePrimeSimple(tarif);
-    }
+    // Système simplifié : la prime calculée = montant fixe
+    const prime_calculee = tarif.montant_fixe;
 
     return {
-      tarif,
+      tarif: this.mapToDto(tarif),
       prime_calculee: Math.round(prime_calculee * 100) / 100,
-      montant_calcule: tarif.montant,
-      pourcentage_calcule: tarif.pourcentage,
-      formule_utilisee
+      montant_fixe: tarif.montant_fixe
     };
   }
 
-  private calculatePrimeSimple(tarif: Tarif): number {
-    let prime = 0;
-    if (tarif.montant) {
-      prime += tarif.montant;
-    }
-    if (tarif.pourcentage) {
-      prime *= (1 + tarif.pourcentage / 100);
-    }
-    return prime;
-  }
 
   private mapToDto(tarif: Tarif): TarifDto {
     return {
@@ -227,9 +192,8 @@ export class TarifsAdminService {
       grille_id: tarif.grille_id,
       critere_id: tarif.critere_id,
       valeur_critere_id: tarif.valeur_critere_id,
-      montant: tarif.montant,
-      pourcentage: tarif.pourcentage,
-      formule: tarif.formule,
+      montant_fixe: tarif.montant_fixe,
+      criteres_combines: tarif.criteres_combines,
       created_at: tarif.created_at
     };
   }

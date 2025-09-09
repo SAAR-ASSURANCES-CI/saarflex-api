@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TypeProduit, StatutProduit } from '../entities/produit.entity';
+import { TypeProduit, StatutProduit, PeriodicitePrime } from '../entities/produit.entity';
 import { BrancheProduitDto, BrancheProduitNullableDto } from './branche-produit.dto';
 
 export class ProduitDto {
@@ -32,6 +32,25 @@ export class ProduitDto {
 
   @ApiProperty({ description: 'Date de création' })
   created_at: Date;
+
+  @ApiProperty({ 
+    description: 'Le produit nécessite-t-il des bénéficiaires ?',
+    example: true
+  })
+  necessite_beneficiaires: boolean;
+
+  @ApiProperty({ 
+    description: 'Nombre maximum de bénéficiaires autorisés',
+    example: 2
+  })
+  max_beneficiaires: number;
+
+  @ApiProperty({ 
+    enum: PeriodicitePrime,
+    description: 'Périodicité de paiement de la prime',
+    example: PeriodicitePrime.MENSUEL
+  })
+  periodicite_prime: PeriodicitePrime;
 
   @ApiProperty({ description: 'Branche du produit', required: false })
   branche: BrancheProduitNullableDto | null;

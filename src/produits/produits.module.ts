@@ -7,9 +7,9 @@ import { CriteresAdminController } from './admin/controllers/criteres-admin.cont
 import { GarantiesAdminController } from './admin/controllers/garanties-admin.controller';
 import { GrillesTarifairesAdminController } from './admin/controllers/grilles-tarifaires-admin.controller';
 import { TarifsAdminController } from './admin/controllers/tarifs-admin.controller';
-import { FormulesCalculAdminController } from './admin/controllers/formules-calcul-admin.controller';
 import { ProduitsController } from './public/controllers/produits.controller';
-import { SimulationDevisController } from './public/controllers/simulation-devis.controller';
+import { SimulationDevisSimplifieeController } from './public/controllers/simulation-devis-simplifie.controller';
+import { DevisSauvegardeController } from './public/controllers/devis-sauvegarde.controller';
 import { GrillesTarifairesController } from './public/controllers/grilles-tarifaires.controller';
 import { ProduitsAdminService } from './admin/services/produits-admin.service';
 import { BranchesAdminService } from './admin/services/branches-admin.service';
@@ -17,9 +17,8 @@ import { CriteresAdminService } from './admin/services/criteres-admin.service';
 import { GarantiesAdminService } from './admin/services/garanties-admin.service';
 import { GrillesTarifairesAdminService } from './admin/services/grilles-tarifaires-admin.service';
 import { TarifsAdminService } from './admin/services/tarifs-admin.service';
-import { FormulesCalculAdminService } from './admin/services/formules-calcul-admin.service';
 import { ProduitsService } from './public/services/produits.service';
-import { SimulationDevisService } from './public/services/simulation-devis.service';
+import { SimulationDevisSimplifieeService } from './public/services/simulation-devis-simplifie.service';
 import { DevisSauvegardeService } from './public/services/devis-sauvegarde.service';
 import { GrillesTarifairesService } from './public/services/grilles-tarifaires.service';
 import { TachePlanifieeService } from './services/tache-planifiee.service';
@@ -29,11 +28,12 @@ import { CritereTarification } from './entities/critere-tarification.entity';
 import { ValeurCritere } from './entities/valeur-critere.entity';
 import { GrilleTarifaire } from './entities/grille-tarifaire.entity';
 import { Tarif } from './entities/tarif.entity';
-import { FormuleCalcul } from './entities/formule-calcul.entity';
 import { DevisSimule } from './entities/devis-simule.entity';
 import { Garantie } from './entities/garantie.entity';
 import { GarantieCritere } from './entities/garantie-critere.entity';
 import { TarifGarantie } from './entities/tarif-garantie.entity';
+import { Beneficiaire } from './entities/beneficiaire.entity';
+import { DocumentIdentite } from './entities/document-identite.entity';
 
 @Module({
   imports: [
@@ -44,8 +44,9 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
       ValeurCritere,
       GrilleTarifaire,
       Tarif,
-      FormuleCalcul,
       DevisSimule,
+      Beneficiaire,
+      DocumentIdentite,
       Garantie,
       GarantieCritere,
       TarifGarantie
@@ -59,9 +60,9 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GarantiesAdminController,
     GrillesTarifairesAdminController,
     TarifsAdminController,
-    FormulesCalculAdminController,
     ProduitsController,
-    SimulationDevisController,
+    SimulationDevisSimplifieeController,
+    DevisSauvegardeController,
     GrillesTarifairesController
   ],
   providers: [
@@ -71,9 +72,8 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GarantiesAdminService,
     GrillesTarifairesAdminService,
     TarifsAdminService,
-    FormulesCalculAdminService,
     ProduitsService,
-    SimulationDevisService,
+    SimulationDevisSimplifieeService,
     DevisSauvegardeService,
     GrillesTarifairesService,
     TachePlanifieeService
@@ -85,9 +85,8 @@ import { TarifGarantie } from './entities/tarif-garantie.entity';
     GarantiesAdminService,
     GrillesTarifairesAdminService,
     TarifsAdminService,
-    FormulesCalculAdminService,
     ProduitsService,
-    SimulationDevisService,
+    SimulationDevisSimplifieeService,
     DevisSauvegardeService,
     GrillesTarifairesService
   ]
