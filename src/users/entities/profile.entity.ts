@@ -48,6 +48,12 @@ export class Profile {
   @Column({ type: 'date', nullable: true })
   date_expiration_piece_identite: Date | null;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  chemin_recto_piece: string | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  chemin_verso_piece: string | null;
+
   @CreateDateColumn({ type: 'timestamp' })
   date_creation: Date;
 

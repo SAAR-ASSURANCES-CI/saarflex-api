@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsUUID, MaxLength, IsNotEmpty, IsUrl } from 'class-validator';
-import { TypeProduit, StatutProduit } from '../entities/produit.entity';
+import { IsString, IsEnum, IsOptional, IsUUID, MaxLength, IsNotEmpty, IsUrl, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import { TypeProduit, StatutProduit, PeriodicitePrime } from '../entities/produit.entity';
 
 export class CreateProduitDto {
   @ApiProperty({ 
@@ -63,6 +63,38 @@ export class CreateProduitDto {
   })
   @IsUUID()
   branch_id: string;
+
+  @ApiProperty({ 
+    description: 'Le produit nécessite-t-il des bénéficiaires ?',
+    example: true,
+    default: false
+  })
+  @IsOptional()
+  @IsBoolean()
+  necessite_beneficiaires?: boolean;
+
+  @ApiProperty({ 
+    description: 'Nombre maximum de bénéficiaires autorisés',
+    example: 2,
+    minimum: 0,
+    maximum: 5,
+    default: 0
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(5)
+  max_beneficiaires?: number;
+
+  @ApiProperty({ 
+    enum: PeriodicitePrime,
+    description: 'Périodicité de paiement de la prime',
+    example: PeriodicitePrime.MENSUEL,
+    default: PeriodicitePrime.MENSUEL
+  })
+  @IsOptional()
+  @IsEnum(PeriodicitePrime)
+  periodicite_prime?: PeriodicitePrime;
 }
 
 export class UpdateProduitDto {
@@ -132,6 +164,38 @@ export class UpdateProduitDto {
   @IsOptional()
   @IsUUID()
   branch_id?: string;
+
+  @ApiProperty({ 
+    description: 'Le produit nécessite-t-il des bénéficiaires ?',
+    example: true,
+    required: false
+  })
+  @IsOptional()
+  @IsBoolean()
+  necessite_beneficiaires?: boolean;
+
+  @ApiProperty({ 
+    description: 'Nombre maximum de bénéficiaires autorisés',
+    example: 2,
+    minimum: 0,
+    maximum: 5,
+    required: false
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(5)
+  max_beneficiaires?: number;
+
+  @ApiProperty({ 
+    enum: PeriodicitePrime,
+    description: 'Périodicité de paiement de la prime',
+    example: PeriodicitePrime.MENSUEL,
+    required: false
+  })
+  @IsOptional()
+  @IsEnum(PeriodicitePrime)
+  periodicite_prime?: PeriodicitePrime;
 }
 
 export class ProduitAdminDto {
@@ -171,22 +235,38 @@ export class ProduitAdminDto {
   @ApiProperty({ description: 'ID de l\'utilisateur qui a créé le produit' })
   created_by: string;
 
-  @ApiProperty({ description: 'Informations de la branche' })
+  @ApiProperty({ 
+    description: 'Le produit nécessite-t-il des bénéficiaires ?',
+    example: true
+  })
+  necessite_beneficiaires: boolean;
+
+  @ApiProperty({ 
+    description: 'Nombre maximum de bénéficiaires autorisés',
+    example: 2
+  })
+  max_beneficiaires: number;
+
+  @ApiProperty({ 
+    enum: PeriodicitePrime,
+    description: 'Périodicité de paiement de la prime',
+    example: PeriodicitePrime.MENSUEL
+  })
+  periodicite_prime: PeriodicitePrime;
+
+  @ApiProperty({ description: 'Informations de la branche', nullable: true })
   branche: {
     id: string;
     nom: string;
     type: string;
     description: string;
-  };
+  } | null;
 
   @ApiProperty({ description: 'Nombre de critères de tarification' })
   nombre_criteres: number;
 
   @ApiProperty({ description: 'Nombre de grilles tarifaires' })
   nombre_grilles: number;
-
-  @ApiProperty({ description: 'Nombre de formules de calcul' })
-  nombre_formules: number;
 
   @ApiProperty({ description: 'Nombre de devis simulés' })
   nombre_devis: number;

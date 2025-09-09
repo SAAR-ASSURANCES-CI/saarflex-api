@@ -18,11 +18,12 @@ import { CritereTarification } from './produits/entities/critere-tarification.en
 import { ValeurCritere } from './produits/entities/valeur-critere.entity';
 import { GrilleTarifaire } from './produits/entities/grille-tarifaire.entity';
 import { Tarif } from './produits/entities/tarif.entity';
-import { FormuleCalcul } from './produits/entities/formule-calcul.entity';
 import { DevisSimule } from './produits/entities/devis-simule.entity';
 import { Garantie } from './produits/entities/garantie.entity';
 import { GarantieCritere } from './produits/entities/garantie-critere.entity';
 import { TarifGarantie } from './produits/entities/tarif-garantie.entity';
+import { Beneficiaire } from './produits/entities/beneficiaire.entity';
+import { DocumentIdentite } from './produits/entities/document-identite.entity';
 
 @Module({
   imports: [
@@ -55,8 +56,9 @@ import { TarifGarantie } from './produits/entities/tarif-garantie.entity';
           ValeurCritere,
           GrilleTarifaire,
           Tarif,
-          FormuleCalcul,
           DevisSimule,
+          Beneficiaire,
+          DocumentIdentite,
           Garantie,
           GarantieCritere,
           TarifGarantie
