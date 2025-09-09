@@ -17,7 +17,7 @@ import {
   InformationsAssureDto 
 } from '../../dto/simulation-devis-simplifie.dto';
 
-const DUREE_VALIDITE_SIMULATION = 24 * 60 * 60 * 1000; // 24 heures
+const DUREE_VALIDITE_SIMULATION = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class SimulationDevisSimplifieeService {
