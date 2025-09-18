@@ -50,7 +50,6 @@ export class SimulationDevisSimplifieeService {
     utilisateurId?: string
   ): Promise<SimulationDevisSimplifieeResponseDto> {
     
-    // 1. Vérifier le produit
     const produit = await this.produitRepository.findOne({
       where: { id: simulationDto.produit_id, statut: StatutProduit.ACTIF },
       relations: ['criteres', 'grilles']
@@ -60,17 +59,14 @@ export class SimulationDevisSimplifieeService {
       throw new NotFoundException('Produit non trouvé ou inactif');
     }
 
-    // 2. Validation spécifique selon le type de souscription
     if (utilisateurId) {
       await this.validerSouscription(simulationDto, utilisateurId, produit);
     } else if (simulationDto.assure_est_souscripteur) {
       throw new BadRequestException('Authentification requise pour les simulations "pour moi-même"');
     }
 
-    // 3. Trouver la grille tarifaire active
     const grilleTarifaire = await this.trouverGrilleTarifaireActive(produit.id);
 
-    // 4. Calculer l'âge si c'est un produit Vie et si nécessaire
     const criteresEnrichis = await this.enrichirCriteresAvecAge(
       simulationDto.criteres_utilisateur,
       simulationDto,
@@ -78,10 +74,8 @@ export class SimulationDevisSimplifieeService {
       produit.type
     );
 
-    // 5. Trouver le tarif fixe correspondant
     const tarifFixe = await this.trouverTarifFixe(grilleTarifaire.id, criteresEnrichis);
 
-    // 6. Créer le devis simulé
     const devisSimule = await this.creerDevisSimule(
       simulationDto,
       produit,
@@ -108,7 +102,6 @@ export class SimulationDevisSimplifieeService {
   ): Promise<void> {
     
     if (simulationDto.assure_est_souscripteur) {
-      // Vérification que l'utilisateur a un profil complet
       if (!utilisateurId) {
         throw new BadRequestException('Utilisateur non authentifié');
       }
@@ -121,7 +114,6 @@ export class SimulationDevisSimplifieeService {
         throw new BadRequestException('Profil utilisateur non trouvé. Veuillez compléter votre profil.');
       }
 
-      // Vérifications spécifiques selon le type de produit
       if (produit.type === TypeProduit.VIE) {
         if (!profile.date_naissance) {
           throw new BadRequestException('Date de naissance requise pour les produits Vie. Veuillez compléter votre profil.');
@@ -141,7 +133,6 @@ export class SimulationDevisSimplifieeService {
       }
 
     } else {
-      // Validation pour "autre personne"
       if (!simulationDto.informations_assure) {
         throw new BadRequestException('Informations de l\'assuré requises');
       }
@@ -196,7 +187,6 @@ export class SimulationDevisSimplifieeService {
       let dateNaissance: Date;
 
       if (simulationDto.assure_est_souscripteur && utilisateurId) {
-        // Récupérer la date de naissance du profil utilisateur
         const profile = await this.profileRepository.findOne({
           where: { user_id: utilisateurId }
         });
@@ -242,7 +232,6 @@ export class SimulationDevisSimplifieeService {
       
       criteresEnrichis['Age Assuré'] = age.toString();
       
-      // Supprimer l'ancien critère 'age' s'il existe
       if ('age' in criteresEnrichis) {
         delete criteresEnrichis.age;
       }
@@ -333,7 +322,7 @@ export class SimulationDevisSimplifieeService {
   }
 
   /**
-   * Crée le devis simulé en base
+   * Crée le devis simulé en base.
    */
   private async creerDevisSimule(
     simulationDto: CreateSimulationDevisSimplifieeDto,
