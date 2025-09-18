@@ -44,6 +44,9 @@ importers:
       '@sentry/profiling-node':
         specifier: ^10.5.0
         version: 10.5.0
+      '@types/multer':
+        specifier: ^2.0.0
+        version: 2.0.0
       '@types/nodemailer':
         specifier: ^6.4.17
         version: 6.4.17
@@ -1361,6 +1364,9 @@ packages:
 
   '@types/mjml@4.7.4':
     resolution: {integrity: sha512-vyi1vzWgMzFMwZY7GSZYX0GU0dmtC8vLHwpgk+NWmwbwRSrlieVyJ9sn5elodwUfklJM7yGl0zQeet1brKTWaQ==}
+
+  '@types/multer@2.0.0':
+    resolution: {integrity: sha512-C3Z9v9Evij2yST3RSBktxP9STm6OdMc5uR1xF1SGr98uv8dUlAL2hqwrZ3GVB3uyMyiegnscEK6PGtYvNrjTjw==}
 
   '@types/mysql@2.15.27':
     resolution: {integrity: sha512-YfWiV16IY0OeBfBCk8+hXKmdTKrKlwKN1MNKAPBu5JYxLwBEZl7QzeEpGnlZb3VMGJrrGmB84gXiH+ofs/TezA==}
@@ -6131,6 +6137,10 @@ snapshots:
     dependencies:
       '@types/mjml-core': 4.15.2
     optional: true
+
+  '@types/multer@2.0.0':
+    dependencies:
+      '@types/express': 5.0.3
 
   '@types/mysql@2.15.27':
     dependencies:
