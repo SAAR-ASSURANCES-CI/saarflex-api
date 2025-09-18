@@ -11,11 +11,12 @@ import { CritereTarification } from './src/produits/entities/critere-tarificatio
 import { ValeurCritere } from './src/produits/entities/valeur-critere.entity';
 import { GrilleTarifaire } from './src/produits/entities/grille-tarifaire.entity';
 import { Tarif } from './src/produits/entities/tarif.entity';
-import { FormuleCalcul } from './src/produits/entities/formule-calcul.entity';
 import { DevisSimule } from './src/produits/entities/devis-simule.entity';
 import { Garantie } from './src/produits/entities/garantie.entity';
 import { GarantieCritere } from './src/produits/entities/garantie-critere.entity';
 import { TarifGarantie } from './src/produits/entities/tarif-garantie.entity';
+import { Beneficiaire } from './src/produits/entities/beneficiaire.entity';
+import { DocumentIdentite } from './src/produits/entities/document-identite.entity';
 
 dotenv.config();
 
@@ -40,8 +41,9 @@ export default new DataSource({
     ValeurCritere,
     GrilleTarifaire,
     Tarif,
-    FormuleCalcul,
     DevisSimule,
+    Beneficiaire,
+    DocumentIdentite,
     Garantie,
     GarantieCritere,
     TarifGarantie

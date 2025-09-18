@@ -16,20 +16,17 @@ export class CreateTarifDto {
   @IsUUID()
   valeur_critere_id?: string;
 
-  @ApiProperty({ description: 'Montant du tarif', required: false })
-  @IsOptional()
+  @ApiProperty({ description: 'Montant fixe du tarif' })
   @IsNumber()
-  montant?: number;
+  montant_fixe: number;
 
-  @ApiProperty({ description: 'Pourcentage du tarif', required: false })
+  @ApiProperty({ 
+    description: 'Critères combinés pour le tarif (pour les produits multi-critères)',
+    example: { "Capital": "1000000", "Age Assuré": "72", "Durée de cotisation": "5" },
+    required: false 
+  })
   @IsOptional()
-  @IsNumber()
-  pourcentage?: number;
-
-  @ApiProperty({ description: 'Formule de calcul', required: false })
-  @IsOptional()
-  @IsString()
-  formule?: string;
+  criteres_combines?: Record<string, string>;
 }
 
 export class UpdateTarifDto {
@@ -48,20 +45,17 @@ export class UpdateTarifDto {
   @IsUUID()
   valeur_critere_id?: string;
 
-  @ApiProperty({ description: 'Montant du tarif', required: false })
+  @ApiProperty({ description: 'Montant fixe du tarif', required: false })
   @IsOptional()
   @IsNumber()
-  montant?: number;
+  montant_fixe?: number;
 
-  @ApiProperty({ description: 'Pourcentage du tarif', required: false })
+  @ApiProperty({ 
+    description: 'Critères combinés pour le tarif (pour les produits multi-critères)',
+    required: false 
+  })
   @IsOptional()
-  @IsNumber()
-  pourcentage?: number;
-
-  @ApiProperty({ description: 'Formule de calcul', required: false })
-  @IsOptional()
-  @IsString()
-  formule?: string;
+  criteres_combines?: Record<string, string>;
 }
 
 export class TarifDto {
@@ -77,14 +71,14 @@ export class TarifDto {
   @ApiProperty({ description: 'ID de la valeur du critère', required: false })
   valeur_critere_id?: string;
 
-  @ApiProperty({ description: 'Montant du tarif', required: false })
-  montant?: number;
+  @ApiProperty({ description: 'Montant fixe du tarif' })
+  montant_fixe: number;
 
-  @ApiProperty({ description: 'Pourcentage du tarif', required: false })
-  pourcentage?: number;
-
-  @ApiProperty({ description: 'Formule de calcul', required: false })
-  formule?: string;
+  @ApiProperty({ 
+    description: 'Critères combinés pour le tarif',
+    required: false 
+  })
+  criteres_combines?: Record<string, string>;
 
   @ApiProperty({ description: 'Date de création' })
   created_at: Date;

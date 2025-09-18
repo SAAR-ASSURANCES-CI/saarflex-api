@@ -2,13 +2,25 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DevisSimule, StatutDevis } from '../../entities/devis-simule.entity';
-import { SauvegardeDevisDto, DevisSauvegardeDto } from '../../dto/simulation-devis.dto';
+import { Beneficiaire } from '../../entities/beneficiaire.entity';
+import { DocumentIdentite } from '../../entities/document-identite.entity';
+import { 
+  SauvegardeDevisDto, 
+  DevisSauvegardeDto, 
+  ModifierDevisSauvegardeDto, 
+  FiltresRechercheDevisDto,
+  DevisSauvegardesResponseDto 
+} from '../../dto/devis-sauvegarde.dto';
 
 @Injectable()
 export class DevisSauvegardeService {
   constructor(
     @InjectRepository(DevisSimule)
     private devisSimuleRepository: Repository<DevisSimule>,
+    @InjectRepository(Beneficiaire)
+    private beneficiaireRepository: Repository<Beneficiaire>,
+    @InjectRepository(DocumentIdentite)
+    private documentRepository: Repository<DocumentIdentite>,
   ) {}
 
   /**
@@ -20,7 +32,7 @@ export class DevisSauvegardeService {
   ): Promise<DevisSauvegardeDto> {
     const devis = await this.devisSimuleRepository.findOne({
       where: { id: sauvegardeDto.devis_id },
-      relations: ['produit', 'grilleTarifaire']
+      relations: ['produit', 'grilleTarifaire', 'beneficiaires', 'documents']
     });
 
     if (!devis) {
@@ -69,7 +81,7 @@ export class DevisSauvegardeService {
         utilisateur_id: utilisateurId,
         statut: StatutDevis.SAUVEGARDE
       },
-      relations: ['produit', 'grilleTarifaire'],
+      relations: ['produit', 'grilleTarifaire', 'beneficiaires', 'documents'],
       order: { created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit
@@ -115,10 +127,7 @@ export class DevisSauvegardeService {
   async modifierDevis(
     devisId: string,
     utilisateurId: string,
-    updateData: {
-      nom_personnalise?: string;
-      notes?: string;
-    }
+    updateData: ModifierDevisSauvegardeDto
   ): Promise<DevisSauvegardeDto> {
     const devis = await this.devisSimuleRepository.findOne({
       where: { 
@@ -171,14 +180,7 @@ export class DevisSauvegardeService {
    */
   async rechercherDevis(
     utilisateurId: string,
-    filtres: {
-      nom_produit?: string;
-      type_produit?: string;
-      date_debut?: Date;
-      date_fin?: Date;
-      prime_min?: number;
-      prime_max?: number;
-    },
+    filtres: FiltresRechercheDevisDto,
     page: number = 1,
     limit: number = 10
   ): Promise<{
@@ -192,10 +194,11 @@ export class DevisSauvegardeService {
       .createQueryBuilder('devis')
       .leftJoinAndSelect('devis.produit', 'produit')
       .leftJoinAndSelect('devis.grilleTarifaire', 'grilleTarifaire')
+      .leftJoinAndSelect('devis.beneficiaires', 'beneficiaires')
+      .leftJoinAndSelect('devis.documents', 'documents')
       .where('devis.utilisateur_id = :utilisateurId', { utilisateurId })
       .andWhere('devis.statut = :statut', { statut: StatutDevis.SAUVEGARDE });
 
-    // Appliquer les filtres
     if (filtres.nom_produit) {
       queryBuilder.andWhere('produit.nom ILIKE :nom_produit', { 
         nom_produit: `%${filtres.nom_produit}%` 
@@ -232,10 +235,8 @@ export class DevisSauvegardeService {
       });
     }
 
-    // Compter le total
     const total = await queryBuilder.getCount();
 
-    // Récupérer les résultats paginés
     const devis = await queryBuilder
       .orderBy('devis.created_at', 'DESC')
       .skip((page - 1) * limit)
@@ -282,10 +283,14 @@ export class DevisSauvegardeService {
       franchise_calculee: Number(devis.franchise_calculee),
       plafond_calcule: devis.plafond_calcule ? Number(devis.plafond_calcule) : undefined,
       criteres_utilisateur: devis.criteres_utilisateur,
+      informations_assure: devis.informations_assure,
+      assure_est_souscripteur: devis.assure_est_souscripteur,
+      nombre_beneficiaires: devis.beneficiaires?.length || 0,
+      nombre_documents: devis.documents?.length || 0,
       statut: devis.statut,
       created_at: devis.created_at,
-      nom_personnalise: devis.nom_personnalise,
-      notes: devis.notes
+      nom_personnalise: devis.nom_personnalise || undefined,
+      notes: devis.notes || undefined
     };
   }
 }

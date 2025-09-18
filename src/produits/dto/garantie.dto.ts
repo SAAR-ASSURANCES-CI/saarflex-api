@@ -213,6 +213,9 @@ export class GarantieWithProduitDto extends GarantieDto {
     type: string;
     description?: string;
     statut: string;
+    necessite_beneficiaires: boolean;
+    max_beneficiaires: number;
+    periodicite_prime: string;
     branche?: {
       id: string;
       nom: string;

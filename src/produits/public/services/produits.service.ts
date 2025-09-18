@@ -207,6 +207,10 @@ export class ProduitsService {
       conditions_pdf: produit.conditions_pdf,
       statut: produit.statut,
       created_at: produit.created_at,
+      // Nouvelles propriétés pour le système simplifié
+      necessite_beneficiaires: produit.necessite_beneficiaires,
+      max_beneficiaires: produit.max_beneficiaires,
+      periodicite_prime: produit.periodicite_prime,
       branche: produit.branche ? {
         id: produit.branche.id,
         nom: produit.branche.nom,
@@ -240,6 +244,10 @@ export class ProduitsService {
         type: garantie.produit.type,
         description: garantie.produit.description,
         statut: garantie.produit.statut,
+        // Nouvelles propriétés pour le système simplifié
+        necessite_beneficiaires: garantie.produit.necessite_beneficiaires,
+        max_beneficiaires: garantie.produit.max_beneficiaires,
+        periodicite_prime: garantie.produit.periodicite_prime,
         branche: garantie.produit.branche ? {
           id: garantie.produit.branche.id,
           nom: garantie.produit.branche.nom,

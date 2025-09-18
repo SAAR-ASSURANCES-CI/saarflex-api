@@ -1,11 +1,10 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Produit, StatutProduit } from '../../entities/produit.entity';
+import { Produit, StatutProduit, PeriodicitePrime } from '../../entities/produit.entity';
 import { BrancheProduit } from '../../entities/branche-produit.entity';
 import { CritereTarification } from '../../entities/critere-tarification.entity';
 import { GrilleTarifaire } from '../../entities/grille-tarifaire.entity';
-import { FormuleCalcul } from '../../entities/formule-calcul.entity';
 import { DevisSimule } from '../../entities/devis-simule.entity';
 import { 
     CreateProduitDto, 
@@ -25,8 +24,6 @@ export class ProduitsAdminService {
         private readonly critereRepository: Repository<CritereTarification>,
         @InjectRepository(GrilleTarifaire)
         private readonly grilleRepository: Repository<GrilleTarifaire>,
-        @InjectRepository(FormuleCalcul)
-        private readonly formuleRepository: Repository<FormuleCalcul>,
         @InjectRepository(DevisSimule)
         private readonly devisRepository: Repository<DevisSimule>,
     ) { }
@@ -59,12 +56,15 @@ export class ProduitsAdminService {
             conditions_pdf: createDto.conditions_pdf,
             statut: createDto.statut || StatutProduit.BROUILLON,
             created_by: userId,
-            branche: branche 
+            branche: branche,
+            necessite_beneficiaires: createDto.necessite_beneficiaires || false,
+            max_beneficiaires: createDto.max_beneficiaires || 0,
+            periodicite_prime: createDto.periodicite_prime || PeriodicitePrime.MENSUEL
         });
 
         const savedProduit = await this.produitRepository.save(produit);
 
-        return this.mapToAdminDto(savedProduit, branche, 0, 0, 0, 0);
+        return this.mapToAdminDto(savedProduit, branche, 0, 0, 0);
     }
 
     /**
@@ -83,10 +83,9 @@ export class ProduitsAdminService {
 
         const produitsDto = await Promise.all(
             produits.map(async (produit) => {
-                const [criteresCount, grillesCount, formulesCount, devisCount] = await Promise.all([
+                const [criteresCount, grillesCount, devisCount] = await Promise.all([
                     this.critereRepository.count({ where: { produit: { id: produit.id } } }),
                     this.grilleRepository.count({ where: { produit: { id: produit.id } } }),
-                    this.formuleRepository.count({ where: { produit: { id: produit.id } } }),
                     this.devisRepository.count({ where: { produit: { id: produit.id } } })
                 ]);
 
@@ -95,7 +94,6 @@ export class ProduitsAdminService {
                     produit.branche,
                     criteresCount,
                     grillesCount,
-                    formulesCount,
                     devisCount
                 );
             })
@@ -128,10 +126,9 @@ export class ProduitsAdminService {
             throw new NotFoundException(`La branche associée au produit ${id} n'existe pas`);
         }
 
-        const [criteresCount, grillesCount, formulesCount, devisCount] = await Promise.all([
+        const [criteresCount, grillesCount, devisCount] = await Promise.all([
             this.critereRepository.count({ where: { produit: { id } } }),
             this.grilleRepository.count({ where: { produit: { id } } }),
-            this.formuleRepository.count({ where: { produit: { id } } }),
             this.devisRepository.count({ where: { produit: { id } } })
         ]);
 
@@ -140,7 +137,6 @@ export class ProduitsAdminService {
             produit.branche,
             criteresCount,
             grillesCount,
-            formulesCount,
             devisCount
         );
     }
@@ -164,7 +160,7 @@ export class ProduitsAdminService {
             });
 
             if (!branche) {
-                throw new NotFoundException(`Branche avec l'ID ${updateDto.branch_id} non trouvée`);
+                throw new NotFoundException(`Branche non trouvée`);
             }
         }
 
@@ -174,7 +170,7 @@ export class ProduitsAdminService {
             });
 
             if (existingProduit) {
-                throw new ConflictException(`Un produit avec le nom "${updateDto.nom}" existe déjà`);
+                throw new ConflictException(`Un produit existe déjà`);
             }
         }
 
@@ -184,13 +180,16 @@ export class ProduitsAdminService {
         if (updateDto.description !== undefined) produit.description = updateDto.description;
         if (updateDto.conditions_pdf !== undefined) produit.conditions_pdf = updateDto.conditions_pdf;
         if (updateDto.statut) produit.statut = updateDto.statut;
+        if (updateDto.necessite_beneficiaires !== undefined) produit.necessite_beneficiaires = updateDto.necessite_beneficiaires;
+        if (updateDto.max_beneficiaires !== undefined) produit.max_beneficiaires = updateDto.max_beneficiaires;
+        if (updateDto.periodicite_prime !== undefined) produit.periodicite_prime = updateDto.periodicite_prime;
         
         if (updateDto.branch_id && updateDto.branch_id !== produit.branche.id) {
             const brancheTrouvee = await this.brancheRepository.findOne({
                 where: { id: updateDto.branch_id }
             });
             if (!brancheTrouvee) {
-                throw new NotFoundException(`Branche avec l'ID ${updateDto.branch_id} non trouvée`);
+                throw new NotFoundException(`Branche non trouvée`);
             }
             produit.branche = brancheTrouvee;
         }
@@ -199,10 +198,9 @@ export class ProduitsAdminService {
 
         const branche = produit.branche;
 
-        const [criteresCount, grillesCount, formulesCount, devisCount] = await Promise.all([
+        const [criteresCount, grillesCount, devisCount] = await Promise.all([
             this.critereRepository.count({ where: { produit: { id } } }),
             this.grilleRepository.count({ where: { produit: { id } } }),
-            this.formuleRepository.count({ where: { produit: { id } } }),
             this.devisRepository.count({ where: { produit: { id } } })
         ]);
 
@@ -211,7 +209,6 @@ export class ProduitsAdminService {
             branche,
             criteresCount,
             grillesCount,
-            formulesCount,
             devisCount
         );
     }
@@ -228,17 +225,16 @@ export class ProduitsAdminService {
             throw new NotFoundException(`Produit avec l'ID ${id} non trouvé`);
         }
 
-        const [criteresCount, grillesCount, formulesCount, devisCount] = await Promise.all([
+        const [criteresCount, grillesCount, devisCount] = await Promise.all([
             this.critereRepository.count({ where: { produit: { id } } }),
             this.grilleRepository.count({ where: { produit: { id } } }),
-            this.formuleRepository.count({ where: { produit: { id } } }),
             this.devisRepository.count({ where: { produit: { id } } })
         ]);
 
-        if (criteresCount > 0 || grillesCount > 0 || formulesCount > 0 || devisCount > 0) {
+        if (criteresCount > 0 || grillesCount > 0 || devisCount > 0) {
             throw new BadRequestException(
                 `Impossible de supprimer le produit "${produit.nom}" car il a des éléments associés : ` +
-                `${criteresCount} critère(s), ${grillesCount} grille(s), ${formulesCount} formule(s), ${devisCount} devis`
+                `${criteresCount} critère(s), ${grillesCount} grille(s), ${devisCount} devis`
             );
         }
 
@@ -269,10 +265,9 @@ export class ProduitsAdminService {
         produit.statut = newStatus as StatutProduit;
         const updatedProduit = await this.produitRepository.save(produit);
 
-        const [criteresCount, grillesCount, formulesCount, devisCount] = await Promise.all([
+        const [criteresCount, grillesCount, devisCount] = await Promise.all([
             this.critereRepository.count({ where: { produit: { id } } }),
             this.grilleRepository.count({ where: { produit: { id } } }),
-            this.formuleRepository.count({ where: { produit: { id } } }),
             this.devisRepository.count({ where: { produit: { id } } })
         ]);
 
@@ -281,7 +276,6 @@ export class ProduitsAdminService {
             produit.branche,
             criteresCount,
             grillesCount,
-            formulesCount,
             devisCount
         );
     }
@@ -294,7 +288,6 @@ export class ProduitsAdminService {
         branche: BrancheProduit,
         nombreCriteres: number,
         nombreGrilles: number,
-        nombreFormules: number,
         nombreDevis: number
     ): ProduitAdminDto {
         return {
@@ -308,15 +301,17 @@ export class ProduitsAdminService {
             created_at: produit.created_at,
             updated_at: produit.updated_at,
             created_by: produit.created_by,
-            branche: {
+            necessite_beneficiaires: produit.necessite_beneficiaires,
+            max_beneficiaires: produit.max_beneficiaires,
+            periodicite_prime: produit.periodicite_prime,
+            branche: branche ? {
                 id: branche.id,
                 nom: branche.nom,
                 type: branche.type,
                 description: branche.description
-            },
+            } : null,
             nombre_criteres: nombreCriteres,
             nombre_grilles: nombreGrilles,
-            nombre_formules: nombreFormules,
             nombre_devis: nombreDevis
         };
     }

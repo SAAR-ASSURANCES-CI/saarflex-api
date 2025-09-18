@@ -17,14 +17,11 @@ export class Tarif {
   @Column({ type: 'uuid', nullable: true })
   valeur_critere_id: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  montant: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
+  montant_fixe: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
-  pourcentage: number;
-
-  @Column({ type: 'text', nullable: true })
-  formule: string;
+  @Column({ type: 'json', nullable: true })
+  criteres_combines: Record<string, string>;
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
