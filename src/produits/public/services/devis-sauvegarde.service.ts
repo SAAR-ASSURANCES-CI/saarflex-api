@@ -199,7 +199,6 @@ export class DevisSauvegardeService {
       .where('devis.utilisateur_id = :utilisateurId', { utilisateurId })
       .andWhere('devis.statut = :statut', { statut: StatutDevis.SAUVEGARDE });
 
-    // Appliquer les filtres
     if (filtres.nom_produit) {
       queryBuilder.andWhere('produit.nom ILIKE :nom_produit', { 
         nom_produit: `%${filtres.nom_produit}%` 
@@ -236,10 +235,8 @@ export class DevisSauvegardeService {
       });
     }
 
-    // Compter le total
     const total = await queryBuilder.getCount();
 
-    // Récupérer les résultats paginés
     const devis = await queryBuilder
       .orderBy('devis.created_at', 'DESC')
       .skip((page - 1) * limit)
@@ -286,7 +283,6 @@ export class DevisSauvegardeService {
       franchise_calculee: Number(devis.franchise_calculee),
       plafond_calcule: devis.plafond_calcule ? Number(devis.plafond_calcule) : undefined,
       criteres_utilisateur: devis.criteres_utilisateur,
-      // Nouvelles propriétés du système simplifié
       informations_assure: devis.informations_assure,
       assure_est_souscripteur: devis.assure_est_souscripteur,
       nombre_beneficiaires: devis.beneficiaires?.length || 0,

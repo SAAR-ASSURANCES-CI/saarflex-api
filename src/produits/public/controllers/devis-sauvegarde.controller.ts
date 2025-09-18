@@ -69,7 +69,7 @@ export class DevisSauvegardeController {
     @Body() sauvegardeDto: SauvegardeDevisDto,
     @Request() req: any
   ): Promise<DevisSauvegardeDto> {
-    return this.devisSauvegardeService.sauvegarderDevis(sauvegardeDto, req.user.userId);
+    return this.devisSauvegardeService.sauvegarderDevis(sauvegardeDto, req.user.id);
   }
 
   @Get()
@@ -103,7 +103,7 @@ export class DevisSauvegardeController {
     @Query('limit', ParseIntPipe) limit: number = 10,
     @Request() req: any
   ): Promise<DevisSauvegardesResponseDto> {
-    return this.devisSauvegardeService.recupererDevisUtilisateur(req.user.userId, page, limit);
+    return this.devisSauvegardeService.recupererDevisUtilisateur(req.user.id, page, limit);
   }
 
   @Get('recherche')
@@ -174,7 +174,7 @@ export class DevisSauvegardeController {
     @Query('limit', ParseIntPipe) limit: number = 10,
     @Request() req: any
   ): Promise<DevisSauvegardesResponseDto> {
-    return this.devisSauvegardeService.rechercherDevis(req.user.userId, filtres, page, limit);
+    return this.devisSauvegardeService.rechercherDevis(req.user.id, filtres, page, limit);
   }
 
   @Get(':id')
@@ -204,7 +204,7 @@ export class DevisSauvegardeController {
     @Param('id', ParseUUIDPipe) id: string,
     @Request() req: any
   ): Promise<DevisSauvegardeDto> {
-    return this.devisSauvegardeService.recupererDevisParId(id, req.user.userId);
+    return this.devisSauvegardeService.recupererDevisParId(id, req.user.id);
   }
 
   @Put(':id')
@@ -236,7 +236,7 @@ export class DevisSauvegardeController {
     @Body() updateData: ModifierDevisSauvegardeDto,
     @Request() req: any
   ): Promise<DevisSauvegardeDto> {
-    return this.devisSauvegardeService.modifierDevis(id, req.user.userId, updateData);
+    return this.devisSauvegardeService.modifierDevis(id, req.user.id, updateData);
   }
 
   @Delete(':id')
@@ -265,7 +265,7 @@ export class DevisSauvegardeController {
     @Param('id', ParseUUIDPipe) id: string,
     @Request() req: any
   ): Promise<{ message: string }> {
-    await this.devisSauvegardeService.supprimerDevis(id, req.user.userId);
+    await this.devisSauvegardeService.supprimerDevis(id, req.user.id);
     return { message: 'Devis supprimé avec succès' };
   }
 }
