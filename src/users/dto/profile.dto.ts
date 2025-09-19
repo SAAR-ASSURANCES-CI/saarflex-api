@@ -47,6 +47,12 @@ export class ProfileDto {
   @ApiProperty({ required: false, nullable: true, description: 'Date d\'expiration de la pièce d\'identité (format DD-MM-YYYY)' })
   date_expiration_piece_identite?: string | null;
 
+  @ApiProperty({ required: false, nullable: true, description: 'Chemin vers la photo recto de la carte d\'identité' })
+  front_document_path?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, description: 'Chemin vers la photo verso de la carte d\'identité' })
+  back_document_path?: string | null;
+
   @ApiProperty()
   date_creation: Date;
 
