@@ -268,6 +268,8 @@ export class UsersService {
             numero_piece_identite: profile.numero_piece_identite ?? undefined,
             type_piece_identite: profile.type_piece_identite ?? undefined,
             date_expiration_piece_identite: profile.date_expiration_piece_identite ? this.formatDateDDMMYYYY(profile.date_expiration_piece_identite) : undefined,
+            front_document_path: profile.chemin_recto_piece ?? undefined,
+            back_document_path: profile.chemin_verso_piece ?? undefined,
         };
     }
 

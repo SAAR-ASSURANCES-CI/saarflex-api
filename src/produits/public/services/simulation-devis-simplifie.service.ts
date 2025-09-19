@@ -424,6 +424,8 @@ export class SimulationDevisSimplifieeService {
       prime_calculee: primeCalculee,
       assure_est_souscripteur: devis.assure_est_souscripteur,
       informations_assure: informationsAssure,
+      front_document_path: devis.chemin_recto_assure || undefined,
+      back_document_path: devis.chemin_verso_assure || undefined,
       beneficiaires: beneficiairesFormatted,
       created_at: devis.created_at
     };
