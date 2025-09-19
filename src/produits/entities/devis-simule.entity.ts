@@ -58,6 +58,12 @@ export class DevisSimule {
   @Column({ type: 'boolean', default: true })
   assure_est_souscripteur: boolean; // true = pour moi-même, false = autre personne
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  chemin_recto_assure: string | null; // Chemin vers la photo recto de l'assuré
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  chemin_verso_assure: string | null; // Chemin vers la photo verso de l'assuré
+
   @CreateDateColumn()
   created_at: Date;
 

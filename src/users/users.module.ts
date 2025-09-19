@@ -11,6 +11,7 @@ import { Profile } from './entities/profile.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
 import { PasswordReset } from './entities/password-reset.entity';
+import { DevisSimule } from '../produits/entities/devis-simule.entity';
 import { JwtService as CustomJwtService } from '../users/jwt/jwt.service';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 import { AdminGuard } from './guards/admin.guard';
@@ -23,7 +24,8 @@ import { EmailModule } from './email/email.module';
       Profile, 
       Session, 
       Notification, 
-      PasswordReset
+      PasswordReset,
+      DevisSimule
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

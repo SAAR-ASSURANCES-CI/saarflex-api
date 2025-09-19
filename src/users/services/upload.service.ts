@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Profile } from '../entities/profile.entity';
 import { User } from '../entities/user.entity';
+import { DevisSimule } from '../../produits/entities/devis-simule.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -15,6 +16,8 @@ export class UploadService {
     private profileRepository: Repository<Profile>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(DevisSimule)
+    private devisSimuleRepository: Repository<DevisSimule>,
   ) {
     this.ensureUploadDirectoryExists();
   }
@@ -140,6 +143,67 @@ export class UploadService {
       .replace(/[^a-z0-9_]/g, '_')
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
+  }
+
+  /**
+   * Upload des photos de carte d'identité de l'assuré (quand assuré ≠ souscripteur)
+   */
+  async uploadAssureIdentityPhotos(
+    devisId: string,
+    userId: string,
+    rectoFile: Express.Multer.File,
+    versoFile: Express.Multer.File
+  ): Promise<{ recto_path: string; verso_path: string }> {
+    // Vérifier que le devis existe et appartient à l'utilisateur
+    const devis = await this.devisSimuleRepository.findOne({
+      where: { 
+        id: devisId, 
+        utilisateur_id: userId 
+      }
+    });
+
+    if (!devis) {
+      throw new NotFoundException('Devis non trouvé ou vous n\'avez pas les droits');
+    }
+
+    // Vérifier que l'assuré n'est pas le souscripteur
+    if (devis.assure_est_souscripteur) {
+      throw new BadRequestException('Cet endpoint est réservé aux cas où l\'assuré est différent du souscripteur');
+    }
+
+    // Créer le nom de dossier basé sur l'ID du devis
+    const folderName = `devis_${devisId}`;
+    const devisFolderPath = path.join(this.uploadPath, 'assures', folderName);
+
+    // Créer le dossier devis s'il n'existe pas
+    this.ensureUserDirectoryExists(devisFolderPath);
+
+    let rectoPath: string | null = null;
+    let versoPath: string | null = null;
+
+    try {
+      // Upload du recto
+      rectoPath = await this.saveFile(rectoFile, devisFolderPath, 'recto.png');
+      
+      // Upload du verso
+      versoPath = await this.saveFile(versoFile, devisFolderPath, 'verso.png');
+
+      // Mettre à jour le devis avec les chemins des fichiers
+      await this.devisSimuleRepository.update(devisId, {
+        chemin_recto_assure: rectoPath,
+        chemin_verso_assure: versoPath
+      });
+
+      return {
+        recto_path: rectoPath,
+        verso_path: versoPath
+      };
+
+    } catch (error) {
+      // En cas d'erreur, nettoyer les fichiers déjà uploadés
+      await this.cleanupUploadedFiles(rectoPath, versoPath);
+      throw error;
+    }
   }
 
   /**

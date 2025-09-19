@@ -160,6 +160,20 @@ export class SimulationDevisSimplifieeResponseDto {
   informations_assure?: InformationsAssureDto;
 
   @ApiProperty({ 
+    description: 'Chemin vers la photo recto de l\'assuré (si assuré ≠ souscripteur)',
+    required: false,
+    example: 'uploads/profiles/assures/devis_123/recto.png'
+  })
+  front_document_path?: string;
+
+  @ApiProperty({ 
+    description: 'Chemin vers la photo verso de l\'assuré (si assuré ≠ souscripteur)',
+    required: false,
+    example: 'uploads/profiles/assures/devis_123/verso.png'
+  })
+  back_document_path?: string;
+
+  @ApiProperty({ 
     description: 'Liste des bénéficiaires',
     type: [CreateBeneficiaireDto],
     required: false
