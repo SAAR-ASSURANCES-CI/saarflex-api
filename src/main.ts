@@ -15,7 +15,7 @@ async function bootstrap() {
 
   app.use(helmet());
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
     prefix: '/uploads/',
   });
 
