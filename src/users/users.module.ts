@@ -2,19 +2,31 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsersController } from './users.controller';
+
+// Contrôleurs
+import { AuthController } from './controllers/auth.controller';
+import { ProfileController } from './controllers/profile.controller';
+import { UsersEventsController } from './controllers/users-events.controller';
 import { UploadController } from './controllers/upload.controller';
+
+// Services
 import { UsersService } from './users.service';
 import { UploadService } from './services/upload.service';
+
+// Entités
 import { User } from './entities/user.entity';
 import { Profile } from './entities/profile.entity';
 import { Session } from './entities/session.entity';
 import { Notification } from './entities/notification.entity';
 import { PasswordReset } from './entities/password-reset.entity';
 import { DevisSimule } from '../produits/entities/devis-simule.entity';
+
+// JWT et Guards
 import { JwtService as CustomJwtService } from '../users/jwt/jwt.service';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 import { AdminGuard } from './guards/admin.guard';
+
+// Modules
 import { EmailModule } from './email/email.module';
 
 // Services spécialisés
@@ -48,7 +60,15 @@ import { DateUtilsService } from './utils/date-utils.service';
     }),
     EmailModule,
   ],
-  controllers: [UsersController, UploadController],
+  controllers: [
+    // Contrôleurs HTTP
+    AuthController,
+    ProfileController,
+    UploadController,
+    
+    // Contrôleur événements microservices
+    UsersEventsController,
+  ],
   providers: [
     // Façade principal
     UsersService,
