@@ -17,6 +17,15 @@ import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { EmailModule } from './email/email.module';
 
+// Services spécialisés
+import { AuthService } from './services/auth.service';
+import { PasswordResetService } from './services/password-reset.service';
+import { ProfileService } from './services/profile.service';
+import { SessionService } from './services/session.service';
+import { NotificationService } from './services/notification.service';
+import { UserManagementService } from './services/user-management.service';
+import { DateUtilsService } from './utils/date-utils.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -40,7 +49,39 @@ import { EmailModule } from './email/email.module';
     EmailModule,
   ],
   controllers: [UsersController, UploadController],
-  providers: [UsersService, UploadService, CustomJwtService, JwtAuthGuard, AdminGuard],
-  exports: [UsersService, CustomJwtService, JwtAuthGuard, AdminGuard, TypeOrmModule],
+  providers: [
+    // Façade principal
+    UsersService,
+    
+    // Services spécialisés
+    AuthService,
+    PasswordResetService,
+    ProfileService,
+    SessionService,
+    NotificationService,
+    UserManagementService,
+    
+    // Utilitaires
+    DateUtilsService,
+    
+    // Autres services
+    UploadService,
+    CustomJwtService,
+    
+    // Guards
+    JwtAuthGuard,
+    AdminGuard,
+  ],
+  exports: [
+    UsersService,
+    CustomJwtService,
+    JwtAuthGuard,
+    AdminGuard,
+    TypeOrmModule,
+    // Export des services pour réutilisation dans d'autres modules
+    UserManagementService,
+    ProfileService,
+    DateUtilsService,
+  ],
 })
 export class UsersModule { }
