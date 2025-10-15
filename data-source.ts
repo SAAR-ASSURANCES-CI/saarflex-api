@@ -17,6 +17,8 @@ import { GarantieCritere } from './src/produits/entities/garantie-critere.entity
 import { TarifGarantie } from './src/produits/entities/tarif-garantie.entity';
 import { Beneficiaire } from './src/produits/entities/beneficiaire.entity';
 import { DocumentIdentite } from './src/produits/entities/document-identite.entity';
+import { Contrat } from './src/produits/entities/contrat.entity';
+import { Paiement } from './src/produits/entities/paiement.entity';
 
 dotenv.config();
 
@@ -28,11 +30,10 @@ export default new DataSource({
   password: process.env.DB_PASSWORD ?? 'saarflex_password',
   database: process.env.DB_NAME ?? 'saarflex_db',
   entities: [
-    // Entités utilisateurs
-    User, 
-    Session, 
-    Notification, 
-    Profile, 
+    User,
+    Session,
+    Notification,
+    Profile,
     PasswordReset,
     // Entités produits
     BrancheProduit,
@@ -42,11 +43,13 @@ export default new DataSource({
     GrilleTarifaire,
     Tarif,
     DevisSimule,
+    Contrat,
     Beneficiaire,
     DocumentIdentite,
     Garantie,
     GarantieCritere,
-    TarifGarantie
+    TarifGarantie,
+    Paiement
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

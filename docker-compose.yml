@@ -1,6 +1,6 @@
 services:
   api:
-    build: 
+    build:
       context: .
       target: development
     container_name: saarflex-api
@@ -27,7 +27,7 @@ services:
       retries: 5
       start_period: 60s
     restart: unless-stopped
-    command: 
+    command:
       - sh
       - -c
       - |
@@ -53,7 +53,17 @@ services:
       - saarflex_db_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD}",
+        ]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -110,7 +120,7 @@ services:
       - saarflex-network
 
   redis-insight:
-    image: redis/redisinsight:latest 
+    image: redis/redisinsight:latest
     container_name: saarflex-redis-insight
     restart: unless-stopped
     ports:
@@ -132,12 +142,12 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
-      - '--web.external-url=http://localhost:9090'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+      - "--web.external-url=http://localhost:9090"
     networks:
       - saarflex-network
     restart: unless-stopped

@@ -166,29 +166,23 @@ export class UploadService {
       throw new NotFoundException('Devis non trouvé ou vous n\'avez pas les droits');
     }
 
-    // Vérifier que l'assuré n'est pas le souscripteur
     if (devis.assure_est_souscripteur) {
       throw new BadRequestException('Cet endpoint est réservé aux cas où l\'assuré est différent du souscripteur');
     }
 
-    // Créer le nom de dossier basé sur l'ID du devis
     const folderName = `devis_${devisId}`;
     const devisFolderPath = path.join(this.uploadPath, 'assures', folderName);
 
-    // Créer le dossier devis s'il n'existe pas
     this.ensureUserDirectoryExists(devisFolderPath);
 
     let rectoPath: string | null = null;
     let versoPath: string | null = null;
 
     try {
-      // Upload du recto
       rectoPath = await this.saveFile(rectoFile, devisFolderPath, 'recto.png');
       
-      // Upload du verso
       versoPath = await this.saveFile(versoFile, devisFolderPath, 'verso.png');
 
-      // Mettre à jour le devis avec les chemins des fichiers
       await this.devisSimuleRepository.update(devisId, {
         chemin_recto_assure: rectoPath,
         chemin_verso_assure: versoPath
@@ -200,7 +194,6 @@ export class UploadService {
       };
 
     } catch (error) {
-      // En cas d'erreur, nettoyer les fichiers déjà uploadés
       await this.cleanupUploadedFiles(rectoPath, versoPath);
       throw error;
     }

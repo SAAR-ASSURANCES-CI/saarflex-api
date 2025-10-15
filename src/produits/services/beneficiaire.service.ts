@@ -11,20 +11,20 @@ export class BeneficiaireService {
     constructor(
         @InjectRepository(Beneficiaire)
         private readonly beneficiaireRepository: Repository<Beneficiaire>,
-    ) {}
+    ) { }
 
     /**
-     * Ajoute des bénéficiaires à un devis
-     * @param devisId ID du devis
+     * Ajoute des bénéficiaires à un contrat
+     * @param contratId ID du contrat
      * @param beneficiaires Liste des bénéficiaires à ajouter
      */
     async ajouterBeneficiaires(
-        devisId: string,
-        beneficiaires: Array<{nom_complet: string, lien_souscripteur: string, ordre: number}>
+        contratId: string,
+        beneficiaires: Array<{ nom_complet: string, lien_souscripteur: string, ordre: number }>
     ): Promise<void> {
         for (const beneficiaireData of beneficiaires) {
             const beneficiaire = this.beneficiaireRepository.create({
-                devis_simule_id: devisId,
+                contrat_id: contratId,
                 nom_complet: beneficiaireData.nom_complet,
                 lien_souscripteur: beneficiaireData.lien_souscripteur,
                 ordre: beneficiaireData.ordre
@@ -35,51 +35,51 @@ export class BeneficiaireService {
     }
 
     /**
-     * Récupère les bénéficiaires d'un devis
-     * @param devisId ID du devis
+     * Récupère les bénéficiaires d'un contrat
+     * @param contratId ID du contrat
      * @param ordre Ordre de tri (ASC par défaut)
      */
     async getBeneficiaires(
-        devisId: string,
+        contratId: string,
         ordre: 'ASC' | 'DESC' = 'ASC'
     ): Promise<Beneficiaire[]> {
         return await this.beneficiaireRepository.find({
-            where: { devis_simule_id: devisId },
+            where: { contrat_id: contratId },
             order: { ordre }
         });
     }
 
     /**
-     * Supprime tous les bénéficiaires d'un devis
-     * @param devisId ID du devis
+     * Supprime tous les bénéficiaires d'un contrat
+     * @param contratId ID du contrat
      */
-    async supprimerBeneficiaires(devisId: string): Promise<void> {
-        await this.beneficiaireRepository.delete({ devis_simule_id: devisId });
+    async supprimerBeneficiaires(contratId: string): Promise<void> {
+        await this.beneficiaireRepository.delete({ contrat_id: contratId });
     }
 
     /**
-     * Met à jour les bénéficiaires d'un devis
-     * @param devisId ID du devis
+     * Met à jour les bénéficiaires d'un contrat
+     * @param contratId ID du contrat
      * @param beneficiaires Nouvelle liste de bénéficiaires
      */
     async updateBeneficiaires(
-        devisId: string,
-        beneficiaires: Array<{nom_complet: string, lien_souscripteur: string, ordre: number}>
+        contratId: string,
+        beneficiaires: Array<{ nom_complet: string, lien_souscripteur: string, ordre: number }>
     ): Promise<void> {
         // Supprimer les anciens
-        await this.supprimerBeneficiaires(devisId);
-        
+        await this.supprimerBeneficiaires(contratId);
+
         // Ajouter les nouveaux
-        await this.ajouterBeneficiaires(devisId, beneficiaires);
+        await this.ajouterBeneficiaires(contratId, beneficiaires);
     }
 
     /**
-     * Compte le nombre de bénéficiaires d'un devis
-     * @param devisId ID du devis
+     * Compte le nombre de bénéficiaires d'un contrat
+     * @param contratId ID du contrat
      */
-    async compterBeneficiaires(devisId: string): Promise<number> {
+    async compterBeneficiaires(contratId: string): Promise<number> {
         return await this.beneficiaireRepository.count({
-            where: { devis_simule_id: devisId }
+            where: { contrat_id: contratId }
         });
     }
 }

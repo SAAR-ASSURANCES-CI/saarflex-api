@@ -15,6 +15,9 @@ import { ProduitsController } from './public/controllers/produits.controller';
 import { SimulationDevisSimplifieeController } from './public/controllers/simulation-devis-simplifie.controller';
 import { DevisSauvegardeController } from './public/controllers/devis-sauvegarde.controller';
 import { GrillesTarifairesController } from './public/controllers/grilles-tarifaires.controller';
+import { SouscriptionController } from './public/controllers/souscription.controller';
+import { PaiementWebhookController } from './public/controllers/paiement-webhook.controller';
+import { ContratsController } from './public/controllers/contrats.controller';
 
 // Services Admin
 import { ProduitsAdminService } from './admin/services/produits-admin.service';
@@ -38,6 +41,9 @@ import { DevisCreationService } from './services/devis-creation.service';
 import { BeneficiaireService } from './services/beneficiaire.service';
 import { DevisMapperService } from './services/devis-mapper.service';
 import { TachePlanifieeService } from './services/tache-planifiee.service';
+import { PaiementService } from './services/paiement.service';
+import { ContratService } from './services/contrat.service';
+import { SouscriptionService } from './services/souscription.service';
 
 // Entités
 import { Produit } from './entities/produit.entity';
@@ -52,6 +58,8 @@ import { GarantieCritere } from './entities/garantie-critere.entity';
 import { TarifGarantie } from './entities/tarif-garantie.entity';
 import { Beneficiaire } from './entities/beneficiaire.entity';
 import { DocumentIdentite } from './entities/document-identite.entity';
+import { Contrat } from './entities/contrat.entity';
+import { Paiement } from './entities/paiement.entity';
 
 @Module({
   imports: [
@@ -67,7 +75,9 @@ import { DocumentIdentite } from './entities/document-identite.entity';
       DocumentIdentite,
       Garantie,
       GarantieCritere,
-      TarifGarantie
+      TarifGarantie,
+      Contrat,
+      Paiement
     ]),
     UsersModule
   ],
@@ -81,7 +91,10 @@ import { DocumentIdentite } from './entities/document-identite.entity';
     ProduitsController,
     SimulationDevisSimplifieeController,
     DevisSauvegardeController,
-    GrillesTarifairesController
+    GrillesTarifairesController,
+    SouscriptionController,
+    PaiementWebhookController,
+    ContratsController
   ],
   providers: [
     // Services Admin
@@ -106,6 +119,11 @@ import { DocumentIdentite } from './entities/document-identite.entity';
     BeneficiaireService,
     DevisMapperService,
     
+    // Services de souscription et paiement
+    PaiementService,
+    ContratService,
+    SouscriptionService,
+    
     // Autres services
     TachePlanifieeService,
   ],
@@ -123,6 +141,9 @@ import { DocumentIdentite } from './entities/document-identite.entity';
     // Export des services spécialisés pour réutilisation
     BeneficiaireService,
     TarifCalculationService,
+    PaiementService,
+    ContratService,
+    SouscriptionService,
   ]
 })
 export class ProduitsModule {}

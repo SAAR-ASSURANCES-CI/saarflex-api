@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { DevisSimule } from './devis-simule.entity';
+import { Contrat } from './contrat.entity';
 
 @Entity('beneficiaires')
 export class Beneficiaire {
@@ -7,7 +7,7 @@ export class Beneficiaire {
   id: string;
 
   @Column({ type: 'uuid', nullable: false })
-  devis_simule_id: string;
+  contrat_id: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   nom_complet: string;
@@ -22,7 +22,7 @@ export class Beneficiaire {
   created_at: Date;
 
   // Relations
-  @ManyToOne(() => DevisSimule, devis => devis.beneficiaires, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'devis_simule_id' })
-  devisSimule: DevisSimule;
+  @ManyToOne(() => Contrat, contrat => contrat.beneficiaires, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'contrat_id' })
+  contrat: Contrat;
 }

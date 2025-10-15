@@ -32,10 +32,10 @@ export class Produit {
   @Column({ type: 'varchar', length: 255, nullable: true })
   icon: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: TypeProduit, 
-    nullable: false 
+  @Column({
+    type: 'enum',
+    enum: TypeProduit,
+    nullable: false
   })
   type: TypeProduit;
 
@@ -48,7 +48,7 @@ export class Produit {
   @Column({ 
     type: 'enum', 
     enum: StatutProduit, 
-    default: StatutProduit.BROUILLON 
+    default: 'brouillon' 
   })
   statut: StatutProduit;
 
@@ -67,10 +67,10 @@ export class Produit {
   @Column({ type: 'int', default: 0 })
   max_beneficiaires: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: PeriodicitePrime, 
-    default: PeriodicitePrime.MENSUEL 
+  @Column({
+    type: 'enum',
+    enum: PeriodicitePrime,
+    default: 'mensuel'
   })
   periodicite_prime: PeriodicitePrime;
 

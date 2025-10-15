@@ -1,12 +1,14 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Produit } from './produit.entity';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
-import { Beneficiaire } from './beneficiaire.entity';
 import { DocumentIdentite } from './document-identite.entity';
 
 export enum StatutDevis {
   SIMULATION = 'simulation',
   SAUVEGARDE = 'sauvegarde',
+  EN_ATTENTE_PAIEMENT = 'en_attente_paiement',
+  PAYE = 'paye',
+  CONVERTI_EN_CONTRAT = 'converti_en_contrat',
   EXPIRE = 'expire'
 }
 
@@ -39,7 +41,7 @@ export class DevisSimule {
   @Column({ 
     type: 'enum', 
     enum: StatutDevis, 
-    default: StatutDevis.SIMULATION 
+    default: 'simulation' 
   })
   statut: StatutDevis;
 
@@ -75,9 +77,6 @@ export class DevisSimule {
   @ManyToOne(() => GrilleTarifaire, grille => grille.tarifs, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'grille_tarifaire_id' })
   grilleTarifaire: GrilleTarifaire;
-
-  @OneToMany(() => Beneficiaire, beneficiaire => beneficiaire.devisSimule, { cascade: true })
-  beneficiaires: Beneficiaire[];
 
   @OneToMany(() => DocumentIdentite, document => document.devisSimule, { cascade: true })
   documents: DocumentIdentite[];

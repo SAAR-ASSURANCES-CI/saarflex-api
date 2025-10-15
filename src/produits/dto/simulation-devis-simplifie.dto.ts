@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsUUID, IsObject, IsBoolean, IsOptional, IsArray, ValidateNested, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsObject, IsBoolean, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CreateBeneficiaireDto } from './beneficiaire.dto';
 
 // DTO pour les informations d'une autre personne à assurer
 export class InformationsAssureDto {
@@ -96,17 +95,6 @@ export class CreateSimulationDevisSimplifieeDto {
   @ValidateNested()
   @Type(() => InformationsAssureDto)
   informations_assure?: InformationsAssureDto;
-
-  @ApiProperty({ 
-    description: 'Liste des bénéficiaires (si requis par le produit)',
-    type: [CreateBeneficiaireDto],
-    required: false
-  })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateBeneficiaireDto)
-  beneficiaires?: CreateBeneficiaireDto[];
 }
 
 // DTO pour la réponse de simulation
@@ -172,13 +160,6 @@ export class SimulationDevisSimplifieeResponseDto {
     example: 'uploads/profiles/assures/devis_123/verso.png'
   })
   back_document_path?: string;
-
-  @ApiProperty({ 
-    description: 'Liste des bénéficiaires',
-    type: [CreateBeneficiaireDto],
-    required: false
-  })
-  beneficiaires?: CreateBeneficiaireDto[];
 
   @ApiProperty({ 
     description: 'Date de création',

@@ -41,7 +41,7 @@ export class DevisMapperService {
             informations_assure: informationsAssure,
             front_document_path: devis.chemin_recto_assure || undefined,
             back_document_path: devis.chemin_verso_assure || undefined,
-            beneficiaires: beneficiaires,
+            // beneficiaires: beneficiaires,
             created_at: devis.created_at
         };
     }
