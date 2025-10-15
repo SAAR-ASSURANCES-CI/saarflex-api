@@ -32,7 +32,7 @@ export class DevisSauvegardeService {
   ): Promise<DevisSauvegardeDto> {
     const devis = await this.devisSimuleRepository.findOne({
       where: { id: sauvegardeDto.devis_id },
-      relations: ['produit', 'grilleTarifaire', 'beneficiaires', 'documents']
+      relations: ['produit', 'grilleTarifaire', 'documents']
     });
 
     if (!devis) {
@@ -81,7 +81,7 @@ export class DevisSauvegardeService {
         utilisateur_id: utilisateurId,
         statut: StatutDevis.SAUVEGARDE
       },
-      relations: ['produit', 'grilleTarifaire', 'beneficiaires', 'documents'],
+      relations: ['produit', 'grilleTarifaire', 'documents'],
       order: { created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit
@@ -194,7 +194,6 @@ export class DevisSauvegardeService {
       .createQueryBuilder('devis')
       .leftJoinAndSelect('devis.produit', 'produit')
       .leftJoinAndSelect('devis.grilleTarifaire', 'grilleTarifaire')
-      .leftJoinAndSelect('devis.beneficiaires', 'beneficiaires')
       .leftJoinAndSelect('devis.documents', 'documents')
       .where('devis.utilisateur_id = :utilisateurId', { utilisateurId })
       .andWhere('devis.statut = :statut', { statut: StatutDevis.SAUVEGARDE });
@@ -285,7 +284,6 @@ export class DevisSauvegardeService {
       criteres_utilisateur: devis.criteres_utilisateur,
       informations_assure: devis.informations_assure,
       assure_est_souscripteur: devis.assure_est_souscripteur,
-      nombre_beneficiaires: devis.beneficiaires?.length || 0,
       nombre_documents: devis.documents?.length || 0,
       statut: devis.statut,
       created_at: devis.created_at,

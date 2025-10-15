@@ -10,7 +10,6 @@ import { DevisValidationService } from '../../services/devis-validation.service'
 import { TarifCalculationService } from '../../services/tarif-calculation.service';
 import { CriteresEnrichmentService } from '../../services/criteres-enrichment.service';
 import { DevisCreationService } from '../../services/devis-creation.service';
-import { BeneficiaireService } from '../../services/beneficiaire.service';
 import { DevisMapperService } from '../../services/devis-mapper.service';
 
 /**
@@ -32,7 +31,6 @@ export class SimulationDevisSimplifieeService {
     private readonly tarifCalculationService: TarifCalculationService,
     private readonly criteresEnrichmentService: CriteresEnrichmentService,
     private readonly devisCreationService: DevisCreationService,
-    private readonly beneficiaireService: BeneficiaireService,
     private readonly devisMapperService: DevisMapperService,
   ) {}
 
@@ -90,12 +88,7 @@ export class SimulationDevisSimplifieeService {
       utilisateurId
     );
 
-    // 7. Ajouter les bénéficiaires si nécessaire
-    if (produit.necessite_beneficiaires && simulationDto.beneficiaires && simulationDto.beneficiaires.length > 0) {
-      await this.beneficiaireService.ajouterBeneficiaires(devisSimule.id, simulationDto.beneficiaires);
-    }
-
-    // 8. Mapper et retourner la réponse
+    // 7. Mapper et retourner la réponse
     return await this.devisMapperService.mapToResponseDto(
       devisSimule, 
       produit, 

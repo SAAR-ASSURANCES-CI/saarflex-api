@@ -119,11 +119,11 @@ export class DevisSauvegardeDto {
   })
   notes?: string;
 
-  @ApiProperty({
-    description: 'Nombre de bénéficiaires associés',
-    example: 2
-  })
-  nombre_beneficiaires: number;
+  // @ApiProperty({
+  //   description: 'Nombre de bénéficiaires associés',
+  //   example: 2
+  // })
+  // nombre_beneficiaires: number;
 
   @ApiProperty({
     description: 'Nombre de documents d\'identité associés',

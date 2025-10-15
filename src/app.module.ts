@@ -24,6 +24,8 @@ import { GarantieCritere } from './produits/entities/garantie-critere.entity';
 import { TarifGarantie } from './produits/entities/tarif-garantie.entity';
 import { Beneficiaire } from './produits/entities/beneficiaire.entity';
 import { DocumentIdentite } from './produits/entities/document-identite.entity';
+import { Contrat } from './produits/entities/contrat.entity';
+import { Paiement } from './produits/entities/paiement.entity';
 
 @Module({
   imports: [
@@ -43,13 +45,11 @@ import { DocumentIdentite } from './produits/entities/document-identite.entity';
         password: configService.get('DB_PASSWORD') ?? 'saarflex_password',
         database: configService.get('DB_NAME') ?? 'saarflex_db',
         entities: [
-          // Entités utilisateurs
           User, 
           Profile, 
           Session, 
           Notification, 
           PasswordReset,
-          // Entités produits
           BrancheProduit,
           Produit,
           CritereTarification,
@@ -57,11 +57,13 @@ import { DocumentIdentite } from './produits/entities/document-identite.entity';
           GrilleTarifaire,
           Tarif,
           DevisSimule,
+          Contrat,
           Beneficiaire,
           DocumentIdentite,
           Garantie,
           GarantieCritere,
-          TarifGarantie
+          TarifGarantie,
+          Paiement
         ],
         migrations: ['dist/migrations/*.js'],
         migrationsRun: true,
