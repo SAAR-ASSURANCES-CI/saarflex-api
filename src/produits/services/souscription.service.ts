@@ -55,9 +55,9 @@ export class SouscriptionService {
       throw new NotFoundException('Devis non trouvé');
     }
 
-    if (devis.statut !== StatutDevis.SAUVEGARDE) {
-      throw new BadRequestException('Le devis doit être sauvegardé avant de pouvoir être souscrit');
-    }
+    // if (devis.statut !== StatutDevis.SAUVEGARDE) {
+    //   throw new BadRequestException('Le devis doit être sauvegardé avant de pouvoir être souscrit');
+    // }
 
     //vérification si le produit nécessite des bénéficiaires
     if (devis.produit.necessite_beneficiaires) {
