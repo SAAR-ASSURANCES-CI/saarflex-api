@@ -38,9 +38,9 @@ export class PaiementService {
             throw new NotFoundException('Devis non trouvé');
         }
 
-        if (devis.statut !== StatutDevis.SAUVEGARDE) {
-            throw new BadRequestException('Le devis doit être sauvegardé avant de pouvoir être payé');
-        }
+        // if (devis.statut !== StatutDevis.SAUVEGARDE) {
+        //     throw new BadRequestException('Le devis doit être sauvegardé avant de pouvoir être payé');
+        // }
 
         const referencePaiement = this.genererReferencePaiement();
 
