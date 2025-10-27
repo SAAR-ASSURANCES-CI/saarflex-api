@@ -12,6 +12,7 @@ import { Session } from './users/entities/session.entity';
 import { PasswordReset } from './users/entities/password-reset.entity';
 import { Profile } from './users/entities/profile.entity';
 import { EmailModule } from './users/email/email.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { BrancheProduit } from './produits/entities/branche-produit.entity';
 import { Produit } from './produits/entities/produit.entity';
 import { CritereTarification } from './produits/entities/critere-tarification.entity';
@@ -73,7 +74,8 @@ import { Paiement } from './produits/entities/paiement.entity';
     }),
     UsersModule,
     ProduitsModule,
-    EmailModule
+    EmailModule,
+    DashboardModule
   ],
   controllers: [AppController],
   providers: [

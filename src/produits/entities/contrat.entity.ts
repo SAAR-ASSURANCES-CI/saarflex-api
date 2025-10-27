@@ -3,6 +3,7 @@ import { Produit, TypeProduit, PeriodicitePrime } from './produit.entity';
 import { DevisSimule } from './devis-simule.entity';
 import type { Beneficiaire } from './beneficiaire.entity';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum StatutContrat {
     ACTIF = 'actif',
@@ -17,7 +18,7 @@ export class Contrat {
     id: string;
 
     @Column({ type: 'varchar', length: 50, unique: true, nullable: false })
-    numero_contrat: string; // Ex: VIE-2025-000001, NONVIE-2025-000001
+    numero_contrat: string; 
 
     @Column({ type: 'uuid', nullable: false })
     devis_simule_id: string;
@@ -96,6 +97,10 @@ export class Contrat {
     @ManyToOne(() => GrilleTarifaire, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'grille_tarifaire_id' })
     grilleTarifaire: GrilleTarifaire;
+
+    @ManyToOne(() => User, { nullable: false })
+    @JoinColumn({ name: 'utilisateur_id' })
+    utilisateur: User;
 
     @OneToMany('Beneficiaire', 'contrat', { cascade: true })
     beneficiaires: any[];
