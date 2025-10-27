@@ -11,18 +11,30 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'debug'],
   });
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
 
-  app.use(helmet());
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+    'http://localhost:3002',
+    'http://localhost:3001',
+  ];
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    })
+  );
 
   app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
     prefix: '/uploads/',
   });
 
-  app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
-  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -34,8 +46,8 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('SAARFLEX')
-      .setDescription('API backend de l\' Saarflex')
+      .setTitle('SAARCIFLEX')
+      .setDescription('API backend de l\' Saarciflex')
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('Saarflex')
@@ -63,7 +75,7 @@ async function bootstrap() {
   });
 
   //start microservice
- await app.startAllMicroservices();
+  await app.startAllMicroservices();
 
   await app.listen(process.env.PORT ?? 3000);
 }
