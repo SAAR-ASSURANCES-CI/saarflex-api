@@ -19,7 +19,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "docker:up": "docker compose up -d --build",
+    "docker:up": "docker compose up --build",
     "docker:down": "docker compose down -v",
     "docker:logs": "docker compose logs -f api | cat",
     "db:console": "docker exec -it users-db mysql -usaarflex -psaarflex users_db",

@@ -5,12 +5,15 @@ import {
     HttpStatus,
     HttpException,
     Ip,
+    UseGuards,
+    Request,
 } from '@nestjs/common';
 import {
     ApiTags,
     ApiOperation,
     ApiResponse,
     ApiBody,
+    ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UsersService } from '../users.service';
 import { RegisterDto, RegisterResponseDto } from '../dto/register.dto';
@@ -18,6 +21,7 @@ import { LoginDto, LoginResponseDto } from '../dto/login.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { VerifyOtpDto } from '../dto/verify-otp.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 
 /**
  * Contrôleur responsable des endpoints d'authentification
@@ -187,6 +191,40 @@ export class AuthController {
     ): Promise<{ status: string; message: string; }> {
         await this.userService.resetPassword(dto);
         return { status: 'success', message: 'Mot de passe mis à jour avec succès' };
+    }
+
+    /**
+     * Déconnexion de l'utilisateur
+     */
+    @Post('logout')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ 
+        summary: 'Déconnexion utilisateur',
+        description: 'Invalide toutes les sessions actives de l\'utilisateur connecté'
+    })
+    @ApiResponse({ status: 200, description: 'Déconnexion réussie' })
+    @ApiResponse({ status: 401, description: 'Non authentifié' })
+    async logout(
+        @Request() req: any
+    ): Promise<{ status: string; message: string }> {
+        try {
+            const userId = req.user?.id;
+            await this.userService.invalidateAllUserSessions(userId);
+            return {
+                status: 'success',
+                message: 'Déconnexion réussie'
+            };
+        } catch (error) {
+            throw new HttpException(
+                {
+                    status: 'error',
+                    message: 'Erreur lors de la déconnexion',
+                    error: error.message,
+                },
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
     }
 }
 
