@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, On
 import { Produit } from './produit.entity';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
 import { DocumentIdentite } from './document-identite.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum StatutDevis {
   SIMULATION = 'simulation',
@@ -58,18 +59,17 @@ export class DevisSimule {
   informations_assure: Record<string, any>;
 
   @Column({ type: 'boolean', default: true })
-  assure_est_souscripteur: boolean; // true = pour moi-même, false = autre personne
+  assure_est_souscripteur: boolean;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  chemin_recto_assure: string | null; // Chemin vers la photo recto de l'assuré
+  chemin_recto_assure: string | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  chemin_verso_assure: string | null; // Chemin vers la photo verso de l'assuré
+  chemin_verso_assure: string | null;
 
   @CreateDateColumn()
   created_at: Date;
 
-  // Relations
   @ManyToOne(() => Produit, produit => produit.devis, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'produit_id' })
   produit: Produit;
@@ -80,4 +80,8 @@ export class DevisSimule {
 
   @OneToMany(() => DocumentIdentite, document => document.devisSimule, { cascade: true })
   documents: DocumentIdentite[];
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'utilisateur_id' })
+  utilisateur: User;
 }
