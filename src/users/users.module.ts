@@ -84,7 +84,6 @@ import { DateUtilsService } from './utils/date-utils.service';
     // Utilitaires
     DateUtilsService,
     
-    // Autres services
     UploadService,
     CustomJwtService,
     
@@ -98,9 +97,9 @@ import { DateUtilsService } from './utils/date-utils.service';
     JwtAuthGuard,
     AdminGuard,
     TypeOrmModule,
-    // Export des services pour réutilisation dans d'autres modules
     UserManagementService,
     ProfileService,
+    SessionService,
     DateUtilsService,
   ],
 })
