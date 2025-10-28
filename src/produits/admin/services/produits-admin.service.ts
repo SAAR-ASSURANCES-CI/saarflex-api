@@ -64,18 +64,52 @@ export class ProduitsAdminService {
 
         const savedProduit = await this.produitRepository.save(produit);
 
-        return this.mapToAdminDto(savedProduit, branche, 0, 0, 0);
+        // Recharger avec relations
+        const produitWithRelations = await this.produitRepository.findOne({
+            where: { id: savedProduit.id },
+            relations: ['branche', 'createur']
+        });
+
+        if (!produitWithRelations) {
+            throw new NotFoundException(`Produit créé mais non retrouvé`);
+        }
+
+        return this.mapToAdminDto(produitWithRelations, 0, 0, 0);
     }
 
     /**
      * Récupère tous les produits avec pagination et filtres (pour l'admin)
      */
-    async findAll(page: number = 1, limit: number = 10): Promise<ProduitsAdminResponseDto> {
+    async findAll(
+        page: number = 1, 
+        limit: number = 10,
+        search?: string,
+        branch_id?: string,
+        statut?: string
+    ): Promise<ProduitsAdminResponseDto> {
         const skip = (page - 1) * limit;
 
-        const [produits, total] = await this.produitRepository
+        const queryBuilder = this.produitRepository
             .createQueryBuilder('produit')
             .leftJoinAndSelect('produit.branche', 'branche')
+            .leftJoinAndSelect('produit.createur', 'createur');
+
+        // Filtre par recherche (nom du produit)
+        if (search && search.trim() !== '') {
+            queryBuilder.andWhere('produit.nom LIKE :search', { search: `%${search}%` });
+        }
+
+        // Filtre par branche
+        if (branch_id && branch_id.trim() !== '') {
+            queryBuilder.andWhere('produit.branch_id = :branch_id', { branch_id });
+        }
+
+        // Filtre par statut
+        if (statut && statut.trim() !== '') {
+            queryBuilder.andWhere('produit.statut = :statut', { statut });
+        }
+
+        const [produits, total] = await queryBuilder
             .orderBy('produit.created_at', 'DESC')
             .skip(skip)
             .take(limit)
@@ -91,7 +125,6 @@ export class ProduitsAdminService {
 
                 return this.mapToAdminDto(
                     produit,
-                    produit.branche,
                     criteresCount,
                     grillesCount,
                     devisCount
@@ -114,7 +147,7 @@ export class ProduitsAdminService {
     async findOne(id: string): Promise<ProduitAdminDto> {
         const produit = await this.produitRepository.findOne({
             where: { id },
-            relations: ['branche']
+            relations: ['branche', 'createur']
         });
 
         if (!produit) {
@@ -134,7 +167,6 @@ export class ProduitsAdminService {
 
         return this.mapToAdminDto(
             produit,
-            produit.branche,
             criteresCount,
             grillesCount,
             devisCount
@@ -204,9 +236,18 @@ export class ProduitsAdminService {
             this.devisRepository.count({ where: { produit: { id } } })
         ]);
 
+        // Recharger avec relations
+        const produitWithRelations = await this.produitRepository.findOne({
+            where: { id: updatedProduit.id },
+            relations: ['branche', 'createur']
+        });
+
+        if (!produitWithRelations) {
+            throw new NotFoundException(`Produit mis à jour mais non retrouvé`);
+        }
+
         return this.mapToAdminDto(
-            updatedProduit,
-            branche,
+            produitWithRelations,
             criteresCount,
             grillesCount,
             devisCount
@@ -251,7 +292,7 @@ export class ProduitsAdminService {
     async changeStatus(id: string, newStatus: string): Promise<ProduitAdminDto> {
         const produit = await this.produitRepository.findOne({
             where: { id },
-            relations: ['branche']
+            relations: ['branche', 'createur']
         });
 
         if (!produit) {
@@ -273,7 +314,6 @@ export class ProduitsAdminService {
 
         return this.mapToAdminDto(
             updatedProduit,
-            produit.branche,
             criteresCount,
             grillesCount,
             devisCount
@@ -285,7 +325,6 @@ export class ProduitsAdminService {
      */
     private mapToAdminDto(
         produit: Produit,
-        branche: BrancheProduit,
         nombreCriteres: number,
         nombreGrilles: number,
         nombreDevis: number
@@ -301,14 +340,19 @@ export class ProduitsAdminService {
             created_at: produit.created_at,
             updated_at: produit.updated_at,
             created_by: produit.created_by,
+            createur: produit.createur ? {
+                id: produit.createur.id,
+                nom: produit.createur.nom,
+                email: produit.createur.email
+            } : null,
             necessite_beneficiaires: produit.necessite_beneficiaires,
             max_beneficiaires: produit.max_beneficiaires,
             periodicite_prime: produit.periodicite_prime,
-            branche: branche ? {
-                id: branche.id,
-                nom: branche.nom,
-                type: branche.type,
-                description: branche.description
+            branche: produit.branche ? {
+                id: produit.branche.id,
+                nom: produit.branche.nom,
+                type: produit.branche.type,
+                description: produit.branche.description
             } : null,
             nombre_criteres: nombreCriteres,
             nombre_grilles: nombreGrilles,

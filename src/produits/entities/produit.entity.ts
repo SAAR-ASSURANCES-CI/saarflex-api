@@ -4,6 +4,7 @@ import { CritereTarification } from './critere-tarification.entity';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
 import { DevisSimule } from './devis-simule.entity';
 import { Garantie } from './garantie.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum TypeProduit {
   VIE = 'vie',
@@ -77,6 +78,10 @@ export class Produit {
   @ManyToOne(() => BrancheProduit, { nullable: true })
   @JoinColumn({ name: 'branch_id' })
   branche: BrancheProduit;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'created_by' })
+  createur: User;
 
   @OneToMany(() => CritereTarification, critere => critere.produit, { cascade: true })
   criteres: CritereTarification[];

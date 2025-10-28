@@ -235,6 +235,13 @@ export class ProduitAdminDto {
   @ApiProperty({ description: 'ID de l\'utilisateur qui a créé le produit' })
   created_by: string;
 
+  @ApiProperty({ description: 'Informations du créateur du produit', nullable: true })
+  createur: {
+    id: string;
+    nom: string;
+    email: string;
+  } | null;
+
   @ApiProperty({ 
     description: 'Le produit nécessite-t-il des bénéficiaires ?',
     example: true

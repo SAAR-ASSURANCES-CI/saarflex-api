@@ -85,7 +85,7 @@ export class ProduitsAdminController {
   @Get()
   @ApiOperation({ 
     summary: 'Récupérer tous les produits (admin)',
-    description: 'Endpoint réservé aux administrateurs pour lister tous les produits avec pagination simple'
+    description: 'Endpoint réservé aux administrateurs pour lister tous les produits avec pagination et filtres'
   })
   @ApiQuery({ 
     name: 'page', 
@@ -98,6 +98,24 @@ export class ProduitsAdminController {
     required: false, 
     description: 'Nombre d\'éléments par page (défaut: 10)',
     example: 10
+  })
+  @ApiQuery({ 
+    name: 'search', 
+    required: false, 
+    description: 'Recherche par nom de produit',
+    example: 'Auto'
+  })
+  @ApiQuery({ 
+    name: 'branch_id', 
+    required: false, 
+    description: 'Filtrer par ID de branche',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiQuery({ 
+    name: 'statut', 
+    required: false, 
+    description: 'Filtrer par statut (brouillon, actif, inactif)',
+    example: 'actif'
   })
   @ApiResponse({ 
     status: 200, 
@@ -114,9 +132,12 @@ export class ProduitsAdminController {
   })
   async findAll(
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10
+    @Query('limit') limit: number = 10,
+    @Query('search') search?: string,
+    @Query('branch_id') branch_id?: string,
+    @Query('statut') statut?: string
   ): Promise<{ status: string; data: ProduitsAdminResponseDto }> {
-    const produits = await this.produitsAdminService.findAll(page, limit);
+    const produits = await this.produitsAdminService.findAll(page, limit, search, branch_id, statut);
     
     return {
       status: 'success',
