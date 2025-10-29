@@ -25,6 +25,7 @@ import { DevisSimule } from '../produits/entities/devis-simule.entity';
 import { JwtService as CustomJwtService } from '../users/jwt/jwt.service';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 import { AdminGuard } from './guards/admin.guard';
+import { AdminOrAgentGuard } from './guards/admin-or-agent.guard';
 
 // Modules
 import { EmailModule } from './email/email.module';
@@ -90,12 +91,14 @@ import { DateUtilsService } from './utils/date-utils.service';
     // Guards
     JwtAuthGuard,
     AdminGuard,
+    AdminOrAgentGuard,
   ],
   exports: [
     UsersService,
     CustomJwtService,
     JwtAuthGuard,
     AdminGuard,
+    AdminOrAgentGuard,
     TypeOrmModule,
     UserManagementService,
     ProfileService,

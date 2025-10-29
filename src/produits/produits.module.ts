@@ -9,6 +9,8 @@ import { CriteresAdminController } from './admin/controllers/criteres-admin.cont
 import { GarantiesAdminController } from './admin/controllers/garanties-admin.controller';
 import { GrillesTarifairesAdminController } from './admin/controllers/grilles-tarifaires-admin.controller';
 import { TarifsAdminController } from './admin/controllers/tarifs-admin.controller';
+import { DevisAdminController } from './admin/controllers/devis-admin.controller';
+import { DevisAgentController } from './admin/controllers/devis-agent.controller';
 
 // Contrôleurs Public
 import { ProduitsController } from './public/controllers/produits.controller';
@@ -26,6 +28,7 @@ import { CriteresAdminService } from './admin/services/criteres-admin.service';
 import { GarantiesAdminService } from './admin/services/garanties-admin.service';
 import { GrillesTarifairesAdminService } from './admin/services/grilles-tarifaires-admin.service';
 import { TarifsAdminService } from './admin/services/tarifs-admin.service';
+import { DevisAdminService } from './admin/services/devis-admin.service';
 
 // Services Public
 import { ProduitsService } from './public/services/produits.service';
@@ -60,6 +63,7 @@ import { Beneficiaire } from './entities/beneficiaire.entity';
 import { DocumentIdentite } from './entities/document-identite.entity';
 import { Contrat } from './entities/contrat.entity';
 import { Paiement } from './entities/paiement.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [
@@ -77,7 +81,8 @@ import { Paiement } from './entities/paiement.entity';
       GarantieCritere,
       TarifGarantie,
       Contrat,
-      Paiement
+      Paiement,
+      User
     ]),
     UsersModule
   ],
@@ -88,6 +93,8 @@ import { Paiement } from './entities/paiement.entity';
     GarantiesAdminController,
     GrillesTarifairesAdminController,
     TarifsAdminController,
+    DevisAdminController,
+    DevisAgentController,
     ProduitsController,
     SimulationDevisSimplifieeController,
     DevisSauvegardeController,
@@ -104,6 +111,7 @@ import { Paiement } from './entities/paiement.entity';
     GarantiesAdminService,
     GrillesTarifairesAdminService,
     TarifsAdminService,
+    DevisAdminService,
     
     // Services Public
     ProduitsService,
