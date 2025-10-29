@@ -36,6 +36,41 @@ services:
         dockerize -wait tcp://redis:6379 -timeout 60s -wait-retry-interval 2s
         echo "All services ready. Starting application..."
         exec pnpm run start:dev
+    develop:
+      watch:
+        # Synchroniser le code source pour watch mode NestJS
+        - action: sync
+          path: ./src
+          target: /app/src
+          initial_sync: true
+          ignore:
+            - node_modules/
+            - dist/
+            - "*.test.ts"
+            - "*.spec.ts"
+            - "**/__tests__/**"
+            - "**/*.spec.ts"
+        # Synchroniser les fichiers de configuration TypeScript
+        - action: sync
+          path: ./tsconfig.json
+          target: /app/tsconfig.json
+        - action: sync
+          path: ./nest-cli.json
+          target: /app/nest-cli.json
+        - action: sync
+          path: ./tsconfig.build.json
+          target: /app/tsconfig.build.json
+        # Reconstruire l'image si les dépendances changent
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        - action: rebuild
+          path: ./Dockerfile
+        # Redémarrer si docker-compose.yml change
+        - action: sync+restart
+          path: ./docker-compose.yml
+          target: /app/docker-compose.yml
     networks:
       - saarflex-network
 
