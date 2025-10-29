@@ -12,6 +12,10 @@ RUN apk add --no-cache \
 # Activation de pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
+# Créer un utilisateur non-root 
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodeuser -u 1001 -G nodejs
+
 WORKDIR /app
 
 # Étape de développement
@@ -23,8 +27,18 @@ COPY package.json pnpm-lock.yaml ./
 # Installation des dépendances
 RUN pnpm install --frozen-lockfile
 
-# Copie du code source
-COPY . .
+# Créer les dossiers nécessaires avec les bonnes permissions
+RUN mkdir -p /app/dist && \
+    chown -R nodeuser:nodejs /app
+
+# Copie du code source avec les bonnes permissions pour watch
+COPY --chown=nodeuser:nodejs . .
+
+# S'assurer que l'utilisateur peut écrire dans /app
+RUN chown -R nodeuser:nodejs /app
+
+# Basculer vers l'utilisateur non-root
+USER nodeuser
 
 # Port d'exposition
 EXPOSE 3000
@@ -40,19 +54,15 @@ COPY package.json pnpm-lock.yaml ./
 # Installation des dépendances de production uniquement
 RUN pnpm install --frozen-lockfile --prod
 
-# Copie du code source et build
-COPY . .
+# Copie du code source avec les bonnes permissions
+COPY --chown=nodeuser:nodejs . .
 RUN pnpm build
 
 # Nettoyage
 RUN rm -rf src/ node_modules/.cache && \
     pnpm store prune
 
-
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodeuser -u 1001 -G nodejs
-
-
+# S'assurer que l'utilisateur peut écrire dans /app
 RUN chown -R nodeuser:nodejs /app
 USER nodeuser
 
