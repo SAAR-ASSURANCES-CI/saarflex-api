@@ -11,6 +11,8 @@ import { GrillesTarifairesAdminController } from './admin/controllers/grilles-ta
 import { TarifsAdminController } from './admin/controllers/tarifs-admin.controller';
 import { DevisAdminController } from './admin/controllers/devis-admin.controller';
 import { DevisAgentController } from './admin/controllers/devis-agent.controller';
+import { ContratsAdminController } from './admin/controllers/contrats-admin.controller';
+import { ContratsAgentController } from './admin/controllers/contrats-agent.controller';
 
 // Contrôleurs Public
 import { ProduitsController } from './public/controllers/produits.controller';
@@ -29,6 +31,7 @@ import { GarantiesAdminService } from './admin/services/garanties-admin.service'
 import { GrillesTarifairesAdminService } from './admin/services/grilles-tarifaires-admin.service';
 import { TarifsAdminService } from './admin/services/tarifs-admin.service';
 import { DevisAdminService } from './admin/services/devis-admin.service';
+import { ContratsAdminService } from './admin/services/contrats-admin.service';
 
 // Services Public
 import { ProduitsService } from './public/services/produits.service';
@@ -95,6 +98,8 @@ import { User } from '../users/entities/user.entity';
     TarifsAdminController,
     DevisAdminController,
     DevisAgentController,
+    ContratsAdminController,
+    ContratsAgentController,
     ProduitsController,
     SimulationDevisSimplifieeController,
     DevisSauvegardeController,
@@ -112,6 +117,7 @@ import { User } from '../users/entities/user.entity';
     GrillesTarifairesAdminService,
     TarifsAdminService,
     DevisAdminService,
+    ContratsAdminService,
     
     // Services Public
     ProduitsService,
