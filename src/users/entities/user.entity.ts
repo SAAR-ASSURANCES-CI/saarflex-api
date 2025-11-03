@@ -43,6 +43,12 @@ export class User {
     @Column({ type: 'boolean', default: true })
     statut: boolean;
 
+    @Column({ type: 'boolean', default: true })
+    premiere_connexion: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    mot_de_passe_temporaire: boolean;
+
     @Column({ type: 'datetime', nullable: true })
     derniere_connexion: Date;
 

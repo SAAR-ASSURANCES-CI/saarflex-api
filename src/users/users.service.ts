@@ -91,6 +91,20 @@ export class UsersService {
         return this.passwordResetService.resetPassword(dto);
     }
 
+    /**
+     * Change le mot de passe lors de la première connexion
+     * @param userId ID de l'utilisateur
+     * @param motDePasseActuel Mot de passe temporaire actuel
+     * @param nouveauMotDePasse Nouveau mot de passe
+     */
+    async changePasswordOnFirstLogin(
+        userId: string,
+        motDePasseActuel: string,
+        nouveauMotDePasse: string
+    ): Promise<void> {
+        return this.authService.changePasswordOnFirstLogin(userId, motDePasseActuel, nouveauMotDePasse);
+    }
+
     // ==================== Gestion profil ====================
 
     /**

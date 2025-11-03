@@ -73,6 +73,8 @@ export class AuthService {
                 mot_de_passe: hashedPassword,
                 type_utilisateur: registerDto.type_utilisateur || UserType.CLIENT,
                 statut: true,
+                premiere_connexion: false, // Les utilisateurs normaux n'ont pas besoin de changer leur mot de passe
+                mot_de_passe_temporaire: false,
                 derniere_connexion: new Date(),
             });
 
@@ -153,8 +155,50 @@ export class AuthService {
             date_creation: user.date_creation,
             token,
             token_type: 'Bearer',
-            expires_in: 86400, // 24 heures
+            expires_in: 22400, // 6 heures
+            premiere_connexion: user.premiere_connexion || false,
+            must_change_password: user.premiere_connexion || false,
         };
+    }
+
+    /**
+     * Change le mot de passe lors de la première connexion
+     * @param userId ID de l'utilisateur
+     * @param motDePasseActuel Mot de passe temporaire actuel
+     * @param nouveauMotDePasse Nouveau mot de passe
+     * @throws UnauthorizedException si le mot de passe actuel est incorrect
+     * @throws BadRequestException si l'utilisateur n'a pas besoin de changer son mot de passe
+     */
+    async changePasswordOnFirstLogin(
+        userId: string,
+        motDePasseActuel: string,
+        nouveauMotDePasse: string
+    ): Promise<void> {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new UnauthorizedException('Utilisateur non trouvé');
+        }
+
+        if (!user.premiere_connexion) {
+            throw new BadRequestException('Vous n\'êtes pas tenu de changer votre mot de passe');
+        }
+
+        const isPasswordValid = await bcrypt.compare(motDePasseActuel, user.mot_de_passe);
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Mot de passe actuel incorrect');
+        }
+
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(nouveauMotDePasse, saltRounds);
+
+        user.mot_de_passe = hashedPassword;
+        user.premiere_connexion = false;
+        user.mot_de_passe_temporaire = false;
+
+        await this.userRepository.save(user);
     }
 
     /**

@@ -21,6 +21,7 @@ import { LoginDto, LoginResponseDto } from '../dto/login.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { VerifyOtpDto } from '../dto/verify-otp.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { ChangePasswordFirstLoginDto } from '../dto/change-password-first-login.dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 
 /**
@@ -191,6 +192,50 @@ export class AuthController {
     ): Promise<{ status: string; message: string; }> {
         await this.userService.resetPassword(dto);
         return { status: 'success', message: 'Mot de passe mis à jour avec succès' };
+    }
+
+    /**
+     * Change le mot de passe lors de la première connexion
+     */
+    @Post('change-password-first-login')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({
+        summary: 'Changer le mot de passe lors de la première connexion',
+        description: 'Permet à un utilisateur (notamment un agent) de changer son mot de passe temporaire lors de sa première connexion',
+    })
+    @ApiBody({ type: ChangePasswordFirstLoginDto })
+    @ApiResponse({ status: 200, description: 'Mot de passe changé avec succès' })
+    @ApiResponse({ status: 400, description: 'Données invalides ou pas besoin de changer le mot de passe' })
+    @ApiResponse({ status: 401, description: 'Non authentifié ou mot de passe actuel incorrect' })
+    async changePasswordOnFirstLogin(
+        @Request() req: any,
+        @Body() dto: ChangePasswordFirstLoginDto
+    ): Promise<{ status: string; message: string }> {
+        try {
+            const userId = req.user?.id;
+            await this.userService.changePasswordOnFirstLogin(
+                userId,
+                dto.mot_de_passe_actuel,
+                dto.nouveau_mot_de_passe
+            );
+            return {
+                status: 'success',
+                message: 'Mot de passe changé avec succès'
+            };
+        } catch (error) {
+            if (error instanceof HttpException) {
+                throw error;
+            }
+            throw new HttpException(
+                {
+                    status: 'error',
+                    message: 'Erreur lors du changement de mot de passe',
+                    error: error.message,
+                },
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
     }
 
     /**

@@ -100,6 +100,62 @@ export class EmailService {
 
 
     /**
+     * Envoie un email avec les identifiants de connexion à un agent
+     * @param nom Nom de l'agent
+     * @param email Email de l'agent
+     * @param motDePasse Mot de passe temporaire
+     */
+    async sendAgentCredentials(nom: string, email: string, motDePasse: string): Promise<void> {
+        const html = this.emailTemplateService.getAgentCredentialsTemplate(nom, email, motDePasse);
+        
+        const mailOptions = {
+            from: {
+                name: 'SAARFLEX',
+                address: this.configService.get('SMTP_USER'),
+            },
+            to: email,
+            subject: 'Vos informations de connexion - SAARCIFLEX',
+            html,
+        };
+
+        try {
+            const result = await this.transporter.sendMail(mailOptions);
+            this.logger.log(`Email d'identifiants envoyé à ${email}: ${result.messageId}`);
+        } catch (error) {
+            this.logger.error(`Erreur lors de l'envoi de l'email d'identifiants à ${email}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Envoie un email de réinitialisation de mot de passe à un agent (admin-initiated)
+     * @param nom Nom de l'agent
+     * @param email Email de l'agent
+     * @param nouveauMotDePasse Nouveau mot de passe temporaire
+     */
+    async sendAgentPasswordReset(nom: string, email: string, nouveauMotDePasse: string): Promise<void> {
+        const html = this.emailTemplateService.getAgentPasswordResetTemplate(nom, email, nouveauMotDePasse);
+        
+        const mailOptions = {
+            from: {
+                name: 'SAARFLEX',
+                address: this.configService.get('SMTP_USER'),
+            },
+            to: email,
+            subject: 'Réinitialisation de votre mot de passe - SAARCIFLEX',
+            html,
+        };
+
+        try {
+            const result = await this.transporter.sendMail(mailOptions);
+            this.logger.log(`Email de réinitialisation envoyé à ${email}: ${result.messageId}`);
+        } catch (error) {
+            this.logger.error(`Erreur lors de l'envoi de l'email de réinitialisation à ${email}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * Envoie un email générique
      * @param to Destinataire
      * @param subject Sujet de l'email
