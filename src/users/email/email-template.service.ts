@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { User } from '../entities/user.entity';
 import { getWelcomeEmailTemplate } from './templates/welcome.template';
 import { getPasswordResetTemplate } from './templates/password-reset.template';
+import { getAgentCredentialsTemplate } from './templates/agent-credentials.template';
+import { getAgentPasswordResetTemplate } from './templates/agent-password-reset.template';
 
 /**
  * Service responsable de la génération des templates d'emails
@@ -24,6 +26,28 @@ export class EmailTemplateService {
      */
     getPasswordResetTemplate(code: string): string {
         return getPasswordResetTemplate(code);
+    }
+
+    /**
+     * Génère le template HTML pour l'email d'identifiants agent
+     * @param nom Nom de l'agent
+     * @param email Email de l'agent
+     * @param motDePasse Mot de passe temporaire
+     * @returns Template HTML
+     */
+    getAgentCredentialsTemplate(nom: string, email: string, motDePasse: string): string {
+        return getAgentCredentialsTemplate(nom, email, motDePasse);
+    }
+
+    /**
+     * Génère le template HTML pour l'email de réinitialisation de mot de passe agent
+     * @param nom Nom de l'agent
+     * @param email Email de l'agent
+     * @param nouveauMotDePasse Nouveau mot de passe temporaire
+     * @returns Template HTML
+     */
+    getAgentPasswordResetTemplate(nom: string, email: string, nouveauMotDePasse: string): string {
+        return getAgentPasswordResetTemplate(nom, email, nouveauMotDePasse);
     }
 
     /**

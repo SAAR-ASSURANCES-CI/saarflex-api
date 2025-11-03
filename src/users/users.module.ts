@@ -8,6 +8,7 @@ import { AuthController } from './controllers/auth.controller';
 import { ProfileController } from './controllers/profile.controller';
 import { UsersEventsController } from './controllers/users-events.controller';
 import { UploadController } from './controllers/upload.controller';
+import { AgentsAdminController } from './admin/controllers/agents-admin.controller';
 
 // Services
 import { UsersService } from './users.service';
@@ -38,6 +39,7 @@ import { SessionService } from './services/session.service';
 import { NotificationService } from './services/notification.service';
 import { UserManagementService } from './services/user-management.service';
 import { DateUtilsService } from './utils/date-utils.service';
+import { AgentsAdminService } from './admin/services/agents-admin.service';
 
 @Module({
   imports: [
@@ -66,6 +68,7 @@ import { DateUtilsService } from './utils/date-utils.service';
     AuthController,
     ProfileController,
     UploadController,
+    AgentsAdminController,
     
     // Contrôleur événements microservices
     UsersEventsController,
@@ -81,6 +84,7 @@ import { DateUtilsService } from './utils/date-utils.service';
     SessionService,
     NotificationService,
     UserManagementService,
+    AgentsAdminService,
     
     // Utilitaires
     DateUtilsService,

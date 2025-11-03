@@ -45,6 +45,12 @@ export class LoginResponseDto {
 
   @ApiProperty({ description: 'Durée de validité du token en secondes', example: 86400 })
   expires_in: number;
+
+  @ApiProperty({ description: 'Première connexion requise', required: false })
+  premiere_connexion?: boolean;
+
+  @ApiProperty({ description: 'Le mot de passe doit être changé', required: false })
+  must_change_password?: boolean;
 }
 
 
