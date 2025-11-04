@@ -30,6 +30,8 @@ export class CriteresEnrichmentService {
         utilisateurId: string | null,
         typeProduit: TypeProduit
     ): Promise<Record<string, any>> {
+        console.log(`[CriteresEnrichment] Critères reçus avant enrichissement:`, JSON.stringify(criteres, null, 2));
+        console.log(`[CriteresEnrichment] Type produit: ${typeProduit}, Utilisateur ID: ${utilisateurId || 'null'}`);
         
         const criteresEnrichis = { ...criteres };
 
@@ -41,14 +43,19 @@ export class CriteresEnrichmentService {
 
             const age = this.dateUtilsService.calculateAge(dateNaissance);
             
+            console.log(`[CriteresEnrichment] Date de naissance: ${dateNaissance.toISOString()}, Âge calculé: ${age}`);
+            
             criteresEnrichis['Age Assuré'] = age.toString();
             
             // Supprimer l'ancien champ 'age' si présent
             if ('age' in criteresEnrichis) {
+                console.log(`[CriteresEnrichment] Suppression du champ 'age' obsolète`);
                 delete criteresEnrichis.age;
             }
         }
 
+        console.log(`[CriteresEnrichment] Critères après enrichissement:`, JSON.stringify(criteresEnrichis, null, 2));
+        
         return criteresEnrichis;
     }
 
