@@ -3,13 +3,15 @@ import {
     IsNotEmpty,
     IsOptional,
     IsString,
-    Matches
+    Matches,
+    IsEnum
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { UserType } from '../../entities/user.entity';
 
 export class CreateAgentDto {
     @ApiProperty({
-        description: 'Nom complet de l\'agent',
+        description: 'Nom complet de l\'utilisateur',
         example: 'Jean Dupont',
     })
     @IsNotEmpty({ message: 'Le nom est obligatoire' })
@@ -33,6 +35,16 @@ export class CreateAgentDto {
     @Matches(/^\+?\d{1,3}[\s.-]?\d{1,14}$/, { message: 'Le numéro de téléphone doit être valide et contenir uniquement des chiffres.' })
     @IsOptional()
     telephone?: string | null;
+
+    @ApiProperty({
+        description: 'Type d\'utilisateur (admin ou agent)',
+        example: 'agent',
+        enum: UserType,
+        enumName: 'UserType',
+    })
+    @IsNotEmpty({ message: 'Le type d\'utilisateur est obligatoire' })
+    @IsEnum(UserType, { message: 'Le type d\'utilisateur doit être admin ou agent' })
+    type_utilisateur: UserType;
 }
 
 export class UpdateAgentDto {
@@ -66,17 +78,20 @@ export class UpdateAgentDto {
 }
 
 export class AgentResponseDto {
-    @ApiProperty({ description: 'ID unique de l\'agent' })
+    @ApiProperty({ description: 'ID unique de l\'utilisateur' })
     id: string;
 
-    @ApiProperty({ description: 'Nom complet de l\'agent' })
+    @ApiProperty({ description: 'Nom complet de l\'utilisateur' })
     nom: string;
 
-    @ApiProperty({ description: 'Email de l\'agent' })
+    @ApiProperty({ description: 'Email de l\'utilisateur' })
     email: string;
 
-    @ApiProperty({ description: 'Téléphone de l\'agent', required: false })
+    @ApiProperty({ description: 'Téléphone de l\'utilisateur', required: false })
     telephone?: string | null;
+
+    @ApiProperty({ description: 'Type d\'utilisateur', enum: UserType })
+    type_utilisateur: UserType;
 
     @ApiProperty({ description: 'Statut du compte (actif/suspendu)' })
     statut: boolean;
@@ -95,10 +110,10 @@ export class AgentResponseDto {
 }
 
 export class AgentsResponseDto {
-    @ApiProperty({ description: 'Liste des agents', type: [AgentResponseDto] })
+    @ApiProperty({ description: 'Liste des utilisateurs', type: [AgentResponseDto] })
     agents: AgentResponseDto[];
 
-    @ApiProperty({ description: 'Nombre total d\'agents' })
+    @ApiProperty({ description: 'Nombre total d\'utilisateurs' })
     total: number;
 
     @ApiProperty({ description: 'Page actuelle' })

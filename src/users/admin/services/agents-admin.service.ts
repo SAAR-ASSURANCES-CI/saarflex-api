@@ -57,12 +57,17 @@ export class AgentsAdminService {
     }
 
     /**
-     * Crée un nouvel agent avec mot de passe généré
+     * Crée un nouvel utilisateur (admin ou agent) avec mot de passe généré
      * @param createAgentDto Données de création
      * @returns AgentResponseDto
      */
     async createAgent(createAgentDto: CreateAgentDto): Promise<AgentResponseDto> {
         try {
+            // Vérifier que le type est admin ou agent (pas client)
+            if (createAgentDto.type_utilisateur === UserType.CLIENT) {
+                throw new BadRequestException('Le type utilisateur ne peut pas être client');
+            }
+
             const existingUser = await this.userManagementService.findByEmail(createAgentDto.email);
             if (existingUser) {
                 throw new ConflictException('Un utilisateur avec cet email existe déjà');
@@ -79,53 +84,104 @@ export class AgentsAdminService {
             const saltRounds = 12;
             const hashedPassword = await bcrypt.hash(tempPassword, saltRounds);
 
-            const newAgent = this.userRepository.create({
+            const newUser = this.userRepository.create({
                 nom: createAgentDto.nom.trim(),
                 email: createAgentDto.email.toLowerCase().trim(),
                 telephone: createAgentDto.telephone?.trim() || null,
                 mot_de_passe: hashedPassword,
-                type_utilisateur: UserType.AGENT,
+                type_utilisateur: createAgentDto.type_utilisateur,
                 statut: true,
                 premiere_connexion: true,
                 mot_de_passe_temporaire: true,
             });
 
-            const savedAgent = await this.userRepository.save(newAgent);
+            const savedUser = await this.userRepository.save(newUser);
 
             this.emailService.sendAgentCredentials(
-                savedAgent.nom,
-                savedAgent.email,
+                savedUser.nom,
+                savedUser.email,
                 tempPassword
             ).catch(error => {
-                console.error(`[AgentsAdminService] Erreur lors de l'envoi de l'email à ${savedAgent.email}:`, error);
+                console.error(`[AgentsAdminService] Erreur lors de l'envoi de l'email à ${savedUser.email}:`, error);
             });
 
-            return this.mapToAgentResponseDto(savedAgent);
+            return this.mapToAgentResponseDto(savedUser);
         } catch (error) {
-            if (error instanceof ConflictException) {
+            if (error instanceof ConflictException || error instanceof BadRequestException) {
                 throw error;
             }
-            console.error('[AgentsAdminService] Erreur lors de la création de l\'agent:', error);
-            throw new InternalServerErrorException('Erreur lors de la création de l\'agent');
+            console.error('[AgentsAdminService] Erreur lors de la création de l\'utilisateur:', error);
+            throw new InternalServerErrorException('Erreur lors de la création de l\'utilisateur');
         }
     }
 
     /**
-     * Récupère tous les agents avec pagination
+     * Récupère tous les utilisateurs (admin et agent) avec pagination, filtres et recherche
      * @param page Numéro de page
      * @param limit Nombre d'éléments par page
+     * @param type_utilisateur Filtre par type (admin, agent, ou undefined pour tous)
+     * @param statut Filtre par statut (true, false, ou undefined pour tous)
+     * @param search Recherche par nom ou email
      * @returns AgentsResponseDto
      */
-    async getAllAgents(page: number = 1, limit: number = 10): Promise<AgentsResponseDto> {
+    async getAllAgents(
+        page: number = 1,
+        limit: number = 10,
+        type_utilisateur?: UserType,
+        statut?: boolean,
+        search?: string,
+    ): Promise<AgentsResponseDto> {
         const skip = (page - 1) * limit;
 
-        const [agents, total] = await this.userRepository.findAndCount({
-            where: { type_utilisateur: UserType.AGENT },
-            select: ['id', 'nom', 'email', 'telephone', 'statut', 'premiere_connexion', 'date_creation', 'date_modification', 'derniere_connexion'],
-            order: { date_creation: 'DESC' },
-            skip,
-            take: limit,
-        });
+        // Construire les conditions de recherche
+        const where: any = {};
+        
+        // Filtrer par type (exclure les clients)
+        if (type_utilisateur) {
+            where.type_utilisateur = type_utilisateur;
+        } else {
+            // Par défaut, exclure les clients
+            where.type_utilisateur = [UserType.ADMIN, UserType.AGENT];
+        }
+
+        // Filtrer par statut
+        if (statut !== undefined) {
+            where.statut = statut;
+        }
+
+        // Recherche par nom ou email
+        const queryBuilder = this.userRepository.createQueryBuilder('user')
+            .select([
+                'user.id',
+                'user.nom',
+                'user.email',
+                'user.telephone',
+                'user.type_utilisateur',
+                'user.statut',
+                'user.premiere_connexion',
+                'user.date_creation',
+                'user.date_modification',
+                'user.derniere_connexion',
+            ])
+            .where('user.type_utilisateur IN (:...types)', { types: type_utilisateur ? [type_utilisateur] : [UserType.ADMIN, UserType.AGENT] });
+
+        if (statut !== undefined) {
+            queryBuilder.andWhere('user.statut = :statut', { statut });
+        }
+
+        if (search && search.trim()) {
+            const searchTerm = `%${search.trim()}%`;
+            queryBuilder.andWhere(
+                '(user.nom LIKE :search OR user.email LIKE :search)',
+                { search: searchTerm }
+            );
+        }
+
+        queryBuilder.orderBy('user.date_creation', 'DESC')
+            .skip(skip)
+            .take(limit);
+
+        const [agents, total] = await queryBuilder.getManyAndCount();
 
         return {
             agents: agents.map(agent => this.mapToAgentResponseDto(agent)),
@@ -137,47 +193,55 @@ export class AgentsAdminService {
     }
 
     /**
-     * Récupère un agent par son ID
-     * @param id ID de l'agent
+     * Récupère un utilisateur par son ID (admin ou agent uniquement)
+     * @param id ID de l'utilisateur
      * @returns AgentResponseDto
-     * @throws NotFoundException si l'agent n'existe pas
+     * @throws NotFoundException si l'utilisateur n'existe pas ou est un client
      */
     async getAgentById(id: string): Promise<AgentResponseDto> {
-        const agent = await this.userRepository.findOne({
-            where: { id, type_utilisateur: UserType.AGENT },
-            select: ['id', 'nom', 'email', 'telephone', 'statut', 'premiere_connexion', 'date_creation', 'date_modification', 'derniere_connexion'],
+        const user = await this.userRepository.findOne({
+            where: { id },
+            select: ['id', 'nom', 'email', 'telephone', 'type_utilisateur', 'statut', 'premiere_connexion', 'date_creation', 'date_modification', 'derniere_connexion'],
         });
 
-        if (!agent) {
-            throw new NotFoundException('Agent non trouvé');
+        if (!user) {
+            throw new NotFoundException('Utilisateur non trouvé');
         }
 
-        return this.mapToAgentResponseDto(agent);
+        if (user.type_utilisateur === UserType.CLIENT) {
+            throw new NotFoundException('Utilisateur non trouvé');
+        }
+
+        return this.mapToAgentResponseDto(user);
     }
 
     /**
-     * Met à jour un agent
-     * @param id ID de l'agent
+     * Met à jour un utilisateur (admin ou agent)
+     * @param id ID de l'utilisateur
      * @param updateAgentDto Données de mise à jour
      * @returns AgentResponseDto
      */
     async updateAgent(id: string, updateAgentDto: UpdateAgentDto): Promise<AgentResponseDto> {
-        const agent = await this.userRepository.findOne({
-            where: { id, type_utilisateur: UserType.AGENT },
+        const user = await this.userRepository.findOne({
+            where: { id },
         });
 
-        if (!agent) {
-            throw new NotFoundException('Agent non trouvé');
+        if (!user) {
+            throw new NotFoundException('Utilisateur non trouvé');
         }
 
-        if (updateAgentDto.email && updateAgentDto.email !== agent.email) {
+        if (user.type_utilisateur === UserType.CLIENT) {
+            throw new NotFoundException('Utilisateur non trouvé');
+        }
+
+        if (updateAgentDto.email && updateAgentDto.email !== user.email) {
             const existingUser = await this.userManagementService.findByEmail(updateAgentDto.email);
             if (existingUser && existingUser.id !== id) {
                 throw new ConflictException('Un utilisateur avec cet email existe déjà');
             }
         }
 
-        if (updateAgentDto.telephone && updateAgentDto.telephone !== agent.telephone) {
+        if (updateAgentDto.telephone && updateAgentDto.telephone !== user.telephone) {
             const existingPhone = await this.userManagementService.phoneExists(updateAgentDto.telephone);
             if (existingPhone) {
                 const phoneUser = await this.userRepository.findOne({
@@ -190,111 +254,123 @@ export class AgentsAdminService {
         }
 
         if (updateAgentDto.nom) {
-            agent.nom = updateAgentDto.nom.trim();
+            user.nom = updateAgentDto.nom.trim();
         }
         if (updateAgentDto.email) {
-            agent.email = updateAgentDto.email.toLowerCase().trim();
+            user.email = updateAgentDto.email.toLowerCase().trim();
         }
         if (updateAgentDto.telephone !== undefined) {
-            agent.telephone = updateAgentDto.telephone?.trim() || null;
+            user.telephone = updateAgentDto.telephone?.trim() || null;
         }
 
-        const updatedAgent = await this.userRepository.save(agent);
-        return this.mapToAgentResponseDto(updatedAgent);
+        const updatedUser = await this.userRepository.save(user);
+        return this.mapToAgentResponseDto(updatedUser);
     }
 
     /**
-     * Suspend un agent (désactive son compte et invalide ses sessions)
-     * @param id ID de l'agent
+     * Suspend un utilisateur (désactive son compte et invalide ses sessions)
+     * @param id ID de l'utilisateur
      * @returns AgentResponseDto
      */
     async suspendAgent(id: string): Promise<AgentResponseDto> {
-        const agent = await this.userRepository.findOne({
-            where: { id, type_utilisateur: UserType.AGENT },
+        const user = await this.userRepository.findOne({
+            where: { id },
         });
 
-        if (!agent) {
-            throw new NotFoundException('Agent non trouvé');
+        if (!user) {
+            throw new NotFoundException('Utilisateur non trouvé');
         }
 
-        if (!agent.statut) {
-            throw new BadRequestException('L\'agent est déjà suspendu');
+        if (user.type_utilisateur === UserType.CLIENT) {
+            throw new NotFoundException('Utilisateur non trouvé');
+        }
+
+        if (!user.statut) {
+            throw new BadRequestException('L\'utilisateur est déjà suspendu');
         }
 
         await this.userManagementService.deactivateUser(id);
         await this.sessionService.invalidateAllUserSessions(id);
 
-        const suspendedAgent = await this.userRepository.findOne({
+        const suspendedUser = await this.userRepository.findOne({
             where: { id },
-            select: ['id', 'nom', 'email', 'telephone', 'statut', 'premiere_connexion', 'date_creation', 'date_modification', 'derniere_connexion'],
+            select: ['id', 'nom', 'email', 'telephone', 'type_utilisateur', 'statut', 'premiere_connexion', 'date_creation', 'date_modification', 'derniere_connexion'],
         });
 
-        return this.mapToAgentResponseDto(suspendedAgent!);
+        return this.mapToAgentResponseDto(suspendedUser!);
     }
 
     /**
-     * Réactive un agent
-     * @param id ID de l'agent
+     * Réactive un utilisateur
+     * @param id ID de l'utilisateur
      * @returns AgentResponseDto
      */
     async activateAgent(id: string): Promise<AgentResponseDto> {
-        const agent = await this.userRepository.findOne({
-            where: { id, type_utilisateur: UserType.AGENT },
+        const user = await this.userRepository.findOne({
+            where: { id },
         });
 
-        if (!agent) {
-            throw new NotFoundException('Agent non trouvé');
+        if (!user) {
+            throw new NotFoundException('Utilisateur non trouvé');
         }
 
-        if (agent.statut) {
-            throw new BadRequestException('L\'agent est déjà actif');
+        if (user.type_utilisateur === UserType.CLIENT) {
+            throw new NotFoundException('Utilisateur non trouvé');
+        }
+
+        if (user.statut) {
+            throw new BadRequestException('L\'utilisateur est déjà actif');
         }
 
         await this.userManagementService.activateUser(id);
 
-        const activatedAgent = await this.userRepository.findOne({
+        const activatedUser = await this.userRepository.findOne({
             where: { id },
-            select: ['id', 'nom', 'email', 'telephone', 'statut', 'premiere_connexion', 'date_creation', 'date_modification', 'derniere_connexion'],
+            select: ['id', 'nom', 'email', 'telephone', 'type_utilisateur', 'statut', 'premiere_connexion', 'date_creation', 'date_modification', 'derniere_connexion'],
         });
 
-        return this.mapToAgentResponseDto(activatedAgent!);
+        return this.mapToAgentResponseDto(activatedUser!);
     }
 
     /**
-     * Réinitialise le mot de passe d'un agent (admin-initiated)
-     * @param id ID de l'agent
+     * Réinitialise le mot de passe d'un utilisateur (admin-initiated)
+     * @param id ID de l'utilisateur
      * @returns AgentResponseDto
      */
     async resetAgentPassword(id: string): Promise<AgentResponseDto> {
-        const agent = await this.userRepository.findOne({
-            where: { id, type_utilisateur: UserType.AGENT },
+        const user = await this.userRepository.findOne({
+            where: { id },
         });
 
-        if (!agent) {
-            throw new NotFoundException('Agent non trouvé');
+        if (!user) {
+            throw new NotFoundException('Utilisateur non trouvé');
+        }
+
+        if (user.type_utilisateur === UserType.CLIENT) {
+            throw new NotFoundException('Utilisateur non trouvé');
         }
 
         const tempPassword = this.generateSecurePassword();
         const saltRounds = 12;
         const hashedPassword = await bcrypt.hash(tempPassword, saltRounds);
 
-        agent.mot_de_passe = hashedPassword;
-        agent.premiere_connexion = true;
-        agent.mot_de_passe_temporaire = true;
+        user.mot_de_passe = hashedPassword;
+        user.premiere_connexion = true;
+        user.mot_de_passe_temporaire = true;
 
-        await this.userRepository.save(agent);
+        await this.userRepository.save(user);
 
         await this.sessionService.invalidateAllUserSessions(id);
 
         this.emailService.sendAgentPasswordReset(
-            agent.nom,
-            agent.email,
+            user.nom,
+            user.email,
             tempPassword
         ).catch(error => {
-            console.error(`[AgentsAdminService] Erreur lors de l'envoi de l'email de réinitialisation à ${agent.email}:`, error);
+            console.error(`[AgentsAdminService] Erreur lors de l'envoi de l'email de réinitialisation à ${user.email}:`, error);
         });
 
-        return this.mapToAgentResponseDto(agent);
+        return this.mapToAgentResponseDto(user);
     }
 
     /**
@@ -309,6 +385,7 @@ export class AgentsAdminService {
             nom: user.nom,
             email: user.email,
             telephone: user.telephone ?? undefined,
+            type_utilisateur: user.type_utilisateur,
             statut: user.statut,
             premiere_connexion: user.premiere_connexion,
             date_creation: user.date_creation,

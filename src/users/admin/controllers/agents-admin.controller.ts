@@ -27,6 +27,7 @@ import {
 } from '../dto/agent-admin.dto';
 import { JwtAuthGuard } from '../../jwt/jwt-auth.guard';
 import { AdminGuard } from '../../guards/admin.guard';
+import { UserType } from '../../entities/user.entity';
 
 @ApiTags('Administration - Gestion des Agents')
 @ApiBearerAuth()
@@ -67,8 +68,8 @@ export class AgentsAdminController {
 
     @Get()
     @ApiOperation({
-        summary: 'Récupérer tous les agents',
-        description: 'Endpoint administrateur pour lister tous les agents avec pagination',
+        summary: 'Récupérer tous les utilisateurs (admin et agent)',
+        description: 'Endpoint administrateur pour lister tous les utilisateurs avec pagination, filtres et recherche',
     })
     @ApiQuery({
         name: 'page',
@@ -84,9 +85,30 @@ export class AgentsAdminController {
         description: 'Nombre d\'éléments par page (défaut: 10)',
         example: 10,
     })
+    @ApiQuery({
+        name: 'type_utilisateur',
+        required: false,
+        enum: ['admin', 'agent'],
+        description: 'Filtre par type d\'utilisateur',
+        example: 'agent',
+    })
+    @ApiQuery({
+        name: 'statut',
+        required: false,
+        type: Boolean,
+        description: 'Filtre par statut (true = actif, false = suspendu)',
+        example: true,
+    })
+    @ApiQuery({
+        name: 'search',
+        required: false,
+        type: String,
+        description: 'Recherche par nom ou email',
+        example: 'Jean',
+    })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: 'Liste des agents récupérée avec succès',
+        description: 'Liste des utilisateurs récupérée avec succès',
         type: AgentsResponseDto,
     })
     @ApiResponse({
@@ -100,8 +122,13 @@ export class AgentsAdminController {
     async findAll(
         @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
         @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+        @Query('type_utilisateur') type_utilisateur?: string,
+        @Query('statut') statut?: string,
+        @Query('search') search?: string,
     ): Promise<AgentsResponseDto> {
-        return this.agentsAdminService.getAllAgents(page, limit);
+        const typeEnum = type_utilisateur ? (type_utilisateur === 'admin' ? UserType.ADMIN : UserType.AGENT) : undefined;
+        const statutBool = statut !== undefined ? statut === 'true' || statut === '1' : undefined;
+        return this.agentsAdminService.getAllAgents(page, limit, typeEnum, statutBool, search);
     }
 
     @Get(':id')
