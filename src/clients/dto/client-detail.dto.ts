@@ -36,6 +36,8 @@ export class ClientProfileDto {
   numero_piece_identite: string | null;
   type_piece_identite: string | null;
   date_expiration_piece_identite: Date | null;
+  front_document_path?: string | null;
+  back_document_path?: string | null;
 }
 
 /**

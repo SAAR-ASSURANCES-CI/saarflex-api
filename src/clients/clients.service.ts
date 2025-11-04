@@ -268,6 +268,8 @@ export class ClientsService {
       numero_piece_identite: profile.numero_piece_identite,
       type_piece_identite: profile.type_piece_identite,
       date_expiration_piece_identite: profile.date_expiration_piece_identite,
+      front_document_path: profile.chemin_recto_piece ?? null,
+      back_document_path: profile.chemin_verso_piece ?? null,
     };
   }
 
