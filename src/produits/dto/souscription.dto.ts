@@ -32,9 +32,9 @@ export class BeneficiaireSouscriptionDto {
 // DTO pour la souscription d'un devis
 export class SouscrireDevisDto {
   @ApiProperty({ 
-    description: 'Méthode de paiement choisie',
+    description: 'Méthode de paiement choisie (MOBILE_MONEY ou WALLET)',
     enum: MethodePaiement,
-    example: MethodePaiement.WAVE
+    example: MethodePaiement.MOBILE_MONEY
   })
   @IsEnum(MethodePaiement)
   @IsNotEmpty()
@@ -48,6 +48,16 @@ export class SouscrireDevisDto {
   @IsOptional()
   @IsString()
   numero_telephone?: string;
+
+  @ApiProperty({ 
+    description: 'Devise du paiement (XOF, XAF)',
+    example: 'XOF',
+    required: false,
+    default: 'XOF'
+  })
+  @IsOptional()
+  @IsString()
+  currency?: string;
 
   @ApiProperty({ 
     description: 'Liste des bénéficiaires (requis si le produit nécessite des bénéficiaires)',
@@ -86,6 +96,20 @@ export class SouscriptionResponseDto {
     example: 12500.00
   })
   montant: number;
+
+  @ApiProperty({ 
+    description: 'URL de paiement CinetPay',
+    example: 'https://secure.cinetpay.com/...',
+    required: false
+  })
+  payment_url?: string;
+
+  @ApiProperty({ 
+    description: 'Devise utilisée',
+    example: 'XOF',
+    required: false
+  })
+  currency?: string;
 
   @ApiProperty({ 
     description: 'Message d\'information',

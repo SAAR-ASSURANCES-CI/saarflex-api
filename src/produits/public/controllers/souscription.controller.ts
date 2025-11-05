@@ -53,7 +53,8 @@ export class SouscriptionController {
             utilisateurId,
             souscrireDto.methode_paiement,
             souscrireDto.numero_telephone,
-            souscrireDto.beneficiaires
+            souscrireDto.beneficiaires,
+            souscrireDto.currency || 'XOF'
         );
 
         return {
@@ -61,6 +62,8 @@ export class SouscriptionController {
             reference_paiement: result.paiement.reference_paiement,
             statut_paiement: result.paiement.statut,
             montant: Number(result.paiement.montant),
+            payment_url: result.paiement.payment_url || undefined,
+            currency: result.paiement.currency || 'XOF',
             message: result.message
         };
     }

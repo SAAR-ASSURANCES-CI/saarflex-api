@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Paiement, StatutPaiement, MethodePaiement } from '../entities/paiement.entity';
 import { DevisSimule, StatutDevis } from '../entities/devis-simule.entity';
+import { CinetPayService } from './cinetpay.service';
 
 /**
  * Service de gestion des paiements
@@ -17,6 +18,7 @@ export class PaiementService {
         private readonly paiementRepository: Repository<Paiement>,
         @InjectRepository(DevisSimule)
         private readonly devisSimuleRepository: Repository<DevisSimule>,
+        private readonly cinetPayService: CinetPayService,
     ) { }
 
     /**
@@ -27,7 +29,8 @@ export class PaiementService {
         utilisateurId: string,
         montant: number,
         methodePaiement: MethodePaiement,
-        numeroTelephone?: string
+        numeroTelephone?: string,
+        currency: string = 'XOF'
     ): Promise<Paiement> {
 
         const devis = await this.devisSimuleRepository.findOne({
@@ -38,34 +41,68 @@ export class PaiementService {
             throw new NotFoundException('Devis non trouvé');
         }
 
-        // if (devis.statut !== StatutDevis.SAUVEGARDE) {
-        //     throw new BadRequestException('Le devis doit être sauvegardé avant de pouvoir être payé');
-        // }
-
         const referencePaiement = this.genererReferencePaiement();
 
-        const paiementData = {
-            reference_paiement: referencePaiement,
-            devis_simule_id: devisId,
-            utilisateur_id: utilisateurId,
-            montant,
-            methode_paiement: methodePaiement,
-            numero_telephone: numeroTelephone,
-            statut: StatutPaiement.EN_ATTENTE,
-        };
+        // Générer un transaction_id unique pour CinetPay 
+        const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
-        const paiement = this.paiementRepository.create(paiementData);
+        // Mapper la méthode de paiement vers le channel CinetPay
+        const channel = methodePaiement === MethodePaiement.MOBILE_MONEY ? 'MOBILE_MONEY' : 'WALLET';
 
-        const paiementSauvegarde = await this.paiementRepository.save(paiement);
+        // Préparer les métadonnées pour retrouver le paiement dans les webhooks
+        const metadata = JSON.stringify({ reference_paiement: referencePaiement, devis_id: devisId });
 
-        await this.devisSimuleRepository.update(
-            { id: devisId },
-            { statut: StatutDevis.EN_ATTENTE_PAIEMENT }
-        );
+        // Initialiser le paiement avec CinetPay
+        this.logger.log(`Initialisation paiement CinetPay - Devis: ${devisId}, Montant: ${montant} ${currency}, Channel: ${channel}`);
 
-        // TODO: Appeler l'API de l'agrégateur de paiement selon la méthode
+        try {
+            const cinetPayResponse = await this.cinetPayService.initierPaiement(
+                transactionId,
+                montant,
+                currency,
+                `Paiement devis ${devisId}`,
+                channel,
+                metadata,
+                numeroTelephone
+            );
 
-        return paiementSauvegarde;
+            const paiementData = {
+                reference_paiement: referencePaiement,
+                devis_simule_id: devisId,
+                utilisateur_id: utilisateurId,
+                montant,
+                methode_paiement: methodePaiement,
+                numero_telephone: numeroTelephone,
+                statut: StatutPaiement.EN_ATTENTE,
+                payment_token: cinetPayResponse.payment_token,
+                payment_url: cinetPayResponse.payment_url,
+                currency: currency,
+                cinetpay_transaction_id: cinetPayResponse.transaction_id,
+                reference_externe: cinetPayResponse.transaction_id,
+                donnees_callback: {
+                    initialisation: {
+                        payment_token: cinetPayResponse.payment_token,
+                        payment_url: cinetPayResponse.payment_url,
+                        transaction_id: cinetPayResponse.transaction_id,
+                    }
+                }
+            };
+
+            const paiement = this.paiementRepository.create(paiementData);
+            const paiementSauvegarde = await this.paiementRepository.save(paiement);
+
+            await this.devisSimuleRepository.update(
+                { id: devisId },
+                { statut: StatutDevis.EN_ATTENTE_PAIEMENT }
+            );
+
+            this.logger.log(`Paiement initié avec succès - Reference: ${referencePaiement}, Payment URL: ${cinetPayResponse.payment_url}`);
+
+            return paiementSauvegarde;
+        } catch (error) {
+            this.logger.error(`Erreur lors de l'initialisation du paiement CinetPay: ${error.message}`, error.stack);
+            throw error;
+        }
     }
 
     /**
@@ -89,8 +126,16 @@ export class PaiementService {
 
         paiement.statut = statut;
         paiement.donnees_callback = donneesCallback;
-        paiement.reference_externe = referenceExterne || null;
+        paiement.reference_externe = referenceExterne || paiement.reference_externe;
         paiement.message_erreur = messageErreur || null;
+
+        if (referenceExterne && !paiement.cinetpay_transaction_id) {
+            paiement.cinetpay_transaction_id = referenceExterne;
+        }
+
+        if (donneesCallback?.data?.operator_id || donneesCallback?.operator_id) {
+            paiement.operator_id = donneesCallback.data?.operator_id || donneesCallback.operator_id;
+        }
 
         if (statut === StatutPaiement.REUSSI) {
             paiement.date_paiement = new Date();
@@ -121,6 +166,21 @@ export class PaiementService {
         if (!paiement) {
             throw new NotFoundException('Paiement non trouvé');
         }
+
+        return paiement;
+    }
+
+    /**
+     * Récupère un paiement par transaction_id CinetPay (reference_externe ou cinetpay_transaction_id)
+     */
+    async obtenirPaiementParTransactionId(transactionId: string): Promise<Paiement | null> {
+        const paiement = await this.paiementRepository.findOne({
+            where: [
+                { reference_externe: transactionId },
+                { cinetpay_transaction_id: transactionId }
+            ],
+            relations: ['devisSimule', 'contrat']
+        });
 
         return paiement;
     }

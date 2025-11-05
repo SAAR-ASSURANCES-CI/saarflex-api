@@ -11,11 +11,8 @@ export enum StatutPaiement {
 }
 
 export enum MethodePaiement {
-    WAVE = 'wave',
-    ORANGE_MONEY = 'orange_money',
-    CARTE_BANCAIRE = 'carte_bancaire',
-    VIREMENT = 'virement',
-    ESPECES = 'especes'
+    MOBILE_MONEY = 'mobile_money',
+    WALLET = 'wallet'
 }
 
 @Entity('paiements')
@@ -66,6 +63,21 @@ export class Paiement {
 
     @Column({ type: 'timestamp', nullable: true })
     date_paiement: Date | null;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    payment_token: string | null;
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    payment_url: string | null;
+
+    @Column({ type: 'varchar', length: 3, nullable: true })
+    currency: string | null;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    cinetpay_transaction_id: string | null;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    operator_id: string | null;
 
     @CreateDateColumn()
     created_at: Date;

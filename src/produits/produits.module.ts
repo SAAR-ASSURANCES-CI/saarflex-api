@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
 
 // Contrôleurs Admin
@@ -50,6 +51,8 @@ import { TachePlanifieeService } from './services/tache-planifiee.service';
 import { PaiementService } from './services/paiement.service';
 import { ContratService } from './services/contrat.service';
 import { SouscriptionService } from './services/souscription.service';
+import { CinetPayService } from './services/cinetpay.service';
+import { CinetPayConfig } from './config/cinetpay.config';
 
 // Entités
 import { Produit } from './entities/produit.entity';
@@ -87,6 +90,7 @@ import { User } from '../users/entities/user.entity';
       Paiement,
       User
     ]),
+    ConfigModule,
     UsersModule
   ],
   controllers: [
@@ -137,6 +141,8 @@ import { User } from '../users/entities/user.entity';
     PaiementService,
     ContratService,
     SouscriptionService,
+    CinetPayService,
+    CinetPayConfig,
     
     // Autres services
     TachePlanifieeService,

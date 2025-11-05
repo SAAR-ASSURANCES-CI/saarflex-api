@@ -38,7 +38,8 @@ export class SouscriptionService {
     utilisateurId: string,
     methodePaiement: MethodePaiement,
     numeroTelephone?: string,
-    beneficiaires?: Array<{nom_complet: string, lien_souscripteur: string, ordre: number}>
+    beneficiaires?: Array<{nom_complet: string, lien_souscripteur: string, ordre: number}>,
+    currency: string = 'XOF'
   ): Promise<{
     paiement: Paiement;
     message: string;
@@ -54,11 +55,7 @@ export class SouscriptionService {
     if (!devis) {
       throw new NotFoundException('Devis non trouvé');
     }
-
-    // if (devis.statut !== StatutDevis.SAUVEGARDE) {
-    //   throw new BadRequestException('Le devis doit être sauvegardé avant de pouvoir être souscrit');
-    // }
-
+    
     //vérification si le produit nécessite des bénéficiaires
     if (devis.produit.necessite_beneficiaires) {
       if (!beneficiaires || beneficiaires.length === 0) {
@@ -78,7 +75,8 @@ export class SouscriptionService {
       utilisateurId,
       Number(devis.prime_calculee),
       methodePaiement,
-      numeroTelephone
+      numeroTelephone,
+      currency
     );
 
     if (beneficiaires && beneficiaires.length > 0) {
