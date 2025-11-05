@@ -1,8 +1,8 @@
-import { Controller, Post, Body, Param, HttpStatus, HttpCode, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Param, HttpStatus, HttpCode, Logger, NotFoundException, BadRequestException, Req, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { PaiementService } from '../../services/paiement.service';
 import { SouscriptionService } from '../../services/souscription.service';
-import { CallbackPaiementDto } from '../../dto/souscription.dto';
 import { StatutPaiement } from '../../entities/paiement.entity';
 
 /**
@@ -26,13 +26,13 @@ export class PaiementWebhookController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Webhook de callback de paiement',
-        description: 'Reçoit les notifications de paiement des agrégateurs (Wave, Orange Money, etc.)'
+        description: 'Reçoit les notifications de paiement des agrégateurs (CinetPay, Wave, Orange Money, etc.)'
     })
     @ApiParam({
         name: 'aggregateur',
         description: 'Nom de l\'agrégateur de paiement',
-        example: 'wave',
-        enum: ['wave', 'orange_money', 'autre']
+        example: 'cinetpay',
+        enum: ['cinetpay', 'wave', 'orange_money', 'autre']
     })
     @ApiResponse({
         status: HttpStatus.OK,
@@ -45,17 +45,50 @@ export class PaiementWebhookController {
     async recevoirCallbackPaiement(
         @Param('aggregateur') aggregateur: string,
         @Body() callbackData: any,
+        @Query() queryParams: any,
+        @Req() req: Request,
     ) {
-        this.logger.log(`Callback reçu de ${aggregateur}: ${JSON.stringify(callbackData)}`);
+
+        const allData = {
+            ...callbackData,
+            ...queryParams,
+            ...(req.body || {}),
+        };
+
+        // Logger toutes les données reçues pour déboguer
+        this.logger.log(`Callback reçu de ${aggregateur}`);
+        this.logger.debug(`Body: ${JSON.stringify(callbackData)}`);
+        this.logger.debug(`Query: ${JSON.stringify(queryParams)}`);
+        this.logger.debug(`Headers: ${JSON.stringify(req.headers)}`);
+        this.logger.debug(`Données combinées: ${JSON.stringify(allData)}`);
+
+        // Si aucune donnée n'est reçue
+        if (!callbackData && !queryParams && Object.keys(allData).length === 0) {
+            this.logger.error('Aucune donnée reçue dans le callback');
+            throw new NotFoundException('Aucune donnée reçue dans le callback');
+        }
 
         try {
-            
-            const donneesAdaptees = this.adapterCallbackAgregateur(aggregateur, callbackData);
+            // Utiliser les données combinées
+            const donneesAdaptees = this.adapterCallbackAgregateur(aggregateur, allData);
 
-            
+            // si on n'a pas la reference_paiement, chercher par transaction_id
+            let referencePaiement = donneesAdaptees.reference_paiement;
+            if (aggregateur.toLowerCase() === 'cinetpay' && !referencePaiement && donneesAdaptees.reference_externe) {
+                const paiementParTransaction = await this.paiementService.obtenirPaiementParTransactionId(donneesAdaptees.reference_externe);
+                if (paiementParTransaction) {
+                    referencePaiement = paiementParTransaction.reference_paiement;
+                    this.logger.log(`Paiement trouvé via transaction_id: ${referencePaiement}`);
+                } else {
+                    this.logger.warn(`Paiement non trouvé pour transaction_id: ${donneesAdaptees.reference_externe}`);
+                    throw new NotFoundException(`Paiement non trouvé pour la transaction ${donneesAdaptees.reference_externe}`);
+                }
+            }
+
+
             const paiement = await this.paiementService.traiterCallbackPaiement(
-                donneesAdaptees.reference_paiement,
-                callbackData,
+                referencePaiement,
+                allData,
                 donneesAdaptees.statut,
                 donneesAdaptees.reference_externe,
                 donneesAdaptees.message_erreur
@@ -91,8 +124,11 @@ export class PaiementWebhookController {
         reference_externe?: string;
         message_erreur?: string;
     } {
-        
+
         switch (aggregateur.toLowerCase()) {
+            case 'cinetpay':
+                return this.adapterCallbackCinetPay(callbackData);
+
             case 'wave':
                 return this.adapterCallbackWave(callbackData);
 
@@ -100,7 +136,7 @@ export class PaiementWebhookController {
                 return this.adapterCallbackOrangeMoney(callbackData);
 
             default:
-                
+
                 return {
                     reference_paiement: callbackData.reference_paiement || callbackData.reference,
                     statut: this.mapperStatut(callbackData.statut || callbackData.status),
@@ -135,6 +171,54 @@ export class PaiementWebhookController {
     }
 
     /**
+     * Adapte les callbacks de CinetPay
+     * Format CinetPay: { code, message, data: { transaction_id, status, operator_id, ... }, metadata }
+     */
+    private adapterCallbackCinetPay(callbackData: any) {
+        // Vérifier que callbackData existe
+        if (!callbackData) {
+            this.logger.error('callbackData est undefined dans adapterCallbackCinetPay');
+            throw new BadRequestException('Données de callback invalides');
+        }
+
+        this.logger.debug(`Traitement callback CinetPay: ${JSON.stringify(callbackData)}`);
+
+        // Extraire la référence de paiement depuis les métadonnées si disponible
+        let referencePaiement: string | undefined;
+        try {
+            if (callbackData.metadata) {
+                const metadata = typeof callbackData.metadata === 'string'
+                    ? JSON.parse(callbackData.metadata)
+                    : callbackData.metadata;
+                referencePaiement = metadata.reference_paiement;
+            }
+        } catch (e) {
+            this.logger.warn(`Impossible de parser les métadonnées CinetPay: ${e.message}`);
+        }
+
+        // CinetPay peut envoyer transaction_id directement ou dans data
+        const transactionId = callbackData.transaction_id ||
+            callbackData.data?.transaction_id ||
+            callbackData.cpm_trans_id ||
+            callbackData.cpm_transaction_id;
+
+        // Code "00" = succès, autres codes = échec
+        const code = callbackData.code || callbackData.data?.code || callbackData.status;
+        const statusData = callbackData.data?.status || callbackData.status;
+        const isSuccess = code === '00' ||
+            code === 'ACCEPTED' ||
+            statusData === 'ACCEPTED' ||
+            statusData === 'SUCCESS';
+
+        return {
+            reference_paiement: referencePaiement || transactionId || callbackData.reference_paiement,
+            statut: isSuccess ? StatutPaiement.REUSSI : StatutPaiement.ECHOUE,
+            reference_externe: transactionId,
+            message_erreur: isSuccess ? null : (callbackData.message || callbackData.data?.message || 'Paiement échoué')
+        };
+    }
+
+    /**
      * Mappe le statut générique vers StatutPaiement
      */
     private mapperStatut(statut: string): StatutPaiement {
@@ -156,7 +240,7 @@ export class PaiementWebhookController {
             return StatutPaiement.ANNULE;
         }
 
-        return StatutPaiement.ECHOUE; 
+        return StatutPaiement.ECHOUE;
     }
 }
 
