@@ -125,7 +125,26 @@ export class PaiementService {
         }
 
         paiement.statut = statut;
-        paiement.donnees_callback = donneesCallback;
+
+        const previousCallback = paiement.donnees_callback ?? {};
+        const previousBeneficiaires = previousCallback?.beneficiaires;
+
+        const mergedCallback: Record<string, any> = {
+            ...previousCallback,
+            dernier_callback: donneesCallback,
+        };
+
+        if (previousCallback?.initialisation && !mergedCallback.initialisation) {
+            mergedCallback.initialisation = previousCallback.initialisation;
+        }
+
+        if (donneesCallback?.beneficiaires) {
+            mergedCallback.beneficiaires = donneesCallback.beneficiaires;
+        } else if (previousBeneficiaires) {
+            mergedCallback.beneficiaires = previousBeneficiaires;
+        }
+
+        paiement.donnees_callback = mergedCallback;
         paiement.reference_externe = referenceExterne || paiement.reference_externe;
         paiement.message_erreur = messageErreur || null;
 
