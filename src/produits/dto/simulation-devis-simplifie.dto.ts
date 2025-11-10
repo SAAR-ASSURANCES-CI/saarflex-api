@@ -105,6 +105,12 @@ export class SimulationDevisSimplifieeResponseDto {
   })
   id: string;
 
+  @ApiProperty({
+    description: 'Référence du devis simulé',
+    example: 'VIE-20241110-0001'
+  })
+  reference: string;
+
   @ApiProperty({ 
     description: 'Nom du produit',
     example: 'Assurance Vie Épargne Plus'

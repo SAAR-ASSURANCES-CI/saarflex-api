@@ -18,6 +18,9 @@ export class DevisSimule {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ type: 'varchar', length: 50, unique: true })
+  reference: string;
+
   @Column({ type: 'uuid', nullable: false })
   produit_id: string;
 

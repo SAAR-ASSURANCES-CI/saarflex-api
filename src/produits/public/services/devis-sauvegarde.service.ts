@@ -276,6 +276,7 @@ export class DevisSauvegardeService {
   private formatDevisSauvegarde(devis: DevisSimule): DevisSauvegardeDto {
     return {
       id: devis.id,
+      reference: devis.reference,
       nom_produit: devis.produit?.nom || 'Produit inconnu',
       type_produit: devis.produit?.type || 'Type inconnu',
       prime_calculee: Number(devis.prime_calculee),

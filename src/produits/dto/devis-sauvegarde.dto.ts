@@ -44,6 +44,12 @@ export class DevisSauvegardeDto {
   id: string;
 
   @ApiProperty({
+    description: 'Référence unique du devis',
+    example: 'NONVIE-20241110-0003'
+  })
+  reference: string;
+
+  @ApiProperty({
     description: 'Nom du produit',
     example: 'Assurance Vie Épargne Plus'
   })

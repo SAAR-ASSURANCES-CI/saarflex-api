@@ -279,6 +279,7 @@ export class ClientsService {
   private mapDevisToDto(devis: DevisSimule[]): ClientDevisDto[] {
     return devis.map((d) => ({
       id: d.id,
+      reference: d.reference,
       produit_nom: d.produit.nom,
       prime_calculee: Number(d.prime_calculee),
       statut: d.statut === StatutDevis.SAUVEGARDE ? 'Sauvegardé' : 'Simulé',

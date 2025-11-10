@@ -27,7 +27,7 @@ export class CinetPayConfig {
    * URL de notification pour les webhooks
    */
   get notifyUrl(): string {
-    return this.configService.get<string>('CINETPAY_NOTIFY_URL') || 'https://72c566e6d9d4.ngrok-free.app/webhooks/paiement/cinetpay';
+    return this.configService.get<string>('CINETPAY_NOTIFY_URL') || 'https://bd63472ca39d.ngrok-free.app/webhooks/paiement/cinetpay';
   }
 
   /**
