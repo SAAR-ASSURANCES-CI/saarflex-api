@@ -237,7 +237,9 @@ export class ClientsService {
     ).length;
 
     const devisEnAttente = devis.filter(
-        (d) => d.statut === StatutDevis.SIMULATION,
+      (d) =>
+        d.statut === StatutDevis.SIMULATION ||
+        d.statut === StatutDevis.EN_ATTENTE_PAIEMENT,
     ).length;
 
     // Devis sauvegardés
@@ -282,7 +284,8 @@ export class ClientsService {
       reference: d.reference,
       produit_nom: d.produit.nom,
       prime_calculee: Number(d.prime_calculee),
-      statut: d.statut === StatutDevis.SAUVEGARDE ? 'Sauvegardé' : 'Simulé',
+      statut: this.formatDevisStatus(d.statut),
+      statut_code: d.statut,
       created_at: d.created_at,
     }));
   }
@@ -350,6 +353,27 @@ export class ClientsService {
       annule: 'Annulé',
     };
     return mapping[statut] || statut;
+  }
+
+  /**
+   * Formate le statut d'un devis pour l'affichage
+   */
+  private formatDevisStatus(statut: StatutDevis): string {
+    switch (statut) {
+      case StatutDevis.SAUVEGARDE:
+        return 'Sauvegardé';
+      case StatutDevis.EN_ATTENTE_PAIEMENT:
+        return 'En attente de paiement';
+      case StatutDevis.PAYE:
+        return 'Payé';
+      case StatutDevis.CONVERTI_EN_CONTRAT:
+        return 'Converti en contrat';
+      case StatutDevis.EXPIRE:
+        return 'Expiré';
+      case StatutDevis.SIMULATION:
+      default:
+        return 'Simulé';
+    }
   }
 }
 

@@ -121,9 +121,18 @@ export class ContratsAdminService {
       throw new NotFoundException('Contrat non trouvé');
     }
 
-    const nombre_beneficiaires = await this.beneficiaireRepository.count({ where: { contrat: { id } as any } });
+    const [nombre_beneficiaires, beneficiaires] = await Promise.all([
+      this.beneficiaireRepository.count({ where: { contrat: { id } as any } }),
+      this.beneficiaireRepository.find({
+        where: { contrat_id: id },
+        order: { ordre: 'ASC' },
+      }),
+    ]);
 
-    return this.mapToDto({ ...contrat, nombre_beneficiaires } as Contrat & { nombre_beneficiaires: number });
+    return this.mapToDto(
+      { ...contrat, nombre_beneficiaires } as Contrat & { nombre_beneficiaires: number },
+      beneficiaires,
+    );
   }
 
   /**
@@ -148,11 +157,20 @@ export class ContratsAdminService {
 
     contrat.statut = dto.statut as StatutContrat;
     const updated = await this.contratRepository.save(contrat);
-    const nombre_beneficiaires = await this.beneficiaireRepository.count({ where: { contrat: { id } as any } });
+    const [nombre_beneficiaires, beneficiaires] = await Promise.all([
+      this.beneficiaireRepository.count({ where: { contrat: { id } as any } }),
+      this.beneficiaireRepository.find({
+        where: { contrat_id: id },
+        order: { ordre: 'ASC' },
+      }),
+    ]);
 
     console.log('[ContratsAdminService] updateContratStatut - Success');
 
-    return this.mapToDto({ ...updated, nombre_beneficiaires } as Contrat & { nombre_beneficiaires: number });
+    return this.mapToDto(
+      { ...updated, nombre_beneficiaires } as Contrat & { nombre_beneficiaires: number },
+      beneficiaires,
+    );
   }
 
   /**
@@ -189,7 +207,10 @@ export class ContratsAdminService {
     return { total, par_statut: parStatut, primes_totales, ce_mois };
   }
 
-  private mapToDto(contrat: Contrat & { nombre_beneficiaires: number }): ContratAdminDto {
+  private mapToDto(
+    contrat: Contrat & { nombre_beneficiaires: number },
+    beneficiaires: Beneficiaire[] = [],
+  ): ContratAdminDto {
     return {
       id: contrat.id,
       numero_contrat: contrat.numero_contrat,
@@ -218,6 +239,11 @@ export class ContratsAdminService {
       date_fin_couverture: contrat.date_fin_couverture,
       nombre_beneficiaires: contrat.nombre_beneficiaires || 0,
       created_at: contrat.created_at,
+      beneficiaires: beneficiaires.map((beneficiaire) => ({
+        nom_complet: beneficiaire.nom_complet,
+        lien_souscripteur: beneficiaire.lien_souscripteur,
+        ordre: beneficiaire.ordre,
+      })),
     };
   }
 }

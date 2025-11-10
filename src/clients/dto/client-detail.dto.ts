@@ -1,3 +1,5 @@
+import { StatutDevis } from '../../produits/entities/devis-simule.entity';
+
 /**
  * DTO pour les détails complets d'un client
  */
@@ -60,6 +62,7 @@ export class ClientDevisDto {
   produit_nom: string;
   prime_calculee: number;
   statut: string;
+  statut_code: StatutDevis;
   created_at: Date;
 }
 
