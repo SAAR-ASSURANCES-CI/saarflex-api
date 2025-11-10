@@ -123,6 +123,7 @@ export class PaiementWebhookController {
         statut: StatutPaiement;
         reference_externe?: string;
         message_erreur?: string;
+        devis_id?: string;
     } {
 
         switch (aggregateur.toLowerCase()) {
@@ -183,20 +184,36 @@ export class PaiementWebhookController {
 
         this.logger.debug(`Traitement callback CinetPay: ${JSON.stringify(callbackData)}`);
 
-        // Extraire la référence de paiement depuis les métadonnées si disponible
+        // Extraire la référence de paiement depuis les métadonnées ou cpm_custom si disponible
         let referencePaiement: string | undefined;
+        let devisId: string | undefined;
+        let beneficiaires: Array<{ nom_complet: string; lien_souscripteur: string; ordre: number }> | undefined;
         try {
             if (callbackData.metadata) {
                 const metadata = typeof callbackData.metadata === 'string'
                     ? JSON.parse(callbackData.metadata)
                     : callbackData.metadata;
-                referencePaiement = metadata.reference_paiement;
+                referencePaiement = metadata.reference_paiement ?? referencePaiement;
+                devisId = metadata.devis_id ?? devisId;
+                beneficiaires = metadata.beneficiaires ?? beneficiaires;
             }
         } catch (e) {
             this.logger.warn(`Impossible de parser les métadonnées CinetPay: ${e.message}`);
         }
 
-        // CinetPay peut envoyer transaction_id directement ou dans data
+        if ((!referencePaiement || !devisId) && callbackData.cpm_custom) {
+            try {
+                const custom = typeof callbackData.cpm_custom === 'string'
+                    ? JSON.parse(callbackData.cpm_custom)
+                    : callbackData.cpm_custom;
+                referencePaiement = custom.reference_paiement ?? referencePaiement;
+                devisId = custom.devis_id ?? devisId;
+                beneficiaires = custom.beneficiaires ?? beneficiaires;
+            } catch (e) {
+                this.logger.warn(`Impossible de parser cpm_custom CinetPay: ${e.message}`);
+            }
+        }
+
         const transactionId = callbackData.transaction_id ||
             callbackData.data?.transaction_id ||
             callbackData.cpm_trans_id ||
@@ -205,16 +222,22 @@ export class PaiementWebhookController {
         // Code "00" = succès, autres codes = échec
         const code = callbackData.code || callbackData.data?.code || callbackData.status;
         const statusData = callbackData.data?.status || callbackData.status;
+        const errorMessage = (callbackData.cpm_error_message || callbackData.error_message || '').toString().toUpperCase();
         const isSuccess = code === '00' ||
             code === 'ACCEPTED' ||
             statusData === 'ACCEPTED' ||
-            statusData === 'SUCCESS';
+            statusData === 'SUCCESS' ||
+            errorMessage === 'SUCCES' ||
+            errorMessage === 'SUCCESS';
 
         return {
             reference_paiement: referencePaiement || transactionId || callbackData.reference_paiement,
             statut: isSuccess ? StatutPaiement.REUSSI : StatutPaiement.ECHOUE,
             reference_externe: transactionId,
-            message_erreur: isSuccess ? null : (callbackData.message || callbackData.data?.message || 'Paiement échoué')
+            message_erreur: isSuccess ? null : (callbackData.message || callbackData.data?.message || 'Paiement échoué'),
+            devis_id: devisId,
+            // On renvoie les bénéficiaires éventuels pour enrichir le callback
+            ...(beneficiaires ? { beneficiaires } : {}),
         };
     }
 

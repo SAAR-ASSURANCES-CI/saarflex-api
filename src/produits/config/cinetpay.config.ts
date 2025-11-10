@@ -34,7 +34,7 @@ export class CinetPayConfig {
    * URL de retour après paiement
    */
   get returnUrl(): string {
-    return this.configService.get<string>('CINETPAY_RETURN_URL') || 'https://qejog5jxm7.loclx.io/paiement/succes';
+    return this.configService.get<string>('CINETPAY_RETURN_URL') || 'https://evil-mice-attack.loca.lt/paiement/succes';
   }
 
   /**
