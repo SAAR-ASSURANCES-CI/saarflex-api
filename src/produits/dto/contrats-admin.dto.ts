@@ -114,6 +114,17 @@ export class ContratsListQueryDto {
 /**
  * DTO pour la réponse d'un contrat (admin/agent)
  */
+export class ContratBeneficiaireDto {
+  @ApiProperty({ description: 'Nom complet du bénéficiaire', example: 'Jean Dupont' })
+  nom_complet: string;
+
+  @ApiProperty({ description: 'Lien avec le souscripteur', example: 'Épouse' })
+  lien_souscripteur: string;
+
+  @ApiProperty({ description: 'Ordre de priorité du bénéficiaire', example: 1 })
+  ordre: number;
+}
+
 export class ContratAdminDto {
   @ApiProperty({ description: 'ID unique du contrat' })
   id: string;
@@ -164,6 +175,13 @@ export class ContratAdminDto {
 
   @ApiProperty({ description: 'Date de création du contrat' })
   created_at: Date;
+
+  @ApiProperty({
+    description: 'Liste des bénéficiaires associés',
+    type: [ContratBeneficiaireDto],
+    required: false,
+  })
+  beneficiaires?: ContratBeneficiaireDto[];
 }
 
 /**
