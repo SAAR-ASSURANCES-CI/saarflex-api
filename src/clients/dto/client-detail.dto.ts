@@ -56,6 +56,7 @@ export class ClientStatsDto {
  */
 export class ClientDevisDto {
   id: string;
+  reference: string;
   produit_nom: string;
   prime_calculee: number;
   statut: string;

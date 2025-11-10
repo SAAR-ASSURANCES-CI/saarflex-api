@@ -248,6 +248,7 @@ export class DevisAdminService {
   private mapToDto(devis: DevisSimule & { documents?: DocumentIdentite[] }): DevisAdminDto {
     return {
       id: devis.id,
+      reference: devis.reference,
       produit: {
         id: devis.produit?.id || '',
         nom: devis.produit?.nom || 'Produit inconnu',

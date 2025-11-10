@@ -32,6 +32,7 @@ export class DevisMapperService {
         
         return {
             id: devis.id,
+            reference: devis.reference,
             nom_produit: produit.nom,
             type_produit: produit.type,
             periodicite_prime: produit.periodicite_prime,

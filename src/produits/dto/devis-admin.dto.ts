@@ -122,6 +122,12 @@ export class DevisAdminDto {
   id: string;
 
   @ApiProperty({
+    description: 'Référence unique du devis simulé',
+    example: 'VIE-20241110-0001'
+  })
+  reference: string;
+
+  @ApiProperty({
     description: 'Informations du produit',
     example: { id: '...', nom: 'Assurance Vie', type: 'vie' }
   })
