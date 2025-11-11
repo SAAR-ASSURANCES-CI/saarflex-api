@@ -30,3 +30,4 @@ export * from './simulation-devis-simplifie.dto';
 export * from './beneficiaire.dto';
 export * from './document-identite.dto';
 export * from './devis-sauvegarde.dto';
+export * from './paiements-admin.dto';

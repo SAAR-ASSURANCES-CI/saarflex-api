@@ -13,35 +13,35 @@ export class CinetPayConfig {
    * Clé API CinetPay
    */
   get apikey(): string {
-    return this.configService.get<string>('CINETPAY_API_KEY') || '97814879868ff3c14ade8f2.88189786';
+    return this.configService.get<string>('CINETPAY_API_KEY') || '';
   }
 
   /**
    * Site ID CinetPay
    */
   get siteId(): string {
-    return this.configService.get<string>('CINETPAY_SITE_ID') || '105906917';
+    return this.configService.get<string>('CINETPAY_SITE_ID') || '';
   }
 
   /**
    * URL de notification pour les webhooks
    */
   get notifyUrl(): string {
-    return this.configService.get<string>('CINETPAY_NOTIFY_URL') || 'https://bd63472ca39d.ngrok-free.app/webhooks/paiement/cinetpay';
+    return this.configService.get<string>('CINETPAY_NOTIFY_URL') || '';
   }
 
   /**
    * URL de retour après paiement
    */
   get returnUrl(): string {
-    return this.configService.get<string>('CINETPAY_RETURN_URL') || 'https://evil-mice-attack.loca.lt/paiement/succes';
+    return this.configService.get<string>('CINETPAY_RETURN_URL') || '';
   }
 
   /**
    * URL de l'API CinetPay
    */
   get apiUrl(): string {
-    return this.configService.get<string>('CINETPAY_API_URL', 'https://api-checkout.cinetpay.com/v2/payment');
+    return this.configService.get<string>('CINETPAY_API_URL', '');
   }
 
   /**
