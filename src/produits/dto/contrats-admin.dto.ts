@@ -133,6 +133,19 @@ export class ContratAdminDto {
   numero_contrat: string;
 
   @ApiProperty({
+    description: 'Informations du devis associé',
+    required: false,
+    example: { id: '...', reference: 'NONVIE-20250101-0001', statut: 'converti_en_contrat' },
+  })
+  devis?: {
+    id: string;
+    reference: string;
+    statut: string;
+    prime_calculee?: number;
+    created_at: Date;
+  };
+
+  @ApiProperty({
     description: 'Informations du produit',
     example: { id: '...', nom: 'Assurance Vie', type: 'vie' }
   })
@@ -161,6 +174,12 @@ export class ContratAdminDto {
   @ApiProperty({ description: 'Plafond en FCFA', required: false, example: 1000000 })
   plafond?: number;
 
+  @ApiProperty({ description: 'Périodicité de paiement des primes', example: 'mensuel' })
+  periodicite_paiement: string;
+
+  @ApiProperty({ description: 'Durée de couverture (en mois)', example: 12 })
+  duree_couverture: number;
+
   @ApiProperty({ enum: StatutContrat, description: 'Statut du contrat', example: StatutContrat.ACTIF })
   statut: StatutContrat;
 
@@ -170,11 +189,31 @@ export class ContratAdminDto {
   @ApiProperty({ description: 'Date de fin de couverture' })
   date_fin_couverture: Date;
 
+  @ApiProperty({ description: "L'assuré est-il le souscripteur ?", example: true })
+  assure_est_souscripteur: boolean;
+
+  @ApiProperty({
+    description: "Informations de l'assuré",
+    required: false,
+    type: Object,
+    example: { nom: 'Jean Dupont', date_naissance: '1990-05-12' },
+  })
+  informations_assure?: Record<string, any>;
+
+  @ApiProperty({ description: 'Chemin document identité recto', required: false })
+  chemin_recto_assure?: string | null;
+
+  @ApiProperty({ description: 'Chemin document identité verso', required: false })
+  chemin_verso_assure?: string | null;
+
   @ApiProperty({ description: "Nombre de bénéficiaires associés", example: 2 })
   nombre_beneficiaires: number;
 
   @ApiProperty({ description: 'Date de création du contrat' })
   created_at: Date;
+
+  @ApiProperty({ description: 'Date de dernière mise à jour du contrat' })
+  updated_at: Date;
 
   @ApiProperty({
     description: 'Liste des bénéficiaires associés',
