@@ -48,7 +48,8 @@ export class ContratsAdminService {
       .createQueryBuilder('contrat')
       .leftJoinAndSelect('contrat.produit', 'produit')
       .leftJoinAndSelect('contrat.grilleTarifaire', 'grilleTarifaire')
-      .leftJoinAndSelect('contrat.utilisateur', 'utilisateur');
+      .leftJoinAndSelect('contrat.utilisateur', 'utilisateur')
+      .leftJoinAndSelect('contrat.devisSimule', 'devis');
 
     if (statut) {
       qb.andWhere('contrat.statut = :statut', { statut });
@@ -114,7 +115,7 @@ export class ContratsAdminService {
 
     const contrat = await this.contratRepository.findOne({
       where: { id },
-      relations: ['produit', 'grilleTarifaire', 'utilisateur']
+      relations: ['produit', 'grilleTarifaire', 'utilisateur', 'devisSimule']
     });
 
     if (!contrat) {
@@ -148,7 +149,7 @@ export class ContratsAdminService {
 
     const contrat = await this.contratRepository.findOne({
       where: { id },
-      relations: ['produit', 'grilleTarifaire', 'utilisateur']
+      relations: ['produit', 'grilleTarifaire', 'utilisateur', 'devisSimule']
     });
 
     if (!contrat) {
@@ -214,6 +215,15 @@ export class ContratsAdminService {
     return {
       id: contrat.id,
       numero_contrat: contrat.numero_contrat,
+      devis: contrat.devisSimule
+        ? {
+            id: contrat.devisSimule.id,
+            reference: contrat.devisSimule.reference,
+            statut: contrat.devisSimule.statut,
+            prime_calculee: Number(contrat.devisSimule.prime_calculee),
+            created_at: contrat.devisSimule.created_at,
+          }
+        : undefined,
       produit: {
         id: contrat.produit?.id || '',
         nom: contrat.produit?.nom || 'Produit inconnu',
@@ -221,8 +231,8 @@ export class ContratsAdminService {
         description: contrat.produit?.description || undefined
       },
       grille_tarifaire: {
-        id: (contrat as any).grilleTarifaire?.id || '',
-        nom: (contrat as any).grilleTarifaire?.nom || 'Grille inconnue'
+        id: contrat.grilleTarifaire?.id || '',
+        nom: contrat.grilleTarifaire?.nom || 'Grille inconnue'
       },
       utilisateur: contrat.utilisateur ? {
         id: contrat.utilisateur.id,
@@ -234,11 +244,18 @@ export class ContratsAdminService {
       prime_mensuelle: Number(contrat.prime_mensuelle),
       franchise: Number(contrat.franchise),
       plafond: contrat.plafond ? Number(contrat.plafond) : undefined,
+      periodicite_paiement: contrat.periodicite_paiement,
+      duree_couverture: contrat.duree_couverture,
       statut: contrat.statut,
       date_debut_couverture: contrat.date_debut_couverture,
       date_fin_couverture: contrat.date_fin_couverture,
+      assure_est_souscripteur: contrat.assure_est_souscripteur,
+      informations_assure: contrat.informations_assure || undefined,
+      chemin_recto_assure: contrat.chemin_recto_assure || undefined,
+      chemin_verso_assure: contrat.chemin_verso_assure || undefined,
       nombre_beneficiaires: contrat.nombre_beneficiaires || 0,
       created_at: contrat.created_at,
+      updated_at: contrat.updated_at,
       beneficiaires: beneficiaires.map((beneficiaire) => ({
         nom_complet: beneficiaire.nom_complet,
         lien_souscripteur: beneficiaire.lien_souscripteur,
