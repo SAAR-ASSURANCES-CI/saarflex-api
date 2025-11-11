@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { DevisSimule } from './devis-simule.entity';
 import { Contrat } from './contrat.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum StatutPaiement {
     EN_ATTENTE = 'en_attente',
@@ -92,5 +93,9 @@ export class Paiement {
     @ManyToOne(() => Contrat, { onDelete: 'SET NULL', nullable: true })
     @JoinColumn({ name: 'contrat_id' })
     contrat: Contrat;
+
+    @ManyToOne(() => User, { nullable: false })
+    @JoinColumn({ name: 'utilisateur_id' })
+    utilisateur: User;
 }
 
