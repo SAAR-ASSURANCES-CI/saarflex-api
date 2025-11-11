@@ -381,10 +381,29 @@ export class AdminDashboardService {
       id: d.id,
       nomProduit: d.produit.nom,
       client: d.utilisateur?.nom || 'Client anonyme',
-      montantPrime: d.prime_calculee,
+      montantPrime: Number(d.prime_calculee),
       dateCreation: d.created_at,
-      statut: d.statut === StatutDevis.SAUVEGARDE ? 'Sauvegardé' : 'Simulé',
+      statutCode: d.statut,
+      statut: this.formatDevisStatus(d.statut),
     }));
+  }
+
+  private formatDevisStatus(statut: StatutDevis): string {
+    switch (statut) {
+      case StatutDevis.SAUVEGARDE:
+        return 'Sauvegardé';
+      case StatutDevis.EN_ATTENTE_PAIEMENT:
+        return 'En attente de paiement';
+      case StatutDevis.PAYE:
+        return 'Payé';
+      case StatutDevis.CONVERTI_EN_CONTRAT:
+        return 'Converti en contrat';
+      case StatutDevis.EXPIRE:
+        return 'Expiré';
+      case StatutDevis.SIMULATION:
+      default:
+        return 'Simulé';
+    }
   }
 }
 

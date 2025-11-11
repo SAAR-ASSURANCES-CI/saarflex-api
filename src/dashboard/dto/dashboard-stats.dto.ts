@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { StatutDevis } from '../../produits/entities/devis-simule.entity';
 
 /**
  * DTO pour les statistiques principales du dashboard
@@ -91,6 +92,7 @@ export class ChartDataDto {
     montantPrime: number;
     dateCreation: Date;
     statut: string;
+    statutCode: StatutDevis;
   }>;
 }
 
