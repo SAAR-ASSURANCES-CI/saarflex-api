@@ -154,24 +154,32 @@ export class AgentDashboardService {
       .andWhere('paiement.date_paiement >= :debutMois', { debutMois })
       .getRawOne();
 
-    // Vie
     const vieResult = await this.paiementRepository
       .createQueryBuilder('paiement')
-      .innerJoin('paiement.contrat', 'contrat')
-      .innerJoin('contrat.produit', 'produit')
+      .leftJoin('paiement.contrat', 'contrat')
+      .leftJoin('paiement.devisSimule', 'devis')
+      .leftJoin('contrat.produit', 'produitContrat')
+      .leftJoin('devis.produit', 'produitDevis')
       .select('SUM(paiement.montant)', 'total')
       .where('paiement.statut = :statut', { statut: StatutPaiement.REUSSI })
-      .andWhere('produit.type = :type', { type: TypeProduit.VIE })
+      .andWhere(
+        '(produitContrat.type = :typeVie OR (contrat.id IS NULL AND produitDevis.type = :typeVie))',
+        { typeVie: TypeProduit.VIE },
+      )
       .getRawOne();
 
-    // Non-vie
     const nonVieResult = await this.paiementRepository
       .createQueryBuilder('paiement')
-      .innerJoin('paiement.contrat', 'contrat')
-      .innerJoin('contrat.produit', 'produit')
+      .leftJoin('paiement.contrat', 'contrat')
+      .leftJoin('paiement.devisSimule', 'devis')
+      .leftJoin('contrat.produit', 'produitContrat')
+      .leftJoin('devis.produit', 'produitDevis')
       .select('SUM(paiement.montant)', 'total')
       .where('paiement.statut = :statut', { statut: StatutPaiement.REUSSI })
-      .andWhere('produit.type = :type', { type: TypeProduit.NON_VIE })
+      .andWhere(
+        '(produitContrat.type = :typeNonVie OR (contrat.id IS NULL AND produitDevis.type = :typeNonVie))',
+        { typeNonVie: TypeProduit.NON_VIE },
+      )
       .getRawOne();
 
     return {
@@ -206,22 +214,32 @@ export class AgentDashboardService {
 
       const vieResult = await this.paiementRepository
         .createQueryBuilder('paiement')
-        .innerJoin('paiement.contrat', 'contrat')
-        .innerJoin('contrat.produit', 'produit')
+        .leftJoin('paiement.contrat', 'contrat')
+        .leftJoin('paiement.devisSimule', 'devis')
+        .leftJoin('contrat.produit', 'produitContrat')
+        .leftJoin('devis.produit', 'produitDevis')
         .select('SUM(paiement.montant)', 'total')
         .where('paiement.statut = :statut', { statut: StatutPaiement.REUSSI })
-        .andWhere('produit.type = :type', { type: TypeProduit.VIE })
+        .andWhere(
+          '(produitContrat.type = :typeVie OR (contrat.id IS NULL AND produitDevis.type = :typeVie))',
+          { typeVie: TypeProduit.VIE },
+        )
         .andWhere('paiement.date_paiement >= :debut', { debut: debutMois })
         .andWhere('paiement.date_paiement <= :fin', { fin: finMois })
         .getRawOne();
 
       const nonVieResult = await this.paiementRepository
         .createQueryBuilder('paiement')
-        .innerJoin('paiement.contrat', 'contrat')
-        .innerJoin('contrat.produit', 'produit')
+        .leftJoin('paiement.contrat', 'contrat')
+        .leftJoin('paiement.devisSimule', 'devis')
+        .leftJoin('contrat.produit', 'produitContrat')
+        .leftJoin('devis.produit', 'produitDevis')
         .select('SUM(paiement.montant)', 'total')
         .where('paiement.statut = :statut', { statut: StatutPaiement.REUSSI })
-        .andWhere('produit.type = :type', { type: TypeProduit.NON_VIE })
+        .andWhere(
+          '(produitContrat.type = :typeNonVie OR (contrat.id IS NULL AND produitDevis.type = :typeNonVie))',
+          { typeNonVie: TypeProduit.NON_VIE },
+        )
         .andWhere('paiement.date_paiement >= :debut', { debut: debutMois })
         .andWhere('paiement.date_paiement <= :fin', { fin: finMois })
         .getRawOne();
