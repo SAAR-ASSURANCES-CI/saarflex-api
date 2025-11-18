@@ -42,6 +42,7 @@ lerna-debug.log*
 .env.production.local
 .env.local
 DEPLOYMENT_DOKPLOY.md
+TROUBLESHOOTING_DOKPLOY_DB.md
 
 # temp directory
 .temp
