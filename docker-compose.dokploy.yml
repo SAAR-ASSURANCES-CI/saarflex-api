@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: .
+      target: production
+    container_name: saarflex-api
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    # Healthcheck pour Dokploy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    # Volume pour les uploads si nécessaire
+    volumes:
+      - uploads:/app/uploads
+
+
+volumes:
+  uploads:
+    driver: local
+
