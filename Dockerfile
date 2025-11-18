@@ -51,21 +51,25 @@ FROM base AS production
 # Copie des fichiers de dépendances
 COPY package.json pnpm-lock.yaml ./
 
-# Installation des dépendances de production uniquement
-RUN pnpm install --frozen-lockfile --prod
+# Installation de toutes les dépendances (dev + prod) pour le build
+RUN pnpm install --frozen-lockfile
 
 # Copie du code source avec les bonnes permissions
 COPY --chown=nodeuser:nodejs . .
+
+# Build de l'application
 RUN pnpm build
 
-# Nettoyage
-RUN rm -rf src/ node_modules/.cache && \
+# Nettoyage : supprimer les dépendances de dev et le code source
+RUN pnpm prune --prod && \
+    rm -rf src/ node_modules/.cache tsconfig*.json nest-cli.json && \
     pnpm store prune
 
 # S'assurer que l'utilisateur peut écrire dans /app
 RUN chown -R nodeuser:nodejs /app
 USER nodeuser
 
-EXPOSE 3000
+# Port d'exposition (configurable via PORT env var, par défaut 3004 en prod)
+EXPOSE 3004
 
 CMD ["node", "dist/main.js"]

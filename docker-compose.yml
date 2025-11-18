@@ -112,7 +112,7 @@ services:
     container_name: saarflex-phpmyadmin
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8082:80"
     environment:
       PMA_HOST: ${DB_HOST}
       PMA_PORT: 3306
