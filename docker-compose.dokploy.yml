@@ -7,13 +7,16 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-    # Labels pour Traefik (utilisé par Dokploy)
-    # Utiliser 'web' (HTTP) car Nginx termine déjà le SSL
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.saarflex-api.rule=Host(`api-saarflex.saarassurancesci.com`)"
-      - "traefik.http.routers.saarflex-api.entrypoints=web"
-      - "traefik.http.services.saarflex-api.loadbalancer.server.port=3000"
+    # Exposer le port 3000 du container sur le port 3001 de l'hôte
+    # (3000 est déjà utilisé par Dokploy)
+    ports:
+      - "127.0.0.1:3001:3000"
+    # Désactiver les labels Traefik car Nginx route directement vers le container
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.saarflex-api.rule=Host(`api-saarflex.saarassurancesci.com`)"
+    #   - "traefik.http.routers.saarflex-api.entrypoints=web"
+    #   - "traefik.http.services.saarflex-api.loadbalancer.server.port=3000"
     # Healthcheck pour Dokploy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
