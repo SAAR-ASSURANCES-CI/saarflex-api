@@ -4,31 +4,30 @@ services:
       context: .
       target: production
     container_name: saarflex-api
+
     environment:
       - NODE_ENV=production
       - PORT=3000
-    # Labels Traefik pour que Dokploy gère le domaine et SSL automatiquement
+
     labels:
       - "traefik.enable=true"
+      # On écoute HTTP interne (Traefik = port 8080 sur host)
       - "traefik.http.routers.saarflex-api.rule=Host(`api-saarflex.saarassurancesci.com`)"
-      - "traefik.http.routers.saarflex-api.entrypoints=websecure"
-      - "traefik.http.routers.saarflex-api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.saarflex-api.tls=true"
+      - "traefik.http.routers.saarflex-api.entrypoints=web"  
       - "traefik.http.services.saarflex-api.loadbalancer.server.port=3000"
-    # Healthcheck pour Dokploy
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
+
     restart: unless-stopped
-    # Volume pour les uploads si nécessaire
+
     volumes:
       - uploads:/app/uploads
-
 
 volumes:
   uploads:
     driver: local
-
