@@ -69,7 +69,7 @@ RUN pnpm prune --prod && \
 RUN chown -R nodeuser:nodejs /app
 USER nodeuser
 
-# Port d'exposition (configurable via PORT env var, par défaut 3004 en prod)
-EXPOSE 3004
+# Port d'exposition (configurable via PORT env var, par défaut 3000)
+EXPOSE 3000
 
 CMD ["node", "dist/main.js"]
