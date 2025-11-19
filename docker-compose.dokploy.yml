@@ -7,6 +7,13 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+    # Labels pour Traefik (utilisé par Dokploy)
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.saarflex-api.rule=Host(`api-saarflex.saarassurancesci.com`)"
+      - "traefik.http.routers.saarflex-api.entrypoints=websecure"
+      - "traefik.http.routers.saarflex-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.saarflex-api.loadbalancer.server.port=3000"
     # Healthcheck pour Dokploy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
