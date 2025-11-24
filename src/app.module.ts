@@ -15,6 +15,7 @@ import { EmailModule } from './users/email/email.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ClientsModule } from './clients/clients.module';
 import { BrancheProduit } from './produits/entities/branche-produit.entity';
+import { CategorieProduit } from './produits/entities/categorie-produit.entity';
 import { Produit } from './produits/entities/produit.entity';
 import { CritereTarification } from './produits/entities/critere-tarification.entity';
 import { ValeurCritere } from './produits/entities/valeur-critere.entity';
@@ -35,7 +36,7 @@ import { Paiement } from './produits/entities/paiement.entity';
       isGlobal: true,
       envFilePath: '.env'
     }),
-    
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -47,12 +48,13 @@ import { Paiement } from './produits/entities/paiement.entity';
         password: configService.get('DB_PASSWORD') ?? 'saarflex_password',
         database: configService.get('DB_NAME') ?? 'saarflex_db',
         entities: [
-          User, 
-          Profile, 
-          Session, 
-          Notification, 
+          User,
+          Profile,
+          Session,
+          Notification,
           PasswordReset,
           BrancheProduit,
+          CategorieProduit,
           Produit,
           CritereTarification,
           ValeurCritere,

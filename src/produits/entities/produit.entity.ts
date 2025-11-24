@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { BrancheProduit } from './branche-produit.entity';
+import { CategorieProduit } from './categorie-produit.entity';
 import { CritereTarification } from './critere-tarification.entity';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
 import { DevisSimule } from './devis-simule.entity';
@@ -46,10 +47,10 @@ export class Produit {
   @Column({ type: 'varchar', length: 500, nullable: true })
   conditions_pdf: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: StatutProduit, 
-    default: 'brouillon' 
+  @Column({
+    type: 'enum',
+    enum: StatutProduit,
+    default: 'brouillon'
   })
   statut: StatutProduit;
 
@@ -78,6 +79,10 @@ export class Produit {
   @ManyToOne(() => BrancheProduit, { nullable: true })
   @JoinColumn({ name: 'branch_id' })
   branche: BrancheProduit;
+
+  @ManyToOne(() => CategorieProduit, { nullable: true })
+  @JoinColumn({ name: 'categorie_id' })
+  categorie: CategorieProduit;
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'created_by' })

@@ -6,6 +6,7 @@ import { UsersModule } from '../users/users.module';
 // Contrôleurs Admin
 import { ProduitsAdminController } from './admin/controllers/produits-admin.controller';
 import { BranchesAdminController } from './admin/controllers/branches-admin.controller';
+import { CategoriesAdminController } from './admin/controllers/categories-admin.controller';
 import { CriteresAdminController } from './admin/controllers/criteres-admin.controller';
 import { GarantiesAdminController } from './admin/controllers/garanties-admin.controller';
 import { GrillesTarifairesAdminController } from './admin/controllers/grilles-tarifaires-admin.controller';
@@ -29,6 +30,7 @@ import { ContratsController } from './public/controllers/contrats.controller';
 // Services Admin
 import { ProduitsAdminService } from './admin/services/produits-admin.service';
 import { BranchesAdminService } from './admin/services/branches-admin.service';
+import { CategoriesAdminService } from './admin/services/categories-admin.service';
 import { CriteresAdminService } from './admin/services/criteres-admin.service';
 import { GarantiesAdminService } from './admin/services/garanties-admin.service';
 import { GrillesTarifairesAdminService } from './admin/services/grilles-tarifaires-admin.service';
@@ -60,6 +62,7 @@ import { CinetPayConfig } from './config/cinetpay.config';
 // Entités
 import { Produit } from './entities/produit.entity';
 import { BrancheProduit } from './entities/branche-produit.entity';
+import { CategorieProduit } from './entities/categorie-produit.entity';
 import { CritereTarification } from './entities/critere-tarification.entity';
 import { ValeurCritere } from './entities/valeur-critere.entity';
 import { GrilleTarifaire } from './entities/grille-tarifaire.entity';
@@ -79,6 +82,7 @@ import { User } from '../users/entities/user.entity';
     TypeOrmModule.forFeature([
       Produit,
       BrancheProduit,
+      CategorieProduit,
       CritereTarification,
       ValeurCritere,
       GrilleTarifaire,
@@ -99,6 +103,7 @@ import { User } from '../users/entities/user.entity';
   controllers: [
     ProduitsAdminController,
     BranchesAdminController,
+    CategoriesAdminController,
     CriteresAdminController,
     GarantiesAdminController,
     GrillesTarifairesAdminController,
@@ -121,6 +126,7 @@ import { User } from '../users/entities/user.entity';
     // Services Admin
     ProduitsAdminService,
     BranchesAdminService,
+    CategoriesAdminService,
     CriteresAdminService,
     GarantiesAdminService,
     GrillesTarifairesAdminService,
@@ -128,13 +134,13 @@ import { User } from '../users/entities/user.entity';
     DevisAdminService,
     ContratsAdminService,
     PaiementsAdminService,
-    
+
     // Services Public
     ProduitsService,
     SimulationDevisSimplifieeService,
     DevisSauvegardeService,
     GrillesTarifairesService,
-    
+
     // Services Spécialisés (simulation devis)
     DevisValidationService,
     TarifCalculationService,
@@ -142,20 +148,21 @@ import { User } from '../users/entities/user.entity';
     DevisCreationService,
     BeneficiaireService,
     DevisMapperService,
-    
+
     // Services de souscription et paiement
     PaiementService,
     ContratService,
     SouscriptionService,
     CinetPayService,
     CinetPayConfig,
-    
+
     // Autres services
     TachePlanifieeService,
   ],
   exports: [
     ProduitsAdminService,
     BranchesAdminService,
+    CategoriesAdminService,
     CriteresAdminService,
     GarantiesAdminService,
     GrillesTarifairesAdminService,
@@ -172,4 +179,4 @@ import { User } from '../users/entities/user.entity';
     SouscriptionService,
   ]
 })
-export class ProduitsModule {}
+export class ProduitsModule { }
