@@ -2,4 +2,9 @@ packages:
   - .
 
 ignoredBuiltDependencies:
+  - '@nestjs/core'
   - '@scarf/scarf'
+  - '@sentry-internal/node-cpu-profiler'
+  - bcrypt
+  - nestjs-pino
+  - unrs-resolver
