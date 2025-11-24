@@ -6,6 +6,7 @@ import { Notification } from './src/users/entities/notification.entity';
 import { Profile } from './src/users/entities/profile.entity';
 import { PasswordReset } from './src/users/entities/password-reset.entity';
 import { BrancheProduit } from './src/produits/entities/branche-produit.entity';
+import { CategorieProduit } from './src/produits/entities/categorie-produit.entity';
 import { Produit } from './src/produits/entities/produit.entity';
 import { CritereTarification } from './src/produits/entities/critere-tarification.entity';
 import { ValeurCritere } from './src/produits/entities/valeur-critere.entity';
@@ -37,6 +38,7 @@ export default new DataSource({
     PasswordReset,
     // Entités produits
     BrancheProduit,
+    CategorieProduit,
     Produit,
     CritereTarification,
     ValeurCritere,

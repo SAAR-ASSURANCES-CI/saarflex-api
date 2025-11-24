@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Produit } from './produit.entity';
+import { CategorieProduit } from './categorie-produit.entity';
 
 export enum TypeBranche {
   VIE = 'vie',
@@ -14,10 +15,10 @@ export class BrancheProduit {
   @Column({ type: 'varchar', length: 255, nullable: false })
   nom: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: TypeBranche, 
-    nullable: false 
+  @Column({
+    type: 'enum',
+    enum: TypeBranche,
+    nullable: false
   })
   type: TypeBranche;
 
@@ -33,4 +34,7 @@ export class BrancheProduit {
   // Relations
   @OneToMany(() => Produit, produit => produit.branche)
   produits: Produit[];
+
+  @OneToMany(() => CategorieProduit, categorie => categorie.branche)
+  categories: CategorieProduit[];
 }
