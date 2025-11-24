@@ -25,9 +25,9 @@ dotenv.config();
 export default new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST ?? 'localhost',
-  port: parseInt(process.env.DB_PORT ?? '3307', 10),
-  username: process.env.DB_USERNAME ?? 'saarflex_user',
-  password: process.env.DB_PASSWORD ?? 'saarflex_password',
+  port: parseInt(process.env.DB_PORT ?? '3306', 10),
+  username: process.env.DB_USERNAME ?? 'root',
+  password: process.env.DB_PASSWORD ?? 'admin1234',
   database: process.env.DB_NAME ?? 'saarflex_db',
   entities: [
     User,
