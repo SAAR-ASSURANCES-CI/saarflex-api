@@ -3,38 +3,38 @@ import { IsString, IsEnum, IsOptional, IsInt, Min, MaxLength, IsNotEmpty } from 
 import { TypeBranche } from '../entities/branche-produit.entity';
 
 export class CreateBrancheProduitDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nom de la branche de produit',
     example: 'Assurance Automobile',
-    maxLength: 255
+    maxLength: 255,
   })
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
   nom: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: TypeBranche,
-    description: 'Type de la branche (vie ou non-vie)',
-    example: 'non-vie'
+    description: "Type de la branche (vie ou non-vie)",
+    example: 'non-vie',
   })
   @IsEnum(TypeBranche)
   type: TypeBranche;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Description détaillée de la branche',
     example: 'Assurance couvrant les véhicules terrestres',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ 
-    description: 'Ordre d\'affichage de la branche',
+  @ApiProperty({
+    description: "Ordre d'affichage de la branche",
     example: 1,
     minimum: 0,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsInt()
@@ -43,46 +43,57 @@ export class CreateBrancheProduitDto {
 }
 
 export class UpdateBrancheProduitDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nom de la branche de produit',
     example: 'Assurance Automobile',
     maxLength: 255,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nom?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: TypeBranche,
-    description: 'Type de la branche (vie ou non-vie)',
+    description: "Type de la branche (vie ou non-vie)",
     example: 'non-vie',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsEnum(TypeBranche)
   type?: TypeBranche;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Description détaillée de la branche',
     example: 'Assurance couvrant les véhicules terrestres',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ 
-    description: 'Ordre d\'affichage de la branche',
+  @ApiProperty({
+    description: "Ordre d'affichage de la branche",
     example: 1,
     minimum: 0,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsInt()
   @Min(0)
   ordre?: number;
+}
+
+export class CategorieProduitDto {
+  @ApiProperty({ description: 'ID de la catégorie' })
+  id: string;
+
+  @ApiProperty({ description: 'Code de la catégorie' })
+  code: string;
+
+  @ApiProperty({ description: 'Libellé de la catégorie' })
+  libelle: string;
 }
 
 export class BrancheProduitAdminDto {
@@ -92,16 +103,16 @@ export class BrancheProduitAdminDto {
   @ApiProperty({ description: 'Nom de la branche' })
   nom: string;
 
-  @ApiProperty({ 
-    enum: TypeBranche, 
-    description: 'Type de la branche (vie ou non-vie)' 
+  @ApiProperty({
+    enum: TypeBranche,
+    description: 'Type de la branche (vie ou non-vie)',
   })
   type: TypeBranche;
 
   @ApiProperty({ description: 'Description de la branche' })
   description: string;
 
-  @ApiProperty({ description: 'Ordre d\'affichage' })
+  @ApiProperty({ description: "Ordre d'affichage" })
   ordre: number;
 
   @ApiProperty({ description: 'Date de création' })
@@ -109,6 +120,9 @@ export class BrancheProduitAdminDto {
 
   @ApiProperty({ description: 'Nombre de produits dans cette branche' })
   nombre_produits: number;
+
+  @ApiProperty({ description: 'Catégories associées à la branche', required: false, type: [CategorieProduitDto] })
+  categories?: CategorieProduitDto[];
 }
 
 export class BranchesResponseDto {
@@ -121,7 +135,7 @@ export class BranchesResponseDto {
   @ApiProperty({ description: 'Page actuelle' })
   page: number;
 
-  @ApiProperty({ description: 'Nombre d\'éléments par page' })
+  @ApiProperty({ description: "Nombre d'éléments par page" })
   limit: number;
 
   @ApiProperty({ description: 'Nombre total de pages' })

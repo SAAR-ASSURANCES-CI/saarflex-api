@@ -1,84 +1,95 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsUUID, MaxLength, IsNotEmpty, IsUrl, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsUUID, MaxLength, IsNotEmpty, IsBoolean, IsInt, Min, Max } from 'class-validator';
 import { TypeProduit, StatutProduit, PeriodicitePrime } from '../entities/produit.entity';
 
+/**
+ * DTO used when creating a new product.
+ */
 export class CreateProduitDto {
-  @ApiProperty({ 
-    description: 'Nom du produit d\'assurance',
+  @ApiProperty({
+    description: "Nom du produit d'assurance",
     example: 'Assurance Auto Premium',
-    maxLength: 255
+    maxLength: 255,
   })
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
   nom: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Icône du produit (chemin ou URL)',
     example: 'icon-auto-premium.svg',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   icon?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: TypeProduit,
     description: 'Type de produit (vie ou non-vie)',
-    example: 'non-vie'
+    example: 'non-vie',
   })
   @IsEnum(TypeProduit)
   type: TypeProduit;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Description détaillée du produit',
     example: 'Assurance automobile complète avec garanties étendues',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Lien vers les conditions générales PDF',
     example: '/pdf/conditions-auto-premium.pdf',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   conditions_pdf?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: StatutProduit,
-    description: 'Statut du produit (brouillon par défaut)',
-    example: 'brouillon'
+    description: "Statut du produit (brouillon par défaut)",
+    default: 'brouillon',
   })
   @IsOptional()
   @IsEnum(StatutProduit)
   statut?: StatutProduit;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'ID de la branche à laquelle appartient ce produit',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsUUID()
   branch_id: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'ID de la catégorie du produit (optionnel)',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  categorie_id?: string;
+
+  @ApiProperty({
     description: 'Le produit nécessite-t-il des bénéficiaires ?',
     example: true,
-    default: false
+    required: false,
   })
   @IsOptional()
   @IsBoolean()
   necessite_beneficiaires?: boolean;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nombre maximum de bénéficiaires autorisés',
     example: 2,
     minimum: 0,
     maximum: 5,
-    default: 0
+    required: false,
   })
   @IsOptional()
   @IsInt()
@@ -86,100 +97,111 @@ export class CreateProduitDto {
   @Max(5)
   max_beneficiaires?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: PeriodicitePrime,
     description: 'Périodicité de paiement de la prime',
     example: PeriodicitePrime.MENSUEL,
-    default: PeriodicitePrime.MENSUEL
+    default: PeriodicitePrime.MENSUEL,
   })
   @IsOptional()
   @IsEnum(PeriodicitePrime)
   periodicite_prime?: PeriodicitePrime;
 }
 
+/**
+ * DTO used when updating an existing product.
+ */
 export class UpdateProduitDto {
-  @ApiProperty({ 
-    description: 'Nom du produit d\'assurance',
+  @ApiProperty({
+    description: "Nom du produit d'assurance",
     example: 'Assurance Auto Premium',
     maxLength: 255,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nom?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Icône du produit (chemin ou URL)',
     example: 'icon-auto-premium.svg',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   icon?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: TypeProduit,
     description: 'Type de produit (vie ou non-vie)',
     example: 'non-vie',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsEnum(TypeProduit)
   type?: TypeProduit;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Description détaillée du produit',
     example: 'Assurance automobile complète avec garanties étendues',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Lien vers les conditions générales PDF',
     example: '/pdf/conditions-auto-premium.pdf',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   conditions_pdf?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: StatutProduit,
     description: 'Statut du produit',
     example: 'actif',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsEnum(StatutProduit)
   statut?: StatutProduit;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'ID de la branche à laquelle appartient ce produit',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsUUID()
   branch_id?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'ID de la catégorie du produit (optionnel)',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  categorie_id?: string;
+
+  @ApiProperty({
     description: 'Le produit nécessite-t-il des bénéficiaires ?',
     example: true,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsBoolean()
   necessite_beneficiaires?: boolean;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nombre maximum de bénéficiaires autorisés',
     example: 2,
     minimum: 0,
     maximum: 5,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsInt()
@@ -187,17 +209,20 @@ export class UpdateProduitDto {
   @Max(5)
   max_beneficiaires?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: PeriodicitePrime,
     description: 'Périodicité de paiement de la prime',
     example: PeriodicitePrime.MENSUEL,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsEnum(PeriodicitePrime)
   periodicite_prime?: PeriodicitePrime;
 }
 
+/**
+ * DTO returned by the admin API when fetching a product.
+ */
 export class ProduitAdminDto {
   @ApiProperty({ description: 'ID unique du produit' })
   id: string;
@@ -208,9 +233,9 @@ export class ProduitAdminDto {
   @ApiProperty({ description: 'Icône du produit' })
   icon: string;
 
-  @ApiProperty({ 
-    enum: TypeProduit, 
-    description: 'Type du produit (vie ou non-vie)' 
+  @ApiProperty({
+    enum: TypeProduit,
+    description: 'Type du produit (vie ou non-vie)',
   })
   type: TypeProduit;
 
@@ -220,9 +245,9 @@ export class ProduitAdminDto {
   @ApiProperty({ description: 'Lien vers les conditions PDF' })
   conditions_pdf: string;
 
-  @ApiProperty({ 
-    enum: StatutProduit, 
-    description: 'Statut du produit' 
+  @ApiProperty({
+    enum: StatutProduit,
+    description: 'Statut du produit',
   })
   statut: StatutProduit;
 
@@ -232,7 +257,7 @@ export class ProduitAdminDto {
   @ApiProperty({ description: 'Date de dernière modification' })
   updated_at: Date;
 
-  @ApiProperty({ description: 'ID de l\'utilisateur qui a créé le produit' })
+  @ApiProperty({ description: "ID de l'utilisateur qui a créé le produit" })
   created_by: string;
 
   @ApiProperty({ description: 'Informations du créateur du produit', nullable: true })
@@ -242,22 +267,16 @@ export class ProduitAdminDto {
     email: string;
   } | null;
 
-  @ApiProperty({ 
-    description: 'Le produit nécessite-t-il des bénéficiaires ?',
-    example: true
-  })
+  @ApiProperty({ description: 'Le produit nécessite-t-il des bénéficiaires ?', example: true })
   necessite_beneficiaires: boolean;
 
-  @ApiProperty({ 
-    description: 'Nombre maximum de bénéficiaires autorisés',
-    example: 2
-  })
+  @ApiProperty({ description: 'Nombre maximum de bénéficiaires autorisés', example: 2 })
   max_beneficiaires: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: PeriodicitePrime,
     description: 'Périodicité de paiement de la prime',
-    example: PeriodicitePrime.MENSUEL
+    example: PeriodicitePrime.MENSUEL,
   })
   periodicite_prime: PeriodicitePrime;
 
@@ -267,6 +286,13 @@ export class ProduitAdminDto {
     nom: string;
     type: string;
     description: string;
+  } | null;
+
+  @ApiProperty({ description: 'Informations de la catégorie', nullable: true })
+  categorie?: {
+    id: string;
+    code: string;
+    libelle: string;
   } | null;
 
   @ApiProperty({ description: 'Nombre de critères de tarification' })
@@ -289,11 +315,9 @@ export class ProduitsAdminResponseDto {
   @ApiProperty({ description: 'Page actuelle' })
   page: number;
 
-  @ApiProperty({ description: 'Nombre d\'éléments par page' })
+  @ApiProperty({ description: "Nombre d'éléments par page" })
   limit: number;
 
   @ApiProperty({ description: 'Nombre total de pages' })
   total_pages: number;
 }
-
-
