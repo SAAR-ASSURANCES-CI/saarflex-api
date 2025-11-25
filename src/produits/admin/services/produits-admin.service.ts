@@ -229,7 +229,7 @@ export class ProduitsAdminService {
     async changeStatus(id: string, newStatus: string): Promise<ProduitAdminDto> {
         const produit = await this.produitRepository.findOne({
             where: { id },
-            relations: ['branche', 'createur'],
+            relations: ['branche', 'categorie', 'createur'],
         });
         if (!produit) {
             throw new NotFoundException(`Produit avec l'ID ${id} non trouvé`);
