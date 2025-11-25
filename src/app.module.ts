@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ProduitsModule } from './produits/produits.module';
+import { ConfigurationModule } from './config/configuration.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_PIPE } from '@nestjs/core';
 import { User } from './users/entities/user.entity';
@@ -29,6 +30,7 @@ import { Beneficiaire } from './produits/entities/beneficiaire.entity';
 import { DocumentIdentite } from './produits/entities/document-identite.entity';
 import { Contrat } from './produits/entities/contrat.entity';
 import { Paiement } from './produits/entities/paiement.entity';
+import { ConfigurationSysteme } from './config/entities/configuration-systeme.entity';
 
 @Module({
   imports: [
@@ -67,7 +69,8 @@ import { Paiement } from './produits/entities/paiement.entity';
           Garantie,
           GarantieCritere,
           TarifGarantie,
-          Paiement
+          Paiement,
+          ConfigurationSysteme
         ],
         migrations: ['dist/migrations/*.js'],
         migrationsRun: true,
@@ -79,7 +82,8 @@ import { Paiement } from './produits/entities/paiement.entity';
     ProduitsModule,
     EmailModule,
     DashboardModule,
-    ClientsModule
+    ClientsModule,
+    ConfigurationModule
   ],
   controllers: [AppController],
   providers: [

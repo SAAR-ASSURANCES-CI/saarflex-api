@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Contrat, StatutContrat } from '../entities/contrat.entity';
 import { DevisSimule, StatutDevis } from '../entities/devis-simule.entity';
 import { Produit, TypeProduit, PeriodicitePrime } from '../entities/produit.entity';
+import { CategorieProduit } from '../entities/categorie-produit.entity';
+import { ConfigurationService } from '../../config/services/configuration.service';
 
 /**
  * Service de gestion des contrats d'assurance
@@ -17,6 +19,9 @@ export class ContratService {
         private readonly devisSimuleRepository: Repository<DevisSimule>,
         @InjectRepository(Produit)
         private readonly produitRepository: Repository<Produit>,
+        @InjectRepository(CategorieProduit)
+        private readonly categorieRepository: Repository<CategorieProduit>,
+        private readonly configurationService: ConfigurationService,
     ) { }
 
     /**
@@ -25,7 +30,7 @@ export class ContratService {
     async creerContratDepuisDevis(devisId: string): Promise<Contrat> {
         const devis = await this.devisSimuleRepository.findOne({
             where: { id: devisId, statut: StatutDevis.PAYE },
-            relations: ['produit', 'grilleTarifaire']
+            relations: ['produit', 'produit.categorie', 'grilleTarifaire']
         });
 
         if (!devis) {
@@ -40,7 +45,15 @@ export class ContratService {
             return contratExistant;
         }
 
-        const numeroContrat = await this.genererNumeroContrat(devis.produit.type);
+        // Vérifier que le produit a une catégorie
+        if (!devis.produit.categorie) {
+            throw new BadRequestException('Le produit doit avoir une catégorie pour générer un numéro de police');
+        }
+
+        const numeroContrat = await this.genererNumeroContrat(
+            devis.produit.type,
+            devis.produit.categorie.code
+        );
 
         const dateDebutCouverture = new Date();
         const dateFinCouverture = new Date();
@@ -80,31 +93,62 @@ export class ContratService {
     }
 
     /**
-     * Génère un numéro de contrat unique avec préfixe par type
-     * Format: VIE-2025-000001 ou NONVIE-2025-000001
+     * Génère un numéro de contrat unique selon le nouveau format
+     * Format: {CODE_AGENCE}-{CODE_CATEGORIE}{SEQUENCE}
+     * Exemple: 101-23000001
+     * 
+     * - CODE_AGENCE: 3 chiffres (configurable, ex: 101)
+     * - CODE_CATEGORIE: 3 chiffres (ex: 230)
+     * - SEQUENCE: 5 chiffres (ex: 00001)
+     * 
+     * La séquence est indépendante par catégorie ET par type de produit (VIE/NON-VIE)
      */
-    private async genererNumeroContrat(typeProduit: TypeProduit): Promise<string> {
-        const annee = new Date().getFullYear();
-        const prefixe = typeProduit === TypeProduit.VIE ? 'VIE' : 'NONVIE';
+    private async genererNumeroContrat(typeProduit: TypeProduit, codeCategorie: string): Promise<string> {
+        // Récupérer le code agence depuis la configuration
+        const codeAgence = await this.configurationService.getCodeAgence();
 
-        // On récupère le dernier contrat du même type pour cette année
+        // Validation du code catégorie (doit être numérique et faire 3 chiffres)
+        const codeCategorieNumeric = codeCategorie.replace(/\D/g, ''); 
+        if (codeCategorieNumeric.length < 3) {
+            throw new BadRequestException(`Le code catégorie "${codeCategorie}" doit contenir au moins 3 chiffres`);
+        }
+
+        // Prendre les 3 premiers chiffres du code catégorie
+        const codeCategorieFormate = codeCategorieNumeric.substring(0, 3);
+
+        // Construire le préfixe de recherche pour trouver le dernier contrat
+        // Format de recherche: {CODE_AGENCE}-{CODE_CATEGORIE}%
+        const prefixeRecherche = `${codeAgence}-${codeCategorieFormate}`;
+
+        // Récupérer le dernier contrat avec ce préfixe ET ce type de produit
+        // On doit vérifier le type de produit via une jointure
         const dernierContrat = await this.contratRepository
             .createQueryBuilder('contrat')
-            .where('contrat.numero_contrat LIKE :prefixe', { prefixe: `${prefixe}-${annee}-%` })
+            .leftJoinAndSelect('contrat.produit', 'produit')
+            .where('contrat.numero_contrat LIKE :prefixe', { prefixe: `${prefixeRecherche}%` })
+            .andWhere('produit.type = :type', { type: typeProduit })
             .orderBy('contrat.created_at', 'DESC')
             .getOne();
 
         let numeroSequence = 1;
 
         if (dernierContrat) {
-            const parts = dernierContrat.numero_contrat.split('-');
-            const dernierNumero = parseInt(parts[2], 10);
-            numeroSequence = dernierNumero + 1;
+            // Extraire la séquence du numéro de contrat
+            // Format: 101-23000001 -> extraire 00001
+            const partieApresCodeCategorie = dernierContrat.numero_contrat.substring(prefixeRecherche.length);
+            const dernierNumero = parseInt(partieApresCodeCategorie, 10);
+
+            if (!isNaN(dernierNumero)) {
+                numeroSequence = dernierNumero + 1;
+            }
         }
 
-        const numeroFormate = numeroSequence.toString().padStart(6, '0');
+        // Formater la séquence sur 5 chiffres
+        const sequenceFormatee = numeroSequence.toString().padStart(5, '0');
 
-        return `${prefixe}-${annee}-${numeroFormate}`;
+        // Format final: {CODE_AGENCE}-{CODE_CATEGORIE}{SEQUENCE}
+        // Exemple: 101-23000001
+        return `${codeAgence}-${codeCategorieFormate}${sequenceFormatee}`;
     }
 
     /**
