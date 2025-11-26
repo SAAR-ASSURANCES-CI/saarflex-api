@@ -1,39 +1,21 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class CreateCategorieProduitTable1764001559695 implements MigrationInterface {
-    name = 'CreateCategorieProduitTable1764001559695'
+export class CreateCategorieProduitTable1700000000020 implements MigrationInterface {
+    name = 'CreateCategorieProduitTable1700000000020'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        // Drop table if it exists to ensure clean state with correct collation
-        await queryRunner.query(`DROP TABLE IF EXISTS \`categories_produits\``);
-
-        // Check and drop foreign key if exists
-        const fkExists = await queryRunner.query(`
+        const tableExists = await queryRunner.query(`
             SELECT COUNT(*) as count 
-            FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
-            WHERE CONSTRAINT_SCHEMA = DATABASE() 
-            AND TABLE_NAME = 'produits' 
-            AND CONSTRAINT_NAME = 'FK_ecb66b944bda31a8648741388d9'
-        `);
-
-        if (fkExists[0].count > 0) {
-            await queryRunner.query(`ALTER TABLE \`produits\` DROP FOREIGN KEY \`FK_ecb66b944bda31a8648741388d9\``);
-        }
-
-        // Check and drop column if exists
-        const colExists = await queryRunner.query(`
-            SELECT COUNT(*) as count 
-            FROM INFORMATION_SCHEMA.COLUMNS 
+            FROM INFORMATION_SCHEMA.TABLES 
             WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = 'produits' 
-            AND COLUMN_NAME = 'categorie_id'
+            AND TABLE_NAME = 'categories_produits'
         `);
 
-        if (colExists[0].count > 0) {
-            await queryRunner.query(`ALTER TABLE \`produits\` DROP COLUMN \`categorie_id\``);
+        if (tableExists[0].count > 0) {
+            console.log('⚠️  Table categories_produits existe déjà, migration ignorée');
+            return;
         }
 
-        // Create table with explicit collation to match other tables
         await queryRunner.query(`
             CREATE TABLE \`categories_produits\` (
                 \`id\` varchar(36) NOT NULL, 
@@ -47,10 +29,8 @@ export class CreateCategorieProduitTable1764001559695 implements MigrationInterf
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
 
-        // Add column to produits
         await queryRunner.query(`ALTER TABLE \`produits\` ADD \`categorie_id\` varchar(36) NULL`);
 
-        // Add FK to categories_produits (referencing branches_produits)
         await queryRunner.query(`
             ALTER TABLE \`categories_produits\` 
             ADD CONSTRAINT \`FK_7c8acd28364e3b9d9b5465c654c\` 
@@ -58,7 +38,6 @@ export class CreateCategorieProduitTable1764001559695 implements MigrationInterf
             ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
-        // Add FK to produits (referencing categories_produits)
         await queryRunner.query(`
             ALTER TABLE \`produits\` 
             ADD CONSTRAINT \`FK_ecb66b944bda31a8648741388d9\` 
