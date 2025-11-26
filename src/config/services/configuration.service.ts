@@ -30,7 +30,19 @@ export class ConfigurationService {
      * Récupère le code agence configuré
      */
     async getCodeAgence(): Promise<string> {
-        return await this.getConfig('code_agence');
+        let config = await this.configRepository.findOne({ where: { cle: 'code_agence' } });
+
+        // Si la configuration n'existe pas, la créer avec une valeur vide
+        if (!config) {
+            config = this.configRepository.create({
+                cle: 'code_agence',
+                valeur: '',
+                description: 'Code agence/intermédiaire utilisé pour générer les numéros de police'
+            });
+            await this.configRepository.save(config);
+        }
+
+        return config.valeur;
     }
 
     /**
