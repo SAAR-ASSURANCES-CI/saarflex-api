@@ -15,17 +15,6 @@ export class CreateConfigurationSystemeTable1732537200000 implements MigrationIn
                 UNIQUE KEY \`UK_CONFIG_CLE\` (\`cle\`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
-
-        // Insérer la configuration par défaut pour le code agence
-        await queryRunner.query(`
-            INSERT INTO \`configuration_systeme\` (\`id\`, \`cle\`, \`valeur\`, \`description\`)
-            VALUES (
-                UUID(),
-                'code_agence',
-                '101',
-                'Code agence/intermédiaire utilisé pour générer les numéros de police'
-            )
-        `);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
