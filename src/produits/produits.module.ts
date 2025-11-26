@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
+import { ConfigurationModule } from '../config/configuration.module';
 
 // Contrôleurs Admin
 import { ProduitsAdminController } from './admin/controllers/produits-admin.controller';
@@ -98,7 +99,8 @@ import { User } from '../users/entities/user.entity';
       User
     ]),
     ConfigModule,
-    UsersModule
+    UsersModule,
+    ConfigurationModule
   ],
   controllers: [
     ProduitsAdminController,
