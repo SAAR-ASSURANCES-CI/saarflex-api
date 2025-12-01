@@ -9,6 +9,8 @@ services:
     environment:
       - PORT=3004
       - NODE_ENV=production
+    ports:
+      - "127.0.0.1:3004:3004"
     depends_on:
       saarflex-db:
         condition: service_healthy
@@ -82,29 +84,6 @@ services:
     networks:
       - saarflex-network
 
-  nginx:
-    image: nginx:alpine
-    container_name: saarflex-nginx-prod
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      # Configuration principale
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Configuration du sous-domaine api-saarflex.saarassurancesci.com
-      - ./nginx/api-saarflex.conf:/etc/nginx/conf.d/api-saarflex.conf:ro
-      # Certificats SSL (Let's Encrypt) - décommentez si vous utilisez Let's Encrypt
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      # Répertoire pour les challenges Let's Encrypt
-      - ./nginx/certbot/www:/var/www/certbot:ro
-      # Certificats SSL auto-signés (temporaire pour développement)
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - api
-    restart: unless-stopped
-    networks:
-      - saarflex-network
-
 volumes:
   saarflex_db_data_prod:
     driver: local
@@ -114,4 +93,3 @@ volumes:
 networks:
   saarflex-network:
     driver: bridge
-
