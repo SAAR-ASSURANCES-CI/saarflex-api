@@ -15,7 +15,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3004/"]
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -97,11 +97,10 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       # Répertoire pour les challenges Let's Encrypt
       - ./nginx/certbot/www:/var/www/certbot:ro
-      # Certificats SSL personnalisés (si vous n'utilisez pas Let's Encrypt)
-      # - ./nginx/ssl:/etc/nginx/ssl:ro
+      # Certificats SSL auto-signés (temporaire pour développement)
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
-      api:
-        condition: service_healthy
+      - api
     restart: unless-stopped
     networks:
       - saarflex-network

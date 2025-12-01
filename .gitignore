@@ -38,6 +38,9 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
+/nginx/TROUBLESHOOTING.md
+/nginx/README-NGINX.md
+
 # dotenv environment variable files
 *.env
 .env.prod
