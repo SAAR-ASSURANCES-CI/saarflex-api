@@ -1,0 +1,11 @@
+# Certificats SSL
+ssl/
+*.crt
+*.key
+*.pem
+*.csr
+
+# Certbot
+certbot/www/*
+!certbot/www/.gitkeep
+
