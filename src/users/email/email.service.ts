@@ -55,11 +55,11 @@ export class EmailService {
         
         const mailOptions = {
             from: {
-                name: 'SAARFLEX',
+                name: 'SAARCIFLEX',
                 address: this.configService.get('SMTP_USER'),
             },
             to: user.email,
-            subject: 'Bienvenue sur SAARFLEX - Votre compte a été créé avec succès',
+            subject: 'Bienvenue sur SAARCIFLEX - Votre compte a été créé avec succès',
             html,
         };
 
@@ -81,7 +81,7 @@ export class EmailService {
         
         const mailOptions = {
             from: {
-                name: 'SAARFLEX',
+                name: 'SAARCIFLEX',
                 address: this.configService.get('SMTP_USER'),
             },
             to: email,
@@ -110,7 +110,7 @@ export class EmailService {
         
         const mailOptions = {
             from: {
-                name: 'SAARFLEX',
+                name: 'SAARCIFLEX',
                 address: this.configService.get('SMTP_USER'),
             },
             to: email,
@@ -138,7 +138,7 @@ export class EmailService {
         
         const mailOptions = {
             from: {
-                name: 'SAARFLEX',
+                name: 'SAARCIFLEX',
                 address: this.configService.get('SMTP_USER'),
             },
             to: email,
@@ -164,7 +164,7 @@ export class EmailService {
     async sendEmail(to: string, subject: string, html: string): Promise<void> {
         const mailOptions = {
             from: {
-                name: 'SAAR ASSURANCE CI',
+                name: 'SAARCIFLEX',
                 address: this.configService.get('SMTP_USER'),
             },
             to,

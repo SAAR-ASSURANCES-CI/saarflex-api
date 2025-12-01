@@ -60,22 +60,42 @@ async function bootstrap() {
     });
   }
 
-  //config microservice
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.REDIS,
-    options: {
-      host: process.env.REDIS_HOST ?? '',
-      port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
-      password: process.env.REDIS_PASSWORD ?? '',
-      db: process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0,
-      retryDelay: 100,
-      retryAttempts: 3,
-      lazyConnect: true,
-    },
-  });
+  //config microservice Redis (optionnel)
+  const redisHost = process.env.REDIS_HOST;
+  const redisEnabled = process.env.REDIS_ENABLED !== 'false' && redisHost && redisHost !== '';
+  
+  if (redisEnabled) {
+    try {
+      console.log(`[Redis] Tentative de connexion à Redis sur ${redisHost}:${process.env.REDIS_PORT || 6379}`);
+      app.connectMicroservice<MicroserviceOptions>({
+        transport: Transport.REDIS,
+        options: {
+          host: redisHost,
+          port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+          password: process.env.REDIS_PASSWORD ?? '',
+          db: process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0,
+          retryDelay: 100,
+          retryAttempts: 3,
+          lazyConnect: true,
+        },
+      });
 
-  //start microservice
-  await app.startAllMicroservices();
+      //start microservice avec gestion d'erreur améliorée
+      try {
+        await app.startAllMicroservices();
+        console.log('[Redis] ✅ Microservice Redis démarré avec succès');
+      } catch (microserviceError: any) {
+        console.warn(`[Redis] ⚠️  Erreur lors du démarrage du microservice Redis: ${microserviceError.message}`);
+        console.warn('[Redis] ⚠️  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
+        // Ne pas faire échouer l'application si Redis n'est pas disponible
+      }
+    } catch (error: any) {
+      console.warn(`[Redis] ⚠️  Impossible de configurer le microservice Redis: ${error.message}`);
+      console.warn('[Redis] ⚠️  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
+    }
+  } else {
+    console.log('[Redis] ℹ️  Redis désactivé (REDIS_ENABLED=false ou REDIS_HOST non défini)');
+  }
 
   await app.listen(process.env.PORT ?? 3000);
 }
