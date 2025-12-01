@@ -1,4 +1,5 @@
 services:
+  # Service API - Exposé uniquement sur localhost pour nginx externe
   api:
     build:
       context: .
@@ -9,6 +10,7 @@ services:
     environment:
       - PORT=3004
       - NODE_ENV=production
+    # Exposé uniquement sur localhost (127.0.0.1) pour être accessible par nginx sur le VPS
     ports:
       - "127.0.0.1:3004:3004"
     depends_on:
@@ -26,6 +28,7 @@ services:
     networks:
       - saarflex-network
 
+  # Base de données MySQL - Exposée uniquement sur localhost pour sécurité
   saarflex-db:
     image: mysql:8.0
     container_name: saarflex-db
@@ -34,8 +37,9 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
+    # Exposé uniquement sur localhost pour sécurité (port 3007 pour éviter les conflits)
     ports:
-      - "3007:3306"
+      - "127.0.0.1:3007:3306"
     volumes:
       - saarflex_db_data_prod:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
@@ -59,6 +63,27 @@ services:
     networks:
       - saarflex-network
 
+  # phpMyAdmin - Interface d'administration MySQL (exposé uniquement sur localhost pour sécurité)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: saarflex-phpmyadmin-prod
+    restart: unless-stopped
+    ports:
+      - "8082:80"
+    environment:
+      PMA_HOST: ${DB_HOST}
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_ROOT_PASSWORD}
+      PMA_ARBITRARY: 1
+      MYSQL_ALLOW_EMPTY_PASSWORD: 0
+    depends_on:
+      saarflex-db:
+        condition: service_healthy
+    networks:
+      - saarflex-network
+
+  # Redis - Non exposé publiquement, accessible uniquement via le réseau Docker
   redis:
     image: redis:7-alpine
     container_name: saarflex-redis-prod
