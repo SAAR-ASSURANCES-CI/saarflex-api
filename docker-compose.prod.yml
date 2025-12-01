@@ -26,7 +26,7 @@ services:
 
   saarflex-db:
     image: mysql:8.0
-    container_name: saarflex-db-prod
+    container_name: saarflex-db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
