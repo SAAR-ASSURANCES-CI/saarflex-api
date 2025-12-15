@@ -5,9 +5,9 @@ import { Garantie } from '../../entities/garantie.entity';
 import { GarantieCritere } from '../../entities/garantie-critere.entity';
 import { TarifGarantie } from '../../entities/tarif-garantie.entity';
 import { Produit } from '../../entities/produit.entity';
-import { 
-  CreateGarantieDto, 
-  UpdateGarantieDto, 
+import {
+  CreateGarantieDto,
+  UpdateGarantieDto,
   GarantieDto,
   GarantiesResponseDto,
   CreateGarantieCritereDto,
@@ -31,11 +31,11 @@ export class GarantiesAdminService {
     private tarifGarantieRepository: Repository<TarifGarantie>,
     @InjectRepository(Produit)
     private produitRepository: Repository<Produit>,
-  ) {}
+  ) { }
 
   async create(createGarantieDto: CreateGarantieDto, userId: string): Promise<GarantieWithProduitDto> {
-    const produit = await this.produitRepository.findOne({ 
-      where: { id: createGarantieDto.produit_id } 
+    const produit = await this.produitRepository.findOne({
+      where: { id: createGarantieDto.produit_id }
     });
     if (!produit) {
       throw new NotFoundException('Produit non trouvé');
@@ -49,23 +49,23 @@ export class GarantiesAdminService {
     });
 
     const savedGarantie = await this.garantieRepository.save(garantie);
-    
+
     // Récupérer la garantie avec les relations pour le retour
     const garantieWithRelations = await this.garantieRepository.findOne({
       where: { id: savedGarantie.id },
       relations: ['produit', 'produit.branche']
     });
-    
+
     if (!garantieWithRelations) {
       throw new NotFoundException('Erreur lors de la récupération de la garantie créée');
     }
-    
+
     return this.mapToDtoWithProduit(garantieWithRelations);
   }
 
   async findAll(page: number = 1, limit: number = 10): Promise<GarantiesWithProduitResponseDto> {
     const skip = (page - 1) * limit;
-    
+
     const [garanties, total] = await this.garantieRepository.findAndCount({
       relations: ['produit', 'produit.branche'],
       order: { created_at: 'DESC' },
@@ -115,17 +115,17 @@ export class GarantiesAdminService {
 
     Object.assign(garantie, updateGarantieDto);
     const updatedGarantie = await this.garantieRepository.save(garantie);
-    
+
     // Récupérer la garantie mise à jour avec les relations
     const garantieWithRelations = await this.garantieRepository.findOne({
       where: { id: updatedGarantie.id },
       relations: ['produit', 'produit.branche']
     });
-    
+
     if (!garantieWithRelations) {
       throw new NotFoundException('Erreur lors de la récupération de la garantie mise à jour');
     }
-    
+
     return this.mapToDtoWithProduit(garantieWithRelations);
   }
 
@@ -161,7 +161,7 @@ export class GarantiesAdminService {
 
     Object.assign(garantieCritere, updateCritereDto);
     const updatedCritere = await this.garantieCritereRepository.save(garantieCritere);
-    
+
     return this.mapCritereToDto(updatedCritere);
   }
 
@@ -208,7 +208,7 @@ export class GarantiesAdminService {
     }
 
     const updateData: any = { ...updateTarifDto };
-    
+
     if (updateTarifDto.date_debut) {
       updateData.date_debut = new Date(updateTarifDto.date_debut);
     }
@@ -218,7 +218,7 @@ export class GarantiesAdminService {
 
     Object.assign(tarif, updateData);
     const updatedTarif = await this.tarifGarantieRepository.save(tarif);
-    
+
     return this.mapTarifToDto(updatedTarif);
   }
 
@@ -259,7 +259,7 @@ export class GarantiesAdminService {
 
   private mapToDtoWithProduit(garantie: Garantie): GarantieWithProduitDto {
     const garantieDto = this.mapToDto(garantie);
-    
+
     return {
       ...garantieDto,
       produit: {
@@ -302,6 +302,8 @@ export class GarantiesAdminService {
     return {
       id: tarif.id,
       garantie_id: tarif.garantie_id,
+      type_calcul: tarif.type_calcul,
+      taux_pourcentage: tarif.taux_pourcentage,
       montant_base: tarif.montant_base,
       pourcentage_produit: tarif.pourcentage_produit,
       formule_calcul: tarif.formule_calcul,

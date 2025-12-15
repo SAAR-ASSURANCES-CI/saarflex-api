@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Produit, StatutProduit } from '../../entities/produit.entity';
-import { 
-  CreateSimulationDevisSimplifieeDto, 
+import {
+  CreateSimulationDevisSimplifieeDto,
   SimulationDevisSimplifieeResponseDto,
 } from '../../dto/simulation-devis-simplifie.dto';
 import { DevisValidationService } from '../../services/devis-validation.service';
@@ -32,7 +32,7 @@ export class SimulationDevisSimplifieeService {
     private readonly criteresEnrichmentService: CriteresEnrichmentService,
     private readonly devisCreationService: DevisCreationService,
     private readonly devisMapperService: DevisMapperService,
-  ) {}
+  ) { }
 
   /**
    * Simule un devis avec le système simplifié
@@ -43,11 +43,11 @@ export class SimulationDevisSimplifieeService {
     simulationDto: CreateSimulationDevisSimplifieeDto,
     utilisateurId?: string
   ): Promise<SimulationDevisSimplifieeResponseDto> {
-    
+
     // 1. Récupérer et valider le produit
     const produit = await this.produitRepository.findOne({
       where: { id: simulationDto.produit_id, statut: StatutProduit.ACTIF },
-      relations: ['criteres', 'grilles']
+      relations: ['criteres', 'grilles', 'categorie']
     });
 
     if (!produit) {
@@ -74,7 +74,7 @@ export class SimulationDevisSimplifieeService {
 
     // 5. Trouver le tarif correspondant
     const tarifFixe = await this.tarifCalculationService.trouverTarifFixe(
-      grilleTarifaire.id, 
+      grilleTarifaire.id,
       criteresEnrichis
     );
 
@@ -90,9 +90,9 @@ export class SimulationDevisSimplifieeService {
 
     // 7. Mapper et retourner la réponse
     return await this.devisMapperService.mapToResponseDto(
-      devisSimule, 
-      produit, 
-      tarifFixe.montant_fixe, 
+      devisSimule,
+      produit,
+      tarifFixe.montant_fixe,
       utilisateurId
     );
   }

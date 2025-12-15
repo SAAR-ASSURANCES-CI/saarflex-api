@@ -59,6 +59,8 @@ import { ContratService } from './services/contrat.service';
 import { SouscriptionService } from './services/souscription.service';
 import { CinetPayService } from './services/cinetpay.service';
 import { CinetPayConfig } from './config/cinetpay.config';
+import { TarifGarantieCalculationService } from './services/tarif-garantie-calculation.service';
+import { CategorieMappingService } from './services/categorie-mapping.service';
 
 // Entités
 import { Produit } from './entities/produit.entity';
@@ -157,6 +159,8 @@ import { User } from '../users/entities/user.entity';
     SouscriptionService,
     CinetPayService,
     CinetPayConfig,
+    TarifGarantieCalculationService,
+    CategorieMappingService,
 
     // Autres services
     TachePlanifieeService,
@@ -176,6 +180,7 @@ import { User } from '../users/entities/user.entity';
     // Export des services spécialisés pour réutilisation
     BeneficiaireService,
     TarifCalculationService,
+    TarifGarantieCalculationService,
     PaiementService,
     ContratService,
     SouscriptionService,

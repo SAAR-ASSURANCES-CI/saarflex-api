@@ -16,6 +16,13 @@ export enum StatutTarifGarantie {
   FUTUR = 'futur'
 }
 
+export enum TypeCalculTarif {
+  MONTANT_FIXE = 'montant_fixe',
+  POURCENTAGE_VALEUR_NEUVE = 'pourcentage_valeur_neuve',
+  POURCENTAGE_VALEUR_VENALE = 'pourcentage_valeur_venale',
+  FORMULE_PERSONNALISEE = 'formule_personnalisee'
+}
+
 @Entity('tarifs_garanties')
 @Index(['garantie_id'])
 @Index(['statut'])
@@ -29,11 +36,28 @@ export class TarifGarantie {
   garantie_id: string;
 
   @Column({
+    type: 'enum',
+    enum: TypeCalculTarif,
+    default: TypeCalculTarif.MONTANT_FIXE,
+    comment: 'Type de calcul du tarif'
+  })
+  type_calcul: TypeCalculTarif;
+
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    comment: 'Taux de pourcentage pour calcul sur VN ou VV (ex: 3.5 pour 3.5%)'
+  })
+  taux_pourcentage: number;
+
+  @Column({
     type: 'decimal',
     precision: 15,
     scale: 2,
-    nullable: false,
-    comment: 'Montant de base en FCFA'
+    nullable: true,
+    comment: 'Montant de base en FCFA (utilisé si type_calcul = MONTANT_FIXE)'
   })
   montant_base: number;
 

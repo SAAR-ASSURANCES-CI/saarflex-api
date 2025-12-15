@@ -24,7 +24,7 @@ export class SouscriptionService {
     private readonly paiementService: PaiementService,
     private readonly contratService: ContratService,
     private readonly beneficiaireService: BeneficiaireService,
-  ) {}
+  ) { }
 
   /**
    * Lance le processus de souscription pour un devis
@@ -38,24 +38,24 @@ export class SouscriptionService {
     utilisateurId: string,
     methodePaiement: MethodePaiement,
     numeroTelephone?: string,
-    beneficiaires?: Array<{nom_complet: string, lien_souscripteur: string, ordre: number}>,
+    beneficiaires?: Array<{ nom_complet: string, lien_souscripteur: string, ordre: number }>,
     currency: string = 'XOF'
   ): Promise<{
     paiement: Paiement;
     message: string;
-    beneficiaires?: Array<{nom_complet: string, lien_souscripteur: string, ordre: number}>;
+    beneficiaires?: Array<{ nom_complet: string, lien_souscripteur: string, ordre: number }>;
   }> {
 
     //récupération du devis
     const devis = await this.devisSimuleRepository.findOne({
       where: { id: devisId, utilisateur_id: utilisateurId },
-      relations: ['produit']
+      relations: ['produit', 'categorie']
     });
 
     if (!devis) {
       throw new NotFoundException('Devis non trouvé');
     }
-    
+
     //vérification si le produit nécessite des bénéficiaires
     if (devis.produit.necessite_beneficiaires) {
       if (!beneficiaires || beneficiaires.length === 0) {
@@ -96,10 +96,10 @@ export class SouscriptionService {
    * Appelé par le webhook de paiement
    */
   async finaliserSouscription(devisId: string, paiementId: string): Promise<Contrat> {
-  
+
     const devis = await this.devisSimuleRepository.findOne({
       where: { id: devisId, statut: StatutDevis.PAYE },
-      relations: ['produit']
+      relations: ['produit', 'categorie']
     });
 
     if (!devis) {
@@ -112,7 +112,7 @@ export class SouscriptionService {
 
     if (devis.produit.necessite_beneficiaires && paiement.donnees_callback?.beneficiaires) {
       await this.beneficiaireService.ajouterBeneficiaires(
-        contrat.id, 
+        contrat.id,
         paiement.donnees_callback.beneficiaires
       );
     }
@@ -140,7 +140,7 @@ export class SouscriptionService {
   }> {
     const devis = await this.devisSimuleRepository.findOne({
       where: { id: devisId, utilisateur_id: utilisateurId },
-      relations: ['produit']
+      relations: ['produit', 'categorie']
     });
 
     if (!devis) {
@@ -151,7 +151,7 @@ export class SouscriptionService {
 
     const paiements = await this.paiementService.obtenirPaiementsUtilisateur(utilisateurId);
     const paiement = paiements.find(p => p.devis_simule_id === devisId);
-    
+
     if (paiement) {
       result.paiement = paiement;
     }
@@ -159,7 +159,7 @@ export class SouscriptionService {
     if (devis.statut === StatutDevis.CONVERTI_EN_CONTRAT) {
       const contrats = await this.contratService.obtenirContratsUtilisateur(utilisateurId);
       const contrat = contrats.find(c => c.devis_simule_id === devisId);
-      
+
       if (contrat) {
         result.contrat = contrat;
       }

@@ -30,7 +30,7 @@ export class ContratService {
     async creerContratDepuisDevis(devisId: string): Promise<Contrat> {
         const devis = await this.devisSimuleRepository.findOne({
             where: { id: devisId, statut: StatutDevis.PAYE },
-            relations: ['produit', 'produit.categorie', 'grilleTarifaire']
+            relations: ['produit', 'categorie', 'grilleTarifaire']
         });
 
         if (!devis) {
@@ -45,14 +45,14 @@ export class ContratService {
             return contratExistant;
         }
 
-        // Vérifier que le produit a une catégorie
-        if (!devis.produit.categorie) {
-            throw new BadRequestException('Le produit doit avoir une catégorie pour générer un numéro de police');
+        // Vérifier que le devis a une catégorie
+        if (!devis.categorie) {
+            throw new BadRequestException('Le devis doit avoir une catégorie pour générer un numéro de police');
         }
 
         const numeroContrat = await this.genererNumeroContrat(
             devis.produit.type,
-            devis.produit.categorie.code
+            devis.categorie.code
         );
 
         const dateDebutCouverture = new Date();
@@ -108,7 +108,7 @@ export class ContratService {
         const codeAgence = await this.configurationService.getCodeAgence();
 
         // Validation du code catégorie (doit être numérique et faire 3 chiffres)
-        const codeCategorieNumeric = codeCategorie.replace(/\D/g, ''); 
+        const codeCategorieNumeric = codeCategorie.replace(/\D/g, '');
         if (codeCategorieNumeric.length < 3) {
             throw new BadRequestException(`Le code catégorie "${codeCategorie}" doit contenir au moins 3 chiffres`);
         }

@@ -50,6 +50,8 @@ lerna-debug.log*
 .env.local
 DEPLOYMENT_DOKPLOY.md
 TROUBLESHOOTING_DOKPLOY_DB.md
+/docs
+/postman
 
 # temp directory
 .temp
