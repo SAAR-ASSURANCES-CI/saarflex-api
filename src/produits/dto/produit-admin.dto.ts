@@ -88,13 +88,13 @@ export class CreateProduitDto {
     description: 'Nombre maximum de bénéficiaires autorisés',
     example: 2,
     minimum: 0,
-    maximum: 5,
+    maximum: 20,
     required: false,
   })
   @IsOptional()
   @IsInt()
   @Min(0)
-  @Max(5)
+  @Max(20)
   max_beneficiaires?: number;
 
   @ApiProperty({
@@ -200,13 +200,13 @@ export class UpdateProduitDto {
     description: 'Nombre maximum de bénéficiaires autorisés',
     example: 2,
     minimum: 0,
-    maximum: 5,
+    maximum: 20,
     required: false,
   })
   @IsOptional()
   @IsInt()
   @Min(0)
-  @Max(5)
+  @Max(20)
   max_beneficiaires?: number;
 
   @ApiProperty({

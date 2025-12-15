@@ -47,7 +47,7 @@ export class Contrat {
     @Column({
         type: 'enum',
         enum: PeriodicitePrime,
-        default: 'mensuel'
+        default: PeriodicitePrime.MENSUEL
     })
     periodicite_paiement: PeriodicitePrime;
 

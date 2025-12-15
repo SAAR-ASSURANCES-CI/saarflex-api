@@ -19,6 +19,7 @@ export enum StatutProduit {
 }
 
 export enum PeriodicitePrime {
+  JOURNALIER = 'journalier',
   MENSUEL = 'mensuel',
   ANNUEL = 'annuel'
 }
@@ -72,7 +73,7 @@ export class Produit {
   @Column({
     type: 'enum',
     enum: PeriodicitePrime,
-    default: 'mensuel'
+    default: PeriodicitePrime.MENSUEL
   })
   periodicite_prime: PeriodicitePrime;
 
