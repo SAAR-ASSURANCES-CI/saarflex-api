@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
+import { writeFileSync } from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -50,10 +51,24 @@ async function bootstrap() {
       .setDescription('API backend de l\' Saarciflex')
       .setVersion('1.0')
       .addBearerAuth()
-      .addTag('Saarflex')
+      .addTag('SAARCIFLEX')
       .build();
-    const documentFactory = () => SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api', app, documentFactory, {
+    // const documentFactory = () => SwaggerModule.createDocument(app, config);
+    // SwaggerModule.setup('api', app, documentFactory, {
+    //   swaggerOptions: {
+    //     persistAuthorization: true,
+    //   },
+    // });
+    const document = SwaggerModule.createDocument(app, config)
+    const outputPath = join(process.cwd(), 'swagger-spec.json');
+    try {
+      writeFileSync(outputPath, JSON.stringify(document, null, 2));
+      console.log(`Swagger document saved to ${outputPath}`);
+    } catch (error) {
+      console.error(`Error writing Swagger document: ${error}`);
+    }
+
+    SwaggerModule.setup('api', app, document, {
       swaggerOptions: {
         persistAuthorization: true,
       },
@@ -63,7 +78,7 @@ async function bootstrap() {
   //config microservice Redis (optionnel)
   const redisHost = process.env.REDIS_HOST;
   const redisEnabled = process.env.REDIS_ENABLED !== 'false' && redisHost && redisHost !== '';
-  
+
   if (redisEnabled) {
     try {
       console.log(`[Redis] Tentative de connexion à Redis sur ${redisHost}:${process.env.REDIS_PORT || 6379}`);
@@ -83,18 +98,18 @@ async function bootstrap() {
       //start microservice avec gestion d'erreur améliorée
       try {
         await app.startAllMicroservices();
-        console.log('[Redis] ✅ Microservice Redis démarré avec succès');
+        console.log('[Redis]  Microservice Redis démarré avec succès');
       } catch (microserviceError: any) {
-        console.warn(`[Redis] ⚠️  Erreur lors du démarrage du microservice Redis: ${microserviceError.message}`);
-        console.warn('[Redis] ⚠️  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
+        console.warn(`[Redis]  Erreur lors du démarrage du microservice Redis: ${microserviceError.message}`);
+        console.warn('[Redis]  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
         // Ne pas faire échouer l'application si Redis n'est pas disponible
       }
     } catch (error: any) {
-      console.warn(`[Redis] ⚠️  Impossible de configurer le microservice Redis: ${error.message}`);
-      console.warn('[Redis] ⚠️  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
+      console.warn(`[Redis]  Impossible de configurer le microservice Redis: ${error.message}`);
+      console.warn('[Redis]  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
     }
   } else {
-    console.log('[Redis] ℹ️  Redis désactivé (REDIS_ENABLED=false ou REDIS_HOST non défini)');
+    console.log('[Redis]  Redis désactivé (REDIS_ENABLED=false ou REDIS_HOST non défini)');
   }
 
   await app.listen(process.env.PORT ?? 3000);
