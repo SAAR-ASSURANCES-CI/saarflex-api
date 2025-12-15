@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Produit } from './produit.entity';
+import { CategorieProduit } from './categorie-produit.entity';
 import { GrilleTarifaire } from './grille-tarifaire.entity';
 import { DocumentIdentite } from './document-identite.entity';
 import { User } from '../../users/entities/user.entity';
@@ -24,6 +25,9 @@ export class DevisSimule {
   @Column({ type: 'uuid', nullable: false })
   produit_id: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  categorie_id: string;
+
   @Column({ type: 'uuid', nullable: false })
   grille_tarifaire_id: string;
 
@@ -42,10 +46,10 @@ export class DevisSimule {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   plafond_calcule: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: StatutDevis, 
-    default: 'simulation' 
+  @Column({
+    type: 'enum',
+    enum: StatutDevis,
+    default: 'simulation'
   })
   statut: StatutDevis;
 
@@ -57,7 +61,7 @@ export class DevisSimule {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
-    
+
   @Column({ type: 'json', nullable: true })
   informations_assure: Record<string, any>;
 
@@ -76,6 +80,10 @@ export class DevisSimule {
   @ManyToOne(() => Produit, produit => produit.devis, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'produit_id' })
   produit: Produit;
+
+  @ManyToOne(() => CategorieProduit, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'categorie_id' })
+  categorie: CategorieProduit;
 
   @ManyToOne(() => GrilleTarifaire, grille => grille.tarifs, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'grille_tarifaire_id' })

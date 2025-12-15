@@ -6,6 +6,7 @@ import { Produit, TypeProduit } from '../entities/produit.entity';
 import { GrilleTarifaire } from '../entities/grille-tarifaire.entity';
 import { Profile } from '../../users/entities/profile.entity';
 import { CreateSimulationDevisSimplifieeDto } from '../dto/simulation-devis-simplifie.dto';
+import { CategorieMappingService } from './categorie-mapping.service';
 
 const DUREE_VALIDITE_SIMULATION = 24 * 60 * 60 * 1000; // 24 heures
 
@@ -21,7 +22,8 @@ export class DevisCreationService {
         private readonly devisSimuleRepository: Repository<DevisSimule>,
         @InjectRepository(Profile)
         private readonly profileRepository: Repository<Profile>,
-    ) {}
+        private readonly categorieMappingService: CategorieMappingService,
+    ) { }
 
     /**
      * Crée un devis simulé en base
@@ -40,12 +42,15 @@ export class DevisCreationService {
         criteres: Record<string, any>,
         utilisateurId?: string
     ): Promise<DevisSimule> {
-        
+
         const informationsAssure = await this.construireInformationsAssure(
-            simulationDto, 
+            simulationDto,
             utilisateurId
         );
-        
+
+        // Déterminer automatiquement la catégorie selon les critères
+        const categorieId = await this.determinerCategorie(criteres, produit);
+
         const devisData = this.creerDevisData(
             simulationDto,
             produit,
@@ -53,10 +58,41 @@ export class DevisCreationService {
             primeCalculee,
             criteres,
             informationsAssure,
+            categorieId,
             utilisateurId
         );
 
         return await this.sauvegarderDevisAvecReference(devisData, produit);
+    }
+
+    /**
+     * Détermine la catégorie du devis selon les critères utilisateur
+     * @param criteres Critères utilisateur
+     * @param produit Produit
+     */
+    private async determinerCategorie(
+        criteres: Record<string, any>,
+        produit: Produit
+    ): Promise<string | undefined> {
+        try {
+            // Charger le produit avec la branche si nécessaire
+            const brancheId = produit.branche?.id;
+            if (!brancheId) {
+                this.logger.warn('Produit sans branche, impossible de déterminer la catégorie');
+                return undefined;
+            }
+
+            const result = await this.categorieMappingService.determinerCategorie(
+                criteres,
+                brancheId
+            );
+            return result || undefined;
+        } catch (error) {
+            this.logger.warn(
+                `Impossible de déterminer la catégorie automatiquement: ${error.message}`
+            );
+            return undefined;
+        }
     }
 
     /**
@@ -68,13 +104,13 @@ export class DevisCreationService {
         simulationDto: CreateSimulationDevisSimplifieeDto,
         utilisateurId?: string
     ): Promise<Record<string, any> | undefined> {
-        
+
         if (simulationDto.assure_est_souscripteur && utilisateurId) {
             return await this.construireInformationsDepuisProfil(utilisateurId);
         } else if (!simulationDto.assure_est_souscripteur && simulationDto.informations_assure) {
             return simulationDto.informations_assure;
         }
-        
+
         return undefined;
     }
 
@@ -89,7 +125,7 @@ export class DevisCreationService {
             where: { user_id: utilisateurId },
             relations: ['user']
         });
-        
+
         if (!profile) {
             return undefined;
         }
@@ -113,6 +149,7 @@ export class DevisCreationService {
      * @param primeCalculee Prime calculée
      * @param criteres Critères
      * @param informationsAssure Informations assuré
+     * @param categorieId ID de la catégorie déterminée
      * @param utilisateurId ID utilisateur
      */
     private creerDevisData(
@@ -122,10 +159,12 @@ export class DevisCreationService {
         primeCalculee: number,
         criteres: Record<string, any>,
         informationsAssure: Record<string, any> | undefined,
+        categorieId: string | undefined,
         utilisateurId?: string
     ): Partial<DevisSimule> {
         return {
             produit_id: simulationDto.produit_id,
+            categorie_id: categorieId,
             grille_tarifaire_id: grilleTarifaire.id,
             utilisateur_id: utilisateurId,
             criteres_utilisateur: criteres,
