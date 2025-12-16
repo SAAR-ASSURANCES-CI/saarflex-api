@@ -8692,6 +8692,31 @@
             "type": "string",
             "description": "ID de la grille tarifaire"
           },
+          "type_calcul": {
+            "type": "string",
+            "description": "Type de calcul du tarif",
+            "enum": [
+              "montant_fixe",
+              "pourcentage_valeur_neuve",
+              "pourcentage_valeur_venale",
+              "formule_personnalisee"
+            ],
+            "default": "montant_fixe"
+          },
+          "montant_fixe": {
+            "type": "number",
+            "description": "Montant fixe du tarif (requis si type_calcul = montant_fixe)"
+          },
+          "taux_pourcentage": {
+            "type": "number",
+            "description": "Taux de pourcentage (requis si type_calcul = pourcentage_valeur_neuve ou pourcentage_valeur_venale)",
+            "example": 3.5
+          },
+          "formule_calcul": {
+            "type": "string",
+            "description": "Formule de calcul personnalisée (requis si type_calcul = formule_personnalisee)",
+            "example": "montant_base + (valeur_neuve * 0.01)"
+          },
           "critere_id": {
             "type": "string",
             "description": "ID du critère de tarification"
@@ -8700,23 +8725,18 @@
             "type": "string",
             "description": "ID de la valeur du critère"
           },
-          "montant_fixe": {
-            "type": "number",
-            "description": "Montant fixe du tarif"
-          },
           "criteres_combines": {
             "type": "object",
             "description": "Critères combinés pour le tarif (pour les produits multi-critères)",
             "example": {
-              "Capital": "1000000",
-              "Age Assuré": "72",
-              "Durée de cotisation": "5"
+              "Garantie": "Tous Risques",
+              "Type de véhicule": "Promenade et affaires"
             }
           }
         },
         "required": [
           "grille_id",
-          "montant_fixe"
+          "type_calcul"
         ]
       },
       "TarifWithGrilleDto": {
@@ -8730,6 +8750,28 @@
             "type": "string",
             "description": "ID de la grille tarifaire"
           },
+          "type_calcul": {
+            "type": "string",
+            "description": "Type de calcul du tarif",
+            "enum": [
+              "montant_fixe",
+              "pourcentage_valeur_neuve",
+              "pourcentage_valeur_venale",
+              "formule_personnalisee"
+            ]
+          },
+          "montant_fixe": {
+            "type": "number",
+            "description": "Montant fixe du tarif"
+          },
+          "taux_pourcentage": {
+            "type": "number",
+            "description": "Taux de pourcentage"
+          },
+          "formule_calcul": {
+            "type": "string",
+            "description": "Formule de calcul personnalisée"
+          },
           "critere_id": {
             "type": "string",
             "description": "ID du critère de tarification"
@@ -8737,10 +8779,6 @@
           "valeur_critere_id": {
             "type": "string",
             "description": "ID de la valeur du critère"
-          },
-          "montant_fixe": {
-            "type": "number",
-            "description": "Montant fixe du tarif"
           },
           "criteres_combines": {
             "type": "object",
@@ -8759,7 +8797,7 @@
         "required": [
           "id",
           "grille_id",
-          "montant_fixe",
+          "type_calcul",
           "created_at",
           "grilleTarifaire"
         ]
@@ -8801,6 +8839,28 @@
             "type": "string",
             "description": "ID de la grille tarifaire"
           },
+          "type_calcul": {
+            "type": "string",
+            "description": "Type de calcul du tarif",
+            "enum": [
+              "montant_fixe",
+              "pourcentage_valeur_neuve",
+              "pourcentage_valeur_venale",
+              "formule_personnalisee"
+            ]
+          },
+          "montant_fixe": {
+            "type": "number",
+            "description": "Montant fixe du tarif"
+          },
+          "taux_pourcentage": {
+            "type": "number",
+            "description": "Taux de pourcentage"
+          },
+          "formule_calcul": {
+            "type": "string",
+            "description": "Formule de calcul personnalisée"
+          },
           "critere_id": {
             "type": "string",
             "description": "ID du critère de tarification"
@@ -8808,10 +8868,6 @@
           "valeur_critere_id": {
             "type": "string",
             "description": "ID de la valeur du critère"
-          },
-          "montant_fixe": {
-            "type": "number",
-            "description": "Montant fixe du tarif"
           },
           "criteres_combines": {
             "type": "object",
@@ -8830,6 +8886,28 @@
             "type": "string",
             "description": "ID de la grille tarifaire"
           },
+          "type_calcul": {
+            "type": "string",
+            "description": "Type de calcul du tarif",
+            "enum": [
+              "montant_fixe",
+              "pourcentage_valeur_neuve",
+              "pourcentage_valeur_venale",
+              "formule_personnalisee"
+            ]
+          },
+          "montant_fixe": {
+            "type": "number",
+            "description": "Montant fixe du tarif"
+          },
+          "taux_pourcentage": {
+            "type": "number",
+            "description": "Taux de pourcentage"
+          },
+          "formule_calcul": {
+            "type": "string",
+            "description": "Formule de calcul personnalisée"
+          },
           "critere_id": {
             "type": "string",
             "description": "ID du critère de tarification"
@@ -8837,10 +8915,6 @@
           "valeur_critere_id": {
             "type": "string",
             "description": "ID de la valeur du critère"
-          },
-          "montant_fixe": {
-            "type": "number",
-            "description": "Montant fixe du tarif"
           },
           "criteres_combines": {
             "type": "object",
@@ -8855,7 +8929,7 @@
         "required": [
           "id",
           "grille_id",
-          "montant_fixe",
+          "type_calcul",
           "created_at"
         ]
       },

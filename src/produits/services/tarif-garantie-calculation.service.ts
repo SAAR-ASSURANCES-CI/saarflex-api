@@ -1,7 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TarifGarantie, TypeCalculTarif, StatutTarifGarantie } from '../entities/tarif-garantie.entity';
+import { TarifGarantie, StatutTarifGarantie } from '../entities/tarif-garantie.entity';
+import { TypeCalculTarif } from '../entities/tarif.entity';
 import { Garantie } from '../entities/garantie.entity';
 import { evaluate } from 'mathjs';
 
@@ -103,7 +104,6 @@ export class TarifGarantieCalculationService {
                 resultats.push(resultat);
             } catch (error) {
                 console.error(`Erreur calcul tarif garantie ${garantie_id}:`, error.message);
-                // On continue avec les autres garanties
             }
         }
 
@@ -235,7 +235,7 @@ export class TarifGarantieCalculationService {
      */
     private evaluerFormule(formule: string, context: Record<string, number>): number {
         try {
-            
+
             const resultat = evaluate(formule, context);
 
             // Vérifier que le résultat est un nombre
