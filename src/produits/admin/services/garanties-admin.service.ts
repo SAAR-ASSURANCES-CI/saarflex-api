@@ -271,6 +271,7 @@ export class GarantiesAdminService {
         statut: garantie.produit.statut,
         necessite_beneficiaires: garantie.produit.necessite_beneficiaires,
         max_beneficiaires: garantie.produit.max_beneficiaires,
+        necessite_informations_vehicule: garantie.produit.necessite_informations_vehicule,
         periodicite_prime: garantie.produit.periodicite_prime,
         branche: garantie.produit.branche ? {
           id: garantie.produit.branche.id,
