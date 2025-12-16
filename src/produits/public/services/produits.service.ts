@@ -9,10 +9,10 @@ import { ValeurCritere } from '../../entities/valeur-critere.entity';
 import { ProduitDto } from '../../dto/produit.dto';
 import { BrancheProduitDto } from '../../dto/branche-produit.dto';
 import { GarantieWithProduitDto } from '../../dto/garanties-index.dto';
-import { 
-  CritereTarificationPublicDto, 
-  ValeurCriterePublicDto, 
-  CriteresPublicResponseDto 
+import {
+  CritereTarificationPublicDto,
+  ValeurCriterePublicDto,
+  CriteresPublicResponseDto
 } from '../../dto/critere-tarification-public.dto';
 
 @Injectable()
@@ -28,7 +28,7 @@ export class ProduitsService {
     private readonly critereRepository: Repository<CritereTarification>,
     @InjectRepository(ValeurCritere)
     private readonly valeurRepository: Repository<ValeurCritere>,
-  ) {}
+  ) { }
 
   /**
    * Récupère tous les produits actifs pour les utilisateurs
@@ -109,9 +109,9 @@ export class ProduitsService {
    */
   async findGarantiesByProduit(produitId: string): Promise<GarantieWithProduitDto[]> {
     const garanties = await this.garantieRepository.find({
-      where: { 
-        produit_id: produitId, 
-        statut: StatutGarantie.ACTIVE 
+      where: {
+        produit_id: produitId,
+        statut: StatutGarantie.ACTIVE
       },
       relations: ['produit', 'produit.branche'],
       order: { ordre: 'ASC', created_at: 'DESC' }
@@ -153,8 +153,8 @@ export class ProduitsService {
    * Récupère tous les critères d'un produit avec pagination
    */
   async findCriteresByProduit(
-    produitId: string, 
-    page: number = 1, 
+    produitId: string,
+    page: number = 1,
     limit: number = 10
   ): Promise<CriteresPublicResponseDto> {
     const skip = (page - 1) * limit;
@@ -210,6 +210,7 @@ export class ProduitsService {
       // Nouvelles propriétés pour le système simplifié
       necessite_beneficiaires: produit.necessite_beneficiaires,
       max_beneficiaires: produit.max_beneficiaires,
+      necessite_informations_vehicule: produit.necessite_informations_vehicule,
       periodicite_prime: produit.periodicite_prime,
       branche: produit.branche ? {
         id: produit.branche.id,
@@ -247,6 +248,7 @@ export class ProduitsService {
         // Nouvelles propriétés pour le système simplifié
         necessite_beneficiaires: garantie.produit.necessite_beneficiaires,
         max_beneficiaires: garantie.produit.max_beneficiaires,
+        necessite_informations_vehicule: garantie.produit.necessite_informations_vehicule,
         periodicite_prime: garantie.produit.periodicite_prime,
         branche: garantie.produit.branche ? {
           id: garantie.produit.branche.id,

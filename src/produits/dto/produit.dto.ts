@@ -12,9 +12,9 @@ export class ProduitDto {
   @ApiProperty({ description: 'Icône du produit' })
   icon: string;
 
-  @ApiProperty({ 
-    enum: TypeProduit, 
-    description: 'Type du produit (vie ou non-vie)' 
+  @ApiProperty({
+    enum: TypeProduit,
+    description: 'Type du produit (vie ou non-vie)'
   })
   type: TypeProduit;
 
@@ -24,28 +24,34 @@ export class ProduitDto {
   @ApiProperty({ description: 'Lien vers les conditions PDF' })
   conditions_pdf: string;
 
-  @ApiProperty({ 
-    enum: StatutProduit, 
-    description: 'Statut du produit' 
+  @ApiProperty({
+    enum: StatutProduit,
+    description: 'Statut du produit'
   })
   statut: StatutProduit;
 
   @ApiProperty({ description: 'Date de création' })
   created_at: Date;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Le produit nécessite-t-il des bénéficiaires ?',
     example: true
   })
   necessite_beneficiaires: boolean;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nombre maximum de bénéficiaires autorisés',
     example: 2
   })
   max_beneficiaires: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Le produit nécessite-t-il les informations du véhicule ?',
+    example: false
+  })
+  necessite_informations_vehicule: boolean;
+
+  @ApiProperty({
     enum: PeriodicitePrime,
     description: 'Périodicité de paiement de la prime',
     example: PeriodicitePrime.MENSUEL
@@ -57,17 +63,17 @@ export class ProduitDto {
 }
 
 export class PaginationQueryDto {
-  @ApiProperty({ 
-    required: false, 
-    default: 1, 
-    description: 'Numéro de page' 
+  @ApiProperty({
+    required: false,
+    default: 1,
+    description: 'Numéro de page'
   })
   page?: number = 1;
 
-  @ApiProperty({ 
-    required: false, 
-    default: 10, 
-    description: 'Nombre d\'éléments par page' 
+  @ApiProperty({
+    required: false,
+    default: 10,
+    description: 'Nombre d\'éléments par page'
   })
   limit?: number = 10;
 }
