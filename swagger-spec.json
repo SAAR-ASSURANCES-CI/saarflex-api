@@ -7146,6 +7146,11 @@
             "minimum": 0,
             "maximum": 20
           },
+          "necessite_informations_vehicule": {
+            "type": "boolean",
+            "description": "Le produit nécessite-t-il les informations du véhicule ?",
+            "example": false
+          },
           "periodicite_prime": {
             "type": "string",
             "enum": [
@@ -7235,6 +7240,11 @@
             "description": "Nombre maximum de bénéficiaires autorisés",
             "example": 2
           },
+          "necessite_informations_vehicule": {
+            "type": "boolean",
+            "description": "Le produit nécessite-t-il les informations du véhicule ?",
+            "example": false
+          },
           "periodicite_prime": {
             "type": "string",
             "enum": [
@@ -7282,6 +7292,7 @@
           "createur",
           "necessite_beneficiaires",
           "max_beneficiaires",
+          "necessite_informations_vehicule",
           "periodicite_prime",
           "branche",
           "categorie",
@@ -7387,6 +7398,11 @@
             "example": 2,
             "minimum": 0,
             "maximum": 20
+          },
+          "necessite_informations_vehicule": {
+            "type": "boolean",
+            "description": "Le produit nécessite-t-il les informations du véhicule ?",
+            "example": false
           },
           "periodicite_prime": {
             "type": "string",
