@@ -3,14 +3,14 @@ import { IsString, IsOptional, IsEnum, IsNumber, IsUUID, Min } from 'class-valid
 import { TypeGarantie, StatutGarantie } from '../entities/garantie.entity';
 
 export class CreateGarantieDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nom de la garantie',
     example: 'Garantie vol et incendie'
   })
   @IsString()
   nom: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Description détaillée de la garantie',
     example: 'Couverture contre le vol et les incendies du véhicule',
     required: false
@@ -19,7 +19,7 @@ export class CreateGarantieDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: TypeGarantie,
     description: 'Type de garantie (obligatoire ou optionnelle)',
     example: TypeGarantie.OBLIGATOIRE
@@ -27,7 +27,7 @@ export class CreateGarantieDto {
   @IsEnum(TypeGarantie)
   type: TypeGarantie;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Montant garanti en FCFA',
     example: 500000,
     required: false
@@ -37,7 +37,7 @@ export class CreateGarantieDto {
   @Min(0)
   montant_garanti?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Franchise en FCFA',
     example: 50000,
     default: 0,
@@ -48,7 +48,7 @@ export class CreateGarantieDto {
   @Min(0)
   franchise?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Ordre d\'affichage de la garantie',
     example: 1,
     default: 0,
@@ -59,14 +59,14 @@ export class CreateGarantieDto {
   @Min(0)
   ordre?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'ID du produit associé',
     example: 'uuid-du-produit'
   })
   @IsUUID()
   produit_id: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: StatutGarantie,
     description: 'Statut de la garantie',
     example: StatutGarantie.ACTIVE,
@@ -78,7 +78,7 @@ export class CreateGarantieDto {
 }
 
 export class UpdateGarantieDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nom de la garantie',
     example: 'Garantie vol et incendie mise à jour',
     required: false
@@ -87,7 +87,7 @@ export class UpdateGarantieDto {
   @IsString()
   nom?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Description détaillée de la garantie',
     example: 'Couverture mise à jour contre le vol et les incendies',
     required: false
@@ -96,7 +96,7 @@ export class UpdateGarantieDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: TypeGarantie,
     description: 'Type de garantie',
     example: TypeGarantie.OPTIONNELLE,
@@ -106,7 +106,7 @@ export class UpdateGarantieDto {
   @IsEnum(TypeGarantie)
   type?: TypeGarantie;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Montant garanti en FCFA',
     example: 750000,
     required: false
@@ -116,7 +116,7 @@ export class UpdateGarantieDto {
   @Min(0)
   montant_garanti?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Franchise en FCFA',
     example: 75000,
     required: false
@@ -126,7 +126,7 @@ export class UpdateGarantieDto {
   @Min(0)
   franchise?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Ordre d\'affichage',
     example: 2,
     required: false
@@ -136,7 +136,7 @@ export class UpdateGarantieDto {
   @Min(0)
   ordre?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: StatutGarantie,
     description: 'Statut de la garantie',
     example: StatutGarantie.INACTIVE,
@@ -203,7 +203,7 @@ export class GarantiesResponseDto {
 }
 
 export class GarantieWithProduitDto extends GarantieDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Données du produit associé'
   })
   produit: {
@@ -215,6 +215,7 @@ export class GarantieWithProduitDto extends GarantieDto {
     statut: string;
     necessite_beneficiaires: boolean;
     max_beneficiaires: number;
+    necessite_informations_vehicule: boolean;
     periodicite_prime: string;
     branche?: {
       id: string;
