@@ -219,6 +219,13 @@ export class DevisAdminDto {
   informations_assure?: Record<string, any>;
 
   @ApiProperty({
+    description: 'Informations du véhicule (pour les assurances auto)',
+    required: false,
+    example: { marque: 'Toyota', modele: 'Corolla', immatriculation: 'DK-1234-AB' }
+  })
+  informations_vehicule?: Record<string, any>;
+
+  @ApiProperty({
     description: 'L\'assuré est-il le souscripteur ?',
     example: true
   })

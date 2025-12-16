@@ -65,6 +65,9 @@ export class DevisSimule {
   @Column({ type: 'json', nullable: true })
   informations_assure: Record<string, any>;
 
+  @Column({ type: 'json', nullable: true, comment: 'Informations du véhicule pour les assurances auto' })
+  informations_vehicule: Record<string, any>;
+
   @Column({ type: 'boolean', default: true })
   assure_est_souscripteur: boolean;
 

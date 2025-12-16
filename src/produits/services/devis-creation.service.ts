@@ -174,7 +174,8 @@ export class DevisCreationService {
             statut: StatutDevis.SIMULATION,
             expires_at: new Date(Date.now() + DUREE_VALIDITE_SIMULATION),
             assure_est_souscripteur: simulationDto.assure_est_souscripteur,
-            informations_assure: informationsAssure
+            informations_assure: informationsAssure,
+            informations_vehicule: simulationDto.informations_vehicule
         };
     }
 

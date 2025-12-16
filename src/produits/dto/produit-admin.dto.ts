@@ -98,6 +98,15 @@ export class CreateProduitDto {
   max_beneficiaires?: number;
 
   @ApiProperty({
+    description: 'Le produit nécessite-t-il les informations du véhicule ?',
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  necessite_informations_vehicule?: boolean;
+
+  @ApiProperty({
     enum: PeriodicitePrime,
     description: 'Périodicité de paiement de la prime',
     example: PeriodicitePrime.MENSUEL,
@@ -210,6 +219,15 @@ export class UpdateProduitDto {
   max_beneficiaires?: number;
 
   @ApiProperty({
+    description: 'Le produit nécessite-t-il les informations du véhicule ?',
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  necessite_informations_vehicule?: boolean;
+
+  @ApiProperty({
     enum: PeriodicitePrime,
     description: 'Périodicité de paiement de la prime',
     example: PeriodicitePrime.MENSUEL,
@@ -272,6 +290,9 @@ export class ProduitAdminDto {
 
   @ApiProperty({ description: 'Nombre maximum de bénéficiaires autorisés', example: 2 })
   max_beneficiaires: number;
+
+  @ApiProperty({ description: 'Le produit nécessite-t-il les informations du véhicule ?', example: false })
+  necessite_informations_vehicule: boolean;
 
   @ApiProperty({
     enum: PeriodicitePrime,

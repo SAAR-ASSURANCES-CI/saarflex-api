@@ -56,6 +56,7 @@ export class ProduitsAdminService {
             ...(createDto.categorie_id ? { categorie: { id: createDto.categorie_id } as any } : {}),
             necessite_beneficiaires: createDto.necessite_beneficiaires || false,
             max_beneficiaires: createDto.max_beneficiaires || 0,
+            necessite_informations_vehicule: createDto.necessite_informations_vehicule || false,
             periodicite_prime: createDto.periodicite_prime || PeriodicitePrime.MENSUEL,
         });
         const savedProduit = await this.produitRepository.save(produit);
@@ -183,6 +184,7 @@ export class ProduitsAdminService {
         if (updateDto.statut) produit.statut = updateDto.statut;
         if (updateDto.necessite_beneficiaires !== undefined) produit.necessite_beneficiaires = updateDto.necessite_beneficiaires;
         if (updateDto.max_beneficiaires !== undefined) produit.max_beneficiaires = updateDto.max_beneficiaires;
+        if (updateDto.necessite_informations_vehicule !== undefined) produit.necessite_informations_vehicule = updateDto.necessite_informations_vehicule;
         if (updateDto.periodicite_prime !== undefined) produit.periodicite_prime = updateDto.periodicite_prime;
         const updatedProduit = await this.produitRepository.save(produit);
         const [criteresCount, grillesCount, devisCount] = await Promise.all([
@@ -272,6 +274,7 @@ export class ProduitsAdminService {
                 : null,
             necessite_beneficiaires: produit.necessite_beneficiaires,
             max_beneficiaires: produit.max_beneficiaires,
+            necessite_informations_vehicule: produit.necessite_informations_vehicule,
             periodicite_prime: produit.periodicite_prime,
             branche: produit.branche
                 ? { id: produit.branche.id, nom: produit.branche.nom, type: produit.branche.type, description: produit.branche.description }

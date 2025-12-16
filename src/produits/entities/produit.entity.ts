@@ -70,6 +70,9 @@ export class Produit {
   @Column({ type: 'int', default: 0 })
   max_beneficiaires: number;
 
+  @Column({ type: 'boolean', default: false, comment: 'Indique si le produit nécessite les informations du véhicule' })
+  necessite_informations_vehicule: boolean;
+
   @Column({
     type: 'enum',
     enum: PeriodicitePrime,

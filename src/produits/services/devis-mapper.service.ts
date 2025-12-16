@@ -11,7 +11,7 @@ import { BeneficiaireService } from './beneficiaire.service';
 export class DevisMapperService {
     constructor(
         private readonly beneficiaireService: BeneficiaireService,
-    ) {}
+    ) { }
 
     /**
      * Mappe un devis vers le DTO de réponse
@@ -26,10 +26,10 @@ export class DevisMapperService {
         primeCalculee: number,
         utilisateurId?: string
     ): Promise<SimulationDevisSimplifieeResponseDto> {
-        
+
         const informationsAssure = devis.informations_assure as InformationsAssureDto | undefined;
         const beneficiaires = await this.mapBeneficiaires(devis.id);
-        
+
         return {
             id: devis.id,
             reference: devis.reference,
@@ -40,6 +40,7 @@ export class DevisMapperService {
             prime_calculee: primeCalculee,
             assure_est_souscripteur: devis.assure_est_souscripteur,
             informations_assure: informationsAssure,
+            informations_vehicule: devis.informations_vehicule,
             front_document_path: devis.chemin_recto_assure || undefined,
             back_document_path: devis.chemin_verso_assure || undefined,
             // beneficiaires: beneficiaires,
@@ -53,9 +54,9 @@ export class DevisMapperService {
      */
     private async mapBeneficiaires(
         devisId: string
-    ): Promise<Array<{nom_complet: string, lien_souscripteur: string, ordre: number}>> {
+    ): Promise<Array<{ nom_complet: string, lien_souscripteur: string, ordre: number }>> {
         const beneficiaires = await this.beneficiaireService.getBeneficiaires(devisId);
-        
+
         return beneficiaires.map(b => ({
             nom_complet: b.nom_complet,
             lien_souscripteur: b.lien_souscripteur,

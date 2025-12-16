@@ -102,7 +102,6 @@ async function bootstrap() {
       } catch (microserviceError: any) {
         console.warn(`[Redis]  Erreur lors du démarrage du microservice Redis: ${microserviceError.message}`);
         console.warn('[Redis]  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
-        // Ne pas faire échouer l'application si Redis n'est pas disponible
       }
     } catch (error: any) {
       console.warn(`[Redis]  Impossible de configurer le microservice Redis: ${error.message}`);
