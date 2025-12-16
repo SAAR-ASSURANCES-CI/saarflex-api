@@ -9,18 +9,12 @@ import {
   Index
 } from 'typeorm';
 import { Garantie } from './garantie.entity';
+import { TypeCalculTarif } from './tarif.entity';
 
 export enum StatutTarifGarantie {
   ACTIF = 'actif',
   INACTIF = 'inactif',
   FUTUR = 'futur'
-}
-
-export enum TypeCalculTarif {
-  MONTANT_FIXE = 'montant_fixe',
-  POURCENTAGE_VALEUR_NEUVE = 'pourcentage_valeur_neuve',
-  POURCENTAGE_VALEUR_VENALE = 'pourcentage_valeur_venale',
-  FORMULE_PERSONNALISEE = 'formule_personnalisee'
 }
 
 @Entity('tarifs_garanties')

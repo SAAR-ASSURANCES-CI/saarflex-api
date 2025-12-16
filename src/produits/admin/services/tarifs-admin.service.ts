@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tarif } from '../../entities/tarif.entity';
 import { GrilleTarifaire, StatutGrille } from '../../entities/grille-tarifaire.entity';
-import { 
-  CreateTarifDto, 
-  UpdateTarifDto, 
+import {
+  CreateTarifDto,
+  UpdateTarifDto,
   TarifDto,
   TarifsResponseDto,
   TarifWithGrilleDto,
@@ -19,11 +19,11 @@ export class TarifsAdminService {
     private tarifRepository: Repository<Tarif>,
     @InjectRepository(GrilleTarifaire)
     private grilleRepository: Repository<GrilleTarifaire>
-  ) {}
+  ) { }
 
   async create(createTarifDto: CreateTarifDto): Promise<TarifWithGrilleDto> {
-    const grille = await this.grilleRepository.findOne({ 
-      where: { id: createTarifDto.grille_id } 
+    const grille = await this.grilleRepository.findOne({
+      where: { id: createTarifDto.grille_id }
     });
     if (!grille) {
       throw new NotFoundException('Grille tarifaire non trouvée');
@@ -35,22 +35,22 @@ export class TarifsAdminService {
 
     const tarif = this.tarifRepository.create(createTarifDto);
     const savedTarif = await this.tarifRepository.save(tarif);
-    
+
     const tarifWithRelations = await this.tarifRepository.findOne({
       where: { id: savedTarif.id },
       relations: ['grilleTarifaire', 'grilleTarifaire.produit', 'grilleTarifaire.produit.branche']
     });
-    
+
     if (!tarifWithRelations) {
       throw new NotFoundException('Erreur lors de la récupération du tarif créé');
     }
-    
+
     return this.mapToDtoWithGrille(tarifWithRelations);
   }
 
   async findAll(page: number = 1, limit: number = 10): Promise<TarifsWithGrilleResponseDto> {
     const skip = (page - 1) * limit;
-    
+
     const [tarifs, total] = await this.tarifRepository.findAndCount({
       relations: ['grilleTarifaire', 'grilleTarifaire.produit', 'grilleTarifaire.produit.branche'],
       order: { created_at: 'DESC' },
@@ -106,21 +106,25 @@ export class TarifsAdminService {
     }
 
     if (updateTarifDto.grille_id !== undefined) tarif.grille_id = updateTarifDto.grille_id;
+    if (updateTarifDto.type_calcul !== undefined) tarif.type_calcul = updateTarifDto.type_calcul;
+    if (updateTarifDto.montant_fixe !== undefined) tarif.montant_fixe = updateTarifDto.montant_fixe;
+    if (updateTarifDto.taux_pourcentage !== undefined) tarif.taux_pourcentage = updateTarifDto.taux_pourcentage;
+    if (updateTarifDto.formule_calcul !== undefined) tarif.formule_calcul = updateTarifDto.formule_calcul;
     if (updateTarifDto.critere_id !== undefined) tarif.critere_id = updateTarifDto.critere_id;
     if (updateTarifDto.valeur_critere_id !== undefined) tarif.valeur_critere_id = updateTarifDto.valeur_critere_id;
-    if (updateTarifDto.montant_fixe !== undefined) tarif.montant_fixe = updateTarifDto.montant_fixe;
+    if (updateTarifDto.criteres_combines !== undefined) tarif.criteres_combines = updateTarifDto.criteres_combines;
 
     const updatedTarif = await this.tarifRepository.save(tarif);
-    
+
     const tarifWithRelations = await this.tarifRepository.findOne({
       where: { id: updatedTarif.id },
       relations: ['grilleTarifaire', 'grilleTarifaire.produit', 'grilleTarifaire.produit.branche']
     });
-    
+
     if (!tarifWithRelations) {
       throw new NotFoundException('Erreur lors de la récupération du tarif mis à jour');
     }
-    
+
     return this.mapToDtoWithGrille(tarifWithRelations);
   }
 
@@ -159,18 +163,18 @@ export class TarifsAdminService {
     montant_fixe: number;
   }> {
     const tarifs = await this.findTarifsByCriteres(grilleId, criteres);
-    
+
     if (tarifs.length === 0) {
       throw new NotFoundException('Aucun tarif trouvé pour les critères donnés');
     }
 
     const tarifDto = tarifs[0];
-    
-    const tarif = await this.tarifRepository.findOne({ 
+
+    const tarif = await this.tarifRepository.findOne({
       where: { id: tarifDto.id },
       relations: ['grilleTarifaire', 'grilleTarifaire.produit', 'grilleTarifaire.produit.branche']
     });
-    
+
     if (!tarif) {
       throw new NotFoundException('Erreur lors de la récupération du tarif');
     }
@@ -190,9 +194,12 @@ export class TarifsAdminService {
     return {
       id: tarif.id,
       grille_id: tarif.grille_id,
+      type_calcul: tarif.type_calcul,
+      montant_fixe: tarif.montant_fixe,
+      taux_pourcentage: tarif.taux_pourcentage,
+      formule_calcul: tarif.formule_calcul,
       critere_id: tarif.critere_id,
       valeur_critere_id: tarif.valeur_critere_id,
-      montant_fixe: tarif.montant_fixe,
       criteres_combines: tarif.criteres_combines,
       created_at: tarif.created_at
     };
@@ -200,7 +207,7 @@ export class TarifsAdminService {
 
   private mapToDtoWithGrille(tarif: Tarif): TarifWithGrilleDto {
     const tarifDto = this.mapToDto(tarif);
-    
+
     return {
       ...tarifDto,
       grilleTarifaire: {

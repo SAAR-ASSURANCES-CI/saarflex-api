@@ -1,10 +1,52 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID, IsOptional, IsNumber, IsString, IsDecimal } from 'class-validator';
+import { IsUUID, IsOptional, IsNumber, IsString, IsEnum, ValidateIf, Min, Max } from 'class-validator';
+import { TypeCalculTarif } from '../entities/tarif.entity';
 
 export class CreateTarifDto {
   @ApiProperty({ description: 'ID de la grille tarifaire' })
   @IsUUID()
   grille_id: string;
+
+  @ApiProperty({
+    description: 'Type de calcul du tarif',
+    enum: TypeCalculTarif,
+    default: TypeCalculTarif.MONTANT_FIXE
+  })
+  @IsOptional()
+  @IsEnum(TypeCalculTarif)
+  type_calcul?: TypeCalculTarif;
+
+  @ApiProperty({
+    description: 'Montant fixe du tarif (requis si type_calcul = montant_fixe)',
+    required: false
+  })
+  @ValidateIf(o => o.type_calcul === TypeCalculTarif.MONTANT_FIXE || !o.type_calcul)
+  @IsNumber()
+  @Min(0)
+  montant_fixe?: number;
+
+  @ApiProperty({
+    description: 'Taux de pourcentage (requis si type_calcul = pourcentage_valeur_neuve ou pourcentage_valeur_venale)',
+    required: false,
+    example: 3.5
+  })
+  @ValidateIf(o =>
+    o.type_calcul === TypeCalculTarif.POURCENTAGE_VALEUR_NEUVE ||
+    o.type_calcul === TypeCalculTarif.POURCENTAGE_VALEUR_VENALE
+  )
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  taux_pourcentage?: number;
+
+  @ApiProperty({
+    description: 'Formule de calcul personnalisée (requis si type_calcul = formule_personnalisee)',
+    required: false,
+    example: 'montant_base + (valeur_neuve * 0.01)'
+  })
+  @ValidateIf(o => o.type_calcul === TypeCalculTarif.FORMULE_PERSONNALISEE)
+  @IsString()
+  formule_calcul?: string;
 
   @ApiProperty({ description: 'ID du critère de tarification', required: false })
   @IsOptional()
@@ -16,14 +58,10 @@ export class CreateTarifDto {
   @IsUUID()
   valeur_critere_id?: string;
 
-  @ApiProperty({ description: 'Montant fixe du tarif' })
-  @IsNumber()
-  montant_fixe: number;
-
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Critères combinés pour le tarif (pour les produits multi-critères)',
-    example: { "Capital": "1000000", "Age Assuré": "72", "Durée de cotisation": "5" },
-    required: false 
+    example: { "Garantie": "Tous Risques", "Type de véhicule": "Promenade et affaires" },
+    required: false
   })
   @IsOptional()
   criteres_combines?: Record<string, string>;
@@ -35,6 +73,42 @@ export class UpdateTarifDto {
   @IsUUID()
   grille_id?: string;
 
+  @ApiProperty({
+    description: 'Type de calcul du tarif',
+    enum: TypeCalculTarif,
+    required: false
+  })
+  @IsOptional()
+  @IsEnum(TypeCalculTarif)
+  type_calcul?: TypeCalculTarif;
+
+  @ApiProperty({
+    description: 'Montant fixe du tarif',
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  montant_fixe?: number;
+
+  @ApiProperty({
+    description: 'Taux de pourcentage',
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  taux_pourcentage?: number;
+
+  @ApiProperty({
+    description: 'Formule de calcul personnalisée',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  formule_calcul?: string;
+
   @ApiProperty({ description: 'ID du critère de tarification', required: false })
   @IsOptional()
   @IsUUID()
@@ -45,14 +119,9 @@ export class UpdateTarifDto {
   @IsUUID()
   valeur_critere_id?: string;
 
-  @ApiProperty({ description: 'Montant fixe du tarif', required: false })
-  @IsOptional()
-  @IsNumber()
-  montant_fixe?: number;
-
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Critères combinés pour le tarif (pour les produits multi-critères)',
-    required: false 
+    required: false
   })
   @IsOptional()
   criteres_combines?: Record<string, string>;
@@ -65,18 +134,30 @@ export class TarifDto {
   @ApiProperty({ description: 'ID de la grille tarifaire' })
   grille_id: string;
 
+  @ApiProperty({
+    description: 'Type de calcul du tarif',
+    enum: TypeCalculTarif
+  })
+  type_calcul: TypeCalculTarif;
+
+  @ApiProperty({ description: 'Montant fixe du tarif', required: false })
+  montant_fixe?: number;
+
+  @ApiProperty({ description: 'Taux de pourcentage', required: false })
+  taux_pourcentage?: number;
+
+  @ApiProperty({ description: 'Formule de calcul personnalisée', required: false })
+  formule_calcul?: string;
+
   @ApiProperty({ description: 'ID du critère de tarification', required: false })
   critere_id?: string;
 
   @ApiProperty({ description: 'ID de la valeur du critère', required: false })
   valeur_critere_id?: string;
 
-  @ApiProperty({ description: 'Montant fixe du tarif' })
-  montant_fixe: number;
-
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Critères combinés pour le tarif',
-    required: false 
+    required: false
   })
   criteres_combines?: Record<string, string>;
 

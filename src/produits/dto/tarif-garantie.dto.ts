@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsEnum, IsNumber, IsUUID, IsDateString, Min, Max } from 'class-validator';
-import { StatutTarifGarantie, TypeCalculTarif } from '../entities/tarif-garantie.entity';
+import { StatutTarifGarantie } from '../entities/tarif-garantie.entity';
+import { TypeCalculTarif } from '../entities/tarif.entity';
 
 export class CreateTarifGarantieDto {
   @ApiProperty({

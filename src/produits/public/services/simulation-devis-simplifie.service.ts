@@ -78,21 +78,24 @@ export class SimulationDevisSimplifieeService {
       criteresEnrichis
     );
 
-    // 6. Créer le devis simulé
+    // 6. Calculer la prime selon le type de calcul du tarif
+    const primeCalculee = this.tarifCalculationService.calculerPrime(tarifFixe, criteresEnrichis);
+
+    // 7. Créer le devis simulé
     const devisSimule = await this.devisCreationService.creerDevisSimule(
       simulationDto,
       produit,
       grilleTarifaire,
-      tarifFixe.montant_fixe,
+      primeCalculee,
       criteresEnrichis,
       utilisateurId
     );
 
-    // 7. Mapper et retourner la réponse
+    // 8. Mapper et retourner la réponse
     return await this.devisMapperService.mapToResponseDto(
       devisSimule,
       produit,
-      tarifFixe.montant_fixe,
+      primeCalculee,
       utilisateurId
     );
   }
