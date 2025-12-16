@@ -9063,6 +9063,15 @@
               "date_naissance": "1985-01-01"
             }
           },
+          "informations_vehicule": {
+            "type": "object",
+            "description": "Informations du véhicule (pour les assurances auto)",
+            "example": {
+              "marque": "Toyota",
+              "modele": "Corolla",
+              "immatriculation": "DK-1234-AB"
+            }
+          },
           "assure_est_souscripteur": {
             "type": "boolean",
             "description": "L'assuré est-il le souscripteur ?",
@@ -9818,6 +9827,63 @@
           "adresse"
         ]
       },
+      "InformationsVehiculeDto": {
+        "type": "object",
+        "properties": {
+          "marque": {
+            "type": "string",
+            "description": "Marque du véhicule",
+            "example": "Toyota"
+          },
+          "modele": {
+            "type": "string",
+            "description": "Modèle du véhicule",
+            "example": "Corolla"
+          },
+          "immatriculation": {
+            "type": "string",
+            "description": "Numéro d'immatriculation",
+            "example": "DK-1234-AB"
+          },
+          "numero_chassis": {
+            "type": "string",
+            "description": "Numéro de châssis",
+            "example": "JTDBF32K000012345"
+          },
+          "zone_stationnement": {
+            "type": "string",
+            "description": "Zone de stationnement habituel",
+            "example": "Dakar"
+          },
+          "couleur": {
+            "type": "string",
+            "description": "Couleur du véhicule",
+            "example": "Gris métallisé"
+          },
+          "annee_mise_circulation": {
+            "type": "string",
+            "description": "Année de première mise en circulation",
+            "example": "2020"
+          },
+          "nombre_places": {
+            "type": "string",
+            "description": "Nombre de places",
+            "example": "5"
+          },
+          "usage": {
+            "type": "string",
+            "description": "Usage du véhicule (personnel, professionnel, mixte)",
+            "example": "personnel"
+          }
+        },
+        "required": [
+          "marque",
+          "modele",
+          "immatriculation",
+          "numero_chassis",
+          "zone_stationnement"
+        ]
+      },
       "CreateSimulationDevisSimplifieeDto": {
         "type": "object",
         "properties": {
@@ -9845,6 +9911,14 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/InformationsAssureDto"
+              }
+            ]
+          },
+          "informations_vehicule": {
+            "description": "Informations du véhicule (pour les assurances auto)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InformationsVehiculeDto"
               }
             ]
           }
@@ -9908,6 +9982,10 @@
                 "$ref": "#/components/schemas/InformationsAssureDto"
               }
             ]
+          },
+          "informations_vehicule": {
+            "type": "object",
+            "description": "Informations du véhicule (pour les assurances auto)"
           },
           "front_document_path": {
             "type": "string",

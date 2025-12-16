@@ -21,7 +21,7 @@ export class DevisAdminService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(DocumentIdentite)
     private readonly documentRepository: Repository<DocumentIdentite>,
-  ) {}
+  ) { }
 
   /**
    * Récupère la liste paginée des devis avec filtres
@@ -274,6 +274,7 @@ export class DevisAdminService {
       nom_personnalise: devis.nom_personnalise || undefined,
       notes: devis.notes || undefined,
       informations_assure: devis.informations_assure || undefined,
+      informations_vehicule: devis.informations_vehicule || undefined,
       assure_est_souscripteur: devis.assure_est_souscripteur,
       nombre_documents: devis.documents?.length || 0,
       created_at: devis.created_at
