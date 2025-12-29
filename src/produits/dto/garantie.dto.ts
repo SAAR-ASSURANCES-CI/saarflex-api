@@ -210,6 +210,7 @@ export class GarantieWithProduitDto extends GarantieDto {
     id: string;
     nom: string;
     icon?: string;
+    icon_url?: string;
     type: string;
     description?: string;
     statut: string;

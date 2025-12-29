@@ -7186,6 +7186,10 @@
             "type": "string",
             "description": "Icône du produit"
           },
+          "icon_url": {
+            "type": "string",
+            "description": "URL de l'icône SVG du produit"
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -7282,6 +7286,7 @@
           "id",
           "nom",
           "icon",
+          "icon_url",
           "type",
           "description",
           "conditions_pdf",
@@ -9604,6 +9609,10 @@
             "type": "string",
             "description": "Icône du produit"
           },
+          "icon_url": {
+            "type": "string",
+            "description": "URL de l'icône SVG du produit"
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -9668,6 +9677,7 @@
           "id",
           "nom",
           "icon",
+          "icon_url",
           "type",
           "description",
           "conditions_pdf",
