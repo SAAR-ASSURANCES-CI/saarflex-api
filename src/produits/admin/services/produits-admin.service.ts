@@ -262,6 +262,7 @@ export class ProduitsAdminService {
             id: produit.id,
             nom: produit.nom,
             icon: produit.icon,
+            icon_url: this.getIconUrl(produit.icon),
             type: produit.type,
             description: produit.description,
             conditions_pdf: produit.conditions_pdf,
@@ -286,5 +287,19 @@ export class ProduitsAdminService {
             nombre_grilles: nombreGrilles,
             nombre_devis: nombreDevis,
         };
+    }
+
+    /**
+     * Génère l'URL de l'icône SVG à partir de son nom
+     */
+    private getIconUrl(iconName: string | null): string {
+        if (!iconName) return '';
+        // Convertit PascalCase en kebab-case (ex: ShieldAlert -> shield-alert)
+        const kebabName = iconName
+            .replace(/([a-z])([A-Z])/g, '$1-$2')
+            .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
+            .toLowerCase();
+
+        return `https://unpkg.com/lucide-static@latest/icons/${kebabName}.svg`;
     }
 }

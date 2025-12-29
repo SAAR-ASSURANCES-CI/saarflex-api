@@ -12,6 +12,9 @@ export class ProduitDto {
   @ApiProperty({ description: 'Icône du produit' })
   icon: string;
 
+  @ApiProperty({ description: 'URL de l\'icône SVG du produit' })
+  icon_url: string;
+
   @ApiProperty({
     enum: TypeProduit,
     description: 'Type du produit (vie ou non-vie)'
