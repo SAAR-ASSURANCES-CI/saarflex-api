@@ -52,7 +52,7 @@ export class EmailService {
      */
     async sendWelcomeEmail(user: User): Promise<void> {
         const html = this.emailTemplateService.getWelcomeEmailTemplate(user);
-        
+
         const mailOptions = {
             from: {
                 name: 'SAARCIFLEX',
@@ -78,7 +78,7 @@ export class EmailService {
      */
     async sendPasswordResetCode(email: string, code: string): Promise<void> {
         const html = this.emailTemplateService.getPasswordResetTemplate(code);
-        
+
         const mailOptions = {
             from: {
                 name: 'SAARCIFLEX',
@@ -107,7 +107,7 @@ export class EmailService {
      */
     async sendAgentCredentials(nom: string, email: string, motDePasse: string): Promise<void> {
         const html = this.emailTemplateService.getAgentCredentialsTemplate(nom, email, motDePasse);
-        
+
         const mailOptions = {
             from: {
                 name: 'SAARCIFLEX',
@@ -135,7 +135,7 @@ export class EmailService {
      */
     async sendAgentPasswordReset(nom: string, email: string, nouveauMotDePasse: string): Promise<void> {
         const html = this.emailTemplateService.getAgentPasswordResetTemplate(nom, email, nouveauMotDePasse);
-        
+
         const mailOptions = {
             from: {
                 name: 'SAARCIFLEX',
@@ -177,6 +177,46 @@ export class EmailService {
             this.logger.log(`Email envoyé à ${to}: ${result.messageId}`);
         } catch (error) {
             this.logger.error(`Erreur lors de l'envoi de l'email à ${to}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Envoie un email avec une pièce jointe
+     * @param to Destinataire
+     * @param subject Sujet
+     * @param html Contenu HTML
+     * @param filename Nom du fichier
+     * @param content Contenu du fichier (Buffer)
+     */
+    async sendEmailWithAttachment(
+        to: string,
+        subject: string,
+        html: string,
+        filename: string,
+        content: Buffer
+    ): Promise<void> {
+        const mailOptions = {
+            from: {
+                name: 'SAARCIFLEX',
+                address: this.configService.get('SMTP_USER'),
+            },
+            to,
+            subject,
+            html,
+            attachments: [
+                {
+                    filename,
+                    content,
+                },
+            ],
+        };
+
+        try {
+            const result = await this.transporter.sendMail(mailOptions);
+            this.logger.log(`Email avec pièce jointe envoyé à ${to}: ${result.messageId}`);
+        } catch (error) {
+            this.logger.error(`Erreur lors de l'envoi de l'email avec pièce jointe à ${to}:`, error);
             throw error;
         }
     }

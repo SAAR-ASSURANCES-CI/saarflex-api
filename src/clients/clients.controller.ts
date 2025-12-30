@@ -25,7 +25,7 @@ import { UpdateClientDto } from './dto/update-client.dto';
 @Controller('clients')
 @UseGuards(JwtAuthGuard)
 export class ClientsController {
-  constructor(private readonly clientsService: ClientsService) {}
+  constructor(private readonly clientsService: ClientsService) { }
 
   /**
    * GET /clients

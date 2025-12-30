@@ -8,6 +8,9 @@ import { PaiementService } from './paiement.service';
 import { ContratService } from './contrat.service';
 import { BeneficiaireService } from './beneficiaire.service';
 import { Beneficiaire } from '../entities/beneficiaire.entity';
+import { AttestationService } from './attestation.service';
+import { EmailService } from '../../users/email/email.service';
+import { User } from '../../users/entities/user.entity';
 
 /**
  * Service orchestrateur du processus de souscription
@@ -21,9 +24,13 @@ export class SouscriptionService {
     private readonly devisSimuleRepository: Repository<DevisSimule>,
     @InjectRepository(Beneficiaire)
     private readonly beneficiaireRepository: Repository<Beneficiaire>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly paiementService: PaiementService,
     private readonly contratService: ContratService,
     private readonly beneficiaireService: BeneficiaireService,
+    private readonly attestationService: AttestationService,
+    private readonly emailService: EmailService,
   ) { }
 
   /**
@@ -115,6 +122,29 @@ export class SouscriptionService {
         contrat.id,
         paiement.donnees_callback.beneficiaires
       );
+    }
+
+    // Envoi de l'attestation par email
+    try {
+      const user = await this.userRepository.findOne({ where: { id: contrat.utilisateur_id } });
+      if (user) {
+        const fullContrat = await this.contratService.obtenirContratParId(contrat.id);
+        const pdfBuffer = await this.attestationService.genererAttestationPDF(fullContrat, user);
+
+        await this.emailService.sendEmailWithAttachment(
+          user.email,
+          'Votre attestation de souscription - SAAR ASSURANCES CI',
+          `<p>Bonjour ${user.nom},</p>
+           <p>Nous vous remercions pour votre confiance. Vous trouverez ci-joint votre attestation de souscription pour le produit <strong>${fullContrat.produit?.nom}</strong>.</p>
+           <p>Référence de votre contrat : <strong>${fullContrat.numero_contrat}</strong></p>
+           <p>Cordialement,<br>L'équipe SAAR ASSURANCES CI</p>`,
+          `attestation_${fullContrat.numero_contrat}.pdf`,
+          pdfBuffer
+        );
+      }
+    } catch (error) {
+      // On ne bloque pas la souscription si l'envoi de l'email échoue
+      console.error('Erreur lors de l\'envoi de l\'attestation par email:', error);
     }
 
     return contrat;
