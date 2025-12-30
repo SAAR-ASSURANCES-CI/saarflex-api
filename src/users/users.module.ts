@@ -109,6 +109,7 @@ import { AgentsAdminService } from './admin/services/agents-admin.service';
     ProfileService,
     SessionService,
     DateUtilsService,
+    EmailModule,
   ],
 })
 export class UsersModule { }

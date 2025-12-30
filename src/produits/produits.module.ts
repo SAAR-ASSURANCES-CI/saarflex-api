@@ -61,6 +61,7 @@ import { CinetPayService } from './services/cinetpay.service';
 import { CinetPayConfig } from './config/cinetpay.config';
 import { TarifGarantieCalculationService } from './services/tarif-garantie-calculation.service';
 import { CategorieMappingService } from './services/categorie-mapping.service';
+import { AttestationService } from './services/attestation.service';
 
 // Entités
 import { Produit } from './entities/produit.entity';
@@ -161,6 +162,7 @@ import { User } from '../users/entities/user.entity';
     CinetPayConfig,
     TarifGarantieCalculationService,
     CategorieMappingService,
+    AttestationService,
 
     // Autres services
     TachePlanifieeService,
@@ -184,6 +186,7 @@ import { User } from '../users/entities/user.entity';
     PaiementService,
     ContratService,
     SouscriptionService,
+    AttestationService,
   ]
 })
 export class ProduitsModule { }
