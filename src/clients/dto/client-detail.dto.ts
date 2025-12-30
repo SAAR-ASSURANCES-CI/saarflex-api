@@ -42,6 +42,8 @@ export class ClientProfileDto {
   back_document_path?: string | null;
   front_document_url?: string | null;
   back_document_url?: string | null;
+  avatar_path?: string | null;
+  avatar_url?: string | null;
 }
 
 /**

@@ -54,6 +54,9 @@ export class Profile {
   @Column({ type: 'varchar', length: 500, nullable: true })
   chemin_verso_piece: string | null;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  avatar_path: string | null;
+
   @CreateDateColumn({ type: 'timestamp' })
   date_creation: Date;
 

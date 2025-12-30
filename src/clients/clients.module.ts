@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { ClientsController } from './clients.controller';
 import { ClientsService } from './clients.service';
 import { User } from '../users/entities/user.entity';
@@ -16,10 +17,11 @@ import { UsersModule } from '../users/users.module';
   imports: [
     TypeOrmModule.forFeature([User, Profile, DevisSimule, Contrat, Paiement]),
     UsersModule,
+    ConfigModule,
   ],
   controllers: [ClientsController],
   providers: [ClientsService],
   exports: [ClientsService],
 })
-export class ClientsModule {}
+export class ClientsModule { }
 

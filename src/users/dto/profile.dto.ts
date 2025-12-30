@@ -53,6 +53,18 @@ export class ProfileDto {
   @ApiProperty({ required: false, nullable: true, description: 'Chemin vers la photo verso de la carte d\'identité' })
   back_document_path?: string | null;
 
+  @ApiProperty({ required: false, nullable: true, description: 'Chemin vers l\'avatar' })
+  avatar_path?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, description: 'URL de l\'avatar' })
+  avatar_url?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, description: 'URL de la photo recto de la carte d\'identité' })
+  front_document_url?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, description: 'URL de la photo verso de la carte d\'identité' })
+  back_document_url?: string | null;
+
   @ApiProperty()
   date_creation: Date;
 

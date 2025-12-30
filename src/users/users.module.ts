@@ -44,10 +44,10 @@ import { AgentsAdminService } from './admin/services/agents-admin.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      User, 
-      Profile, 
-      Session, 
-      Notification, 
+      User,
+      Profile,
+      Session,
+      Notification,
       PasswordReset,
       DevisSimule
     ]),
@@ -62,6 +62,7 @@ import { AgentsAdminService } from './admin/services/agents-admin.service';
       }),
     }),
     EmailModule,
+    ConfigModule,
   ],
   controllers: [
     // Contrôleurs HTTP
@@ -69,14 +70,14 @@ import { AgentsAdminService } from './admin/services/agents-admin.service';
     ProfileController,
     UploadController,
     AgentsAdminController,
-    
+
     // Contrôleur événements microservices
     UsersEventsController,
   ],
   providers: [
     // Façade principal
     UsersService,
-    
+
     // Services spécialisés
     AuthService,
     PasswordResetService,
@@ -85,13 +86,13 @@ import { AgentsAdminService } from './admin/services/agents-admin.service';
     NotificationService,
     UserManagementService,
     AgentsAdminService,
-    
+
     // Utilitaires
     DateUtilsService,
-    
+
     UploadService,
     CustomJwtService,
-    
+
     // Guards
     JwtAuthGuard,
     AdminGuard,

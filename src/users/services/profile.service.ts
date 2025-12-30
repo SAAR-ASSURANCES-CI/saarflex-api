@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -20,7 +21,8 @@ export class ProfileService {
         private readonly profileRepository: Repository<Profile>,
         private readonly dateUtilsService: DateUtilsService,
         private readonly userManagementService: UserManagementService,
-    ) {}
+        private readonly configService: ConfigService,
+    ) { }
 
     /**
      * Retourne le profil complet de l'utilisateur
@@ -30,7 +32,7 @@ export class ProfileService {
     async getProfile(userId: string): Promise<ProfileDto> {
         const user = await this.userManagementService.findById(userId);
         let profile = await this.profileRepository.findOne({ where: { user_id: user.id } });
-        
+
         if (!profile) {
             profile = await this.ensureProfileExists(user.id);
         }
@@ -49,16 +51,21 @@ export class ProfileService {
             nationalite: profile.nationalite ?? undefined,
             profession: profile.profession ?? undefined,
             adresse: profile.adresse ?? undefined,
-            date_naissance: profile.date_naissance 
-                ? this.dateUtilsService.formatDateDDMMYYYY(profile.date_naissance) 
+            date_naissance: profile.date_naissance
+                ? this.dateUtilsService.formatDateDDMMYYYY(profile.date_naissance)
                 : undefined,
             numero_piece_identite: profile.numero_piece_identite ?? undefined,
             type_piece_identite: profile.type_piece_identite ?? undefined,
-            date_expiration_piece_identite: profile.date_expiration_piece_identite 
-                ? this.dateUtilsService.formatDateDDMMYYYY(profile.date_expiration_piece_identite) 
+            date_expiration_piece_identite: profile.date_expiration_piece_identite
+                ? this.dateUtilsService.formatDateDDMMYYYY(profile.date_expiration_piece_identite)
                 : undefined,
             front_document_path: profile.chemin_recto_piece ?? undefined,
             back_document_path: profile.chemin_verso_piece ?? undefined,
+            avatar_path: profile.avatar_path ?? undefined,
+            // URLs absolues
+            avatar_url: this.getFileUrl(profile.avatar_path) ?? undefined,
+            front_document_url: this.getFileUrl(profile.chemin_recto_piece) ?? undefined,
+            back_document_url: this.getFileUrl(profile.chemin_verso_piece) ?? undefined,
         };
     }
 
@@ -148,15 +155,43 @@ export class ProfileService {
             nationalite: savedProfile.nationalite ?? undefined,
             profession: savedProfile.profession ?? undefined,
             adresse: savedProfile.adresse ?? undefined,
-            date_naissance: savedProfile.date_naissance 
-                ? this.dateUtilsService.formatDateDDMMYYYY(savedProfile.date_naissance) 
+            date_naissance: savedProfile.date_naissance
+                ? this.dateUtilsService.formatDateDDMMYYYY(savedProfile.date_naissance)
                 : undefined,
             numero_piece_identite: savedProfile.numero_piece_identite ?? undefined,
             type_piece_identite: savedProfile.type_piece_identite ?? undefined,
-            date_expiration_piece_identite: savedProfile.date_expiration_piece_identite 
-                ? this.dateUtilsService.formatDateDDMMYYYY(savedProfile.date_expiration_piece_identite) 
+            date_expiration_piece_identite: savedProfile.date_expiration_piece_identite
+                ? this.dateUtilsService.formatDateDDMMYYYY(savedProfile.date_expiration_piece_identite)
                 : undefined,
+            avatar_path: savedProfile.avatar_path ?? undefined,
+            avatar_url: this.getFileUrl(savedProfile.avatar_path) ?? undefined,
+            front_document_path: savedProfile.chemin_recto_piece ?? undefined,
+            back_document_path: savedProfile.chemin_verso_piece ?? undefined,
+            front_document_url: this.getFileUrl(savedProfile.chemin_recto_piece) ?? undefined,
+            back_document_url: this.getFileUrl(savedProfile.chemin_verso_piece) ?? undefined,
         };
+    }
+
+    /**
+     * Génère l'URL complète pour un fichier
+     */
+    private getFileUrl(path: string | null): string | null {
+        if (!path) return null;
+
+        const appUrl = this.configService.get<string>('APP_URL') || `http://localhost:${this.configService.get('PORT', 3000)}`;
+
+        if (path.startsWith('http')) return path;
+
+        let cleanPath = path.replace(/\\/g, '/');
+        if (cleanPath.startsWith('/')) {
+            cleanPath = cleanPath.substring(1);
+        }
+
+        if (!cleanPath.startsWith('uploads/')) {
+            cleanPath = `uploads/${cleanPath}`;
+        }
+
+        return `${appUrl}/${cleanPath}`;
     }
 
     /**
@@ -179,7 +214,7 @@ export class ProfileService {
      */
     async validateProfileCompleteness(userId: string, typeProduit: string): Promise<void> {
         const profile = await this.profileRepository.findOne({ where: { user_id: userId } });
-        
+
         if (!profile) {
             throw new BadRequestException('Profil utilisateur non trouvé. Veuillez compléter votre profil.');
         }
