@@ -40,6 +40,8 @@ export class ClientProfileDto {
   date_expiration_piece_identite: Date | null;
   front_document_path?: string | null;
   back_document_path?: string | null;
+  front_document_url?: string | null;
+  back_document_url?: string | null;
 }
 
 /**

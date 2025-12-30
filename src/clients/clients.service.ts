@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserType } from '../users/entities/user.entity';
@@ -39,7 +40,8 @@ export class ClientsService {
     @InjectRepository(Paiement)
     private readonly paiementRepository: Repository<Paiement>,
     private readonly sessionService: SessionService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) { }
 
   /**
    * Récupère la liste des clients avec pagination, recherche et filtres
@@ -96,7 +98,7 @@ export class ClientsService {
    * Récupère les détails complets d'un client
    */
   async getClientById(id: string): Promise<ClientDetailDto> {
-    
+
     const client = await this.userRepository.findOne({
       where: { id, type_utilisateur: UserType.CLIENT },
     });
@@ -260,6 +262,9 @@ export class ClientsService {
    * Transforme un profil en DTO
    */
   private mapProfileToDto(profile: Profile): ClientProfileDto {
+    const frontPath = profile.chemin_recto_piece ?? null;
+    const backPath = profile.chemin_verso_piece ?? null;
+
     return {
       lieu_naissance: profile.lieu_naissance,
       sexe: profile.sexe,
@@ -270,9 +275,34 @@ export class ClientsService {
       numero_piece_identite: profile.numero_piece_identite,
       type_piece_identite: profile.type_piece_identite,
       date_expiration_piece_identite: profile.date_expiration_piece_identite,
-      front_document_path: profile.chemin_recto_piece ?? null,
-      back_document_path: profile.chemin_verso_piece ?? null,
+      front_document_path: frontPath,
+      back_document_path: backPath,
+      front_document_url: this.getFileUrl(frontPath),
+      back_document_url: this.getFileUrl(backPath),
     };
+  }
+
+  /**
+   * Génère l'URL complète pour un fichier
+   */
+  private getFileUrl(path: string | null): string | null {
+    if (!path) return null;
+
+    const appUrl = this.configService.get<string>('APP_URL') || `http://localhost:${this.configService.get('PORT', 3000)}`;
+
+    if (path.startsWith('http')) return path;
+
+    let cleanPath = path.replace(/\\/g, '/');
+
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+
+    if (!cleanPath.startsWith('uploads/')) {
+      cleanPath = `uploads/${cleanPath}`;
+    }
+
+    return `${appUrl}/${cleanPath}`;
   }
 
   /**
@@ -304,10 +334,10 @@ export class ClientsService {
         c.statut === StatutContrat.ACTIF
           ? 'Actif'
           : c.statut === StatutContrat.EXPIRE
-          ? 'Expiré'
-          : c.statut === StatutContrat.SUSPENDU
-          ? 'Suspendu'
-          : 'Résilié',
+            ? 'Expiré'
+            : c.statut === StatutContrat.SUSPENDU
+              ? 'Suspendu'
+              : 'Résilié',
       prime_totale: Number(c.prime_mensuelle),
     }));
   }
