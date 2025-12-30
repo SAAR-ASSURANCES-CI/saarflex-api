@@ -367,6 +367,52 @@
         ]
       }
     },
+    "/profiles/upload/avatar": {
+      "post": {
+        "description": "Upload de la photo de profil de l'utilisateur connecté",
+        "operationId": "UploadController_uploadAvatar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Fichier image pour l'avatar",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Fichier image (JPG, PNG, WebP)"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "$ref": "#/components/schemas/"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Avatar uploadé avec succès"
+          },
+          "400": {
+            "description": "Données invalides ou erreur de validation du fichier"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload de la photo de profil",
+        "tags": [
+          "Upload de fichiers"
+        ]
+      }
+    },
     "/profiles/upload/images": {
       "post": {
         "description": "Upload des photos recto et verso de la carte d'identité de l'utilisateur connecté",
@@ -6787,6 +6833,26 @@
             "type": "object",
             "nullable": true,
             "description": "Chemin vers la photo verso de la carte d'identité"
+          },
+          "avatar_path": {
+            "type": "object",
+            "nullable": true,
+            "description": "Chemin vers l'avatar"
+          },
+          "avatar_url": {
+            "type": "object",
+            "nullable": true,
+            "description": "URL de l'avatar"
+          },
+          "front_document_url": {
+            "type": "object",
+            "nullable": true,
+            "description": "URL de la photo recto de la carte d'identité"
+          },
+          "back_document_url": {
+            "type": "object",
+            "nullable": true,
+            "description": "URL de la photo verso de la carte d'identité"
           },
           "date_creation": {
             "format": "date-time",

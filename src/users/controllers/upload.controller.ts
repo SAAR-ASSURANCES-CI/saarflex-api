@@ -3,12 +3,13 @@ import {
   Post,
   UseInterceptors,
   UploadedFiles,
+  UploadedFile,
   UseGuards,
   Request,
   BadRequestException,
   Param,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -26,7 +27,55 @@ import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+  constructor(private readonly uploadService: UploadService) { }
+
+  @Post('upload/avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary: 'Upload de la photo de profil',
+    description: 'Upload de la photo de profil de l\'utilisateur connecté'
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Fichier image pour l\'avatar',
+    type: 'multipart/form-data',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Fichier image (JPG, PNG, WebP)',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Avatar uploadé avec succès',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Données invalides ou erreur de validation du fichier',
+  })
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: any
+  ): Promise<{ status: string; avatar_path: string }> {
+    if (!file) {
+      throw new BadRequestException('Un fichier est requis');
+    }
+
+    this.uploadService.validateFile(file, 'Photo de profil');
+
+    const result = await this.uploadService.uploadAvatar(req.user.id, file);
+
+    return {
+      status: 'success',
+      ...result
+    };
+  }
 
   @Post('upload/images')
   @UseInterceptors(FilesInterceptor('files', 2))

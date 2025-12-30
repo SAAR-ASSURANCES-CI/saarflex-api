@@ -24,11 +24,11 @@
     "docker:down": "docker compose down -v",
     "docker:logs": "docker compose logs -f api | cat",
     "db:console": "docker exec -it users-db mysql -usaarflex -psaarflex users_db",
-    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d data-source.ts",
-    "migration:run": "typeorm-ts-node-commonjs migration:run -d data-source.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d data-source.ts",
-    "migration:show": "typeorm-ts-node-commonjs migration:show -d data-source.ts",
-    "schema:drop": "typeorm-ts-node-commonjs schema:drop -d data-source.ts"
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/data-source.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d src/data-source.ts",
+    "schema:drop": "typeorm-ts-node-commonjs schema:drop -d src/data-source.ts"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",

@@ -45,7 +45,7 @@ export class UploadService {
 
     try {
       rectoPath = await this.saveFile(rectoFile, userFolderPath, 'recto.png');
-      
+
       versoPath = await this.saveFile(versoFile, userFolderPath, 'verso.png');
 
       await this.updateProfilePaths(userId, rectoPath, versoPath);
@@ -56,7 +56,46 @@ export class UploadService {
       };
 
     } catch (error) {
-      await this.cleanupUploadedFiles(rectoPath, versoPath);
+      await this.cleanupUploadedFiles([rectoPath, versoPath]);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload de la photo de profil (Avatar)
+   */
+  async uploadAvatar(
+    userId: string,
+    avatarFile: Express.Multer.File
+  ): Promise<{ avatar_path: string }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('Utilisateur non trouvé');
+    }
+
+    const folderName = this.sanitizeFolderName(user.nom);
+    const userFolderPath = path.join(this.uploadPath, folderName);
+
+    this.ensureUserDirectoryExists(userFolderPath);
+
+    let avatarPath: string | null = null;
+
+    try {
+      // Déterminer l'extension du fichier
+      const extension = path.extname(avatarFile.originalname) || '.png';
+      avatarPath = await this.saveFile(avatarFile, userFolderPath, `avatar${extension}`);
+
+      await this.profileRepository.update(
+        { user_id: userId },
+        { avatar_path: avatarPath }
+      );
+
+      return {
+        avatar_path: avatarPath
+      };
+
+    } catch (error) {
+      await this.cleanupUploadedFiles([avatarPath]);
       throw error;
     }
   }
@@ -70,7 +109,7 @@ export class UploadService {
     filename: string
   ): Promise<string> {
     const filePath = path.join(destinationFolder, filename);
-    
+
     return new Promise((resolve, reject) => {
       fs.writeFile(filePath, file.buffer, (err) => {
         if (err) {
@@ -102,9 +141,9 @@ export class UploadService {
   /**
    * Nettoie les fichiers uploadés en cas d'erreur
    */
-  private async cleanupUploadedFiles(rectoPath: string | null, versoPath: string | null): Promise<void> {
-    const filesToDelete = [rectoPath, versoPath].filter((path): path is string => path !== null);
-    
+  private async cleanupUploadedFiles(filePaths: (string | null)[]): Promise<void> {
+    const filesToDelete = filePaths.filter((path): path is string => path !== null);
+
     for (const filePath of filesToDelete) {
       try {
         if (fs.existsSync(filePath)) {
@@ -156,9 +195,9 @@ export class UploadService {
   ): Promise<{ recto_path: string; verso_path: string }> {
     // Vérifier que le devis existe et appartient à l'utilisateur
     const devis = await this.devisSimuleRepository.findOne({
-      where: { 
-        id: devisId, 
-        utilisateur_id: userId 
+      where: {
+        id: devisId,
+        utilisateur_id: userId
       }
     });
 
@@ -180,7 +219,7 @@ export class UploadService {
 
     try {
       rectoPath = await this.saveFile(rectoFile, devisFolderPath, 'recto.png');
-      
+
       versoPath = await this.saveFile(versoFile, devisFolderPath, 'verso.png');
 
       await this.devisSimuleRepository.update(devisId, {
@@ -194,36 +233,34 @@ export class UploadService {
       };
 
     } catch (error) {
-      await this.cleanupUploadedFiles(rectoPath, versoPath);
+      await this.cleanupUploadedFiles([rectoPath, versoPath]);
       throw error;
     }
   }
 
   /**
-   * Valide les fichiers uploadés
+   * Valide un seul fichier (ex: avatar)
    */
-  validateFiles(rectoFile: Express.Multer.File, versoFile: Express.Multer.File): void {
+  validateFile(file: Express.Multer.File, fieldName: string = 'Fichier'): void {
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
     const maxSize = 5 * 1024 * 1024; // 5MB
 
-    if (!rectoFile) {
-      throw new BadRequestException('Photo recto de la carte d\'identité requise');
+    if (!file) {
+      throw new BadRequestException(`${fieldName} requis`);
     }
-    if (!allowedMimeTypes.includes(rectoFile.mimetype)) {
-      throw new BadRequestException('Format de fichier non supporté pour le recto. Formats acceptés: JPEG, PNG, WebP');
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(`Format de fichier non supporté pour ${fieldName}. Formats acceptés: JPEG, PNG, WebP`);
     }
-    if (rectoFile.size > maxSize) {
-      throw new BadRequestException('Fichier recto trop volumineux. Taille maximum: 5MB');
+    if (file.size > maxSize) {
+      throw new BadRequestException(`${fieldName} trop volumineux. Taille maximum: 5MB`);
     }
+  }
 
-    if (!versoFile) {
-      throw new BadRequestException('Photo verso de la carte d\'identité requise');
-    }
-    if (!allowedMimeTypes.includes(versoFile.mimetype)) {
-      throw new BadRequestException('Format de fichier non supporté pour le verso. Formats acceptés: JPEG, PNG, WebP');
-    }
-    if (versoFile.size > maxSize) {
-      throw new BadRequestException('Fichier verso trop volumineux. Taille maximum: 5MB');
-    }
+  /**
+   * Valide les fichiers uploadés (recto/verso)
+   */
+  validateFiles(rectoFile: Express.Multer.File, versoFile: Express.Multer.File): void {
+    this.validateFile(rectoFile, 'Photo recto de la carte d\'identité');
+    this.validateFile(versoFile, 'Photo verso de la carte d\'identité');
   }
 }

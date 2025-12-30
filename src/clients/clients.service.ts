@@ -264,6 +264,7 @@ export class ClientsService {
   private mapProfileToDto(profile: Profile): ClientProfileDto {
     const frontPath = profile.chemin_recto_piece ?? null;
     const backPath = profile.chemin_verso_piece ?? null;
+    const avatarPath = profile.avatar_path ?? null;
 
     return {
       lieu_naissance: profile.lieu_naissance,
@@ -279,6 +280,8 @@ export class ClientsService {
       back_document_path: backPath,
       front_document_url: this.getFileUrl(frontPath),
       back_document_url: this.getFileUrl(backPath),
+      avatar_path: avatarPath,
+      avatar_url: this.getFileUrl(avatarPath),
     };
   }
 
