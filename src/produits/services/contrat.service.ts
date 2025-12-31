@@ -45,14 +45,24 @@ export class ContratService {
             return contratExistant;
         }
 
-        // Vérifier que le devis a une catégorie
-        if (!devis.categorie) {
-            throw new BadRequestException('Le devis doit avoir une catégorie pour générer un numéro de police');
+        // Récupérer la catégorie (soit depuis le devis, soit depuis le produit)
+        let categorie: CategorieProduit | null | undefined = devis.categorie;
+
+        if (!categorie && devis.produit) {
+            const produitComplet = await this.produitRepository.findOne({
+                where: { id: devis.produit.id },
+                relations: ['categorie']
+            });
+            categorie = produitComplet?.categorie;
+        }
+
+        if (!categorie) {
+            throw new BadRequestException('Le devis doit avoir une catégorie pour générer un numéro de police (non trouvée sur le devis ni sur le produit)');
         }
 
         const numeroContrat = await this.genererNumeroContrat(
             devis.produit.type,
-            devis.categorie.code
+            categorie.code
         );
 
         const dateDebutCouverture = new Date();
@@ -83,7 +93,6 @@ export class ContratService {
 
         const contratSauvegarde = await this.contratRepository.save(contrat);
 
-        // Mettre à jour le statut du devis
         await this.devisSimuleRepository.update(
             { id: devisId },
             { statut: StatutDevis.CONVERTI_EN_CONTRAT }
@@ -104,24 +113,17 @@ export class ContratService {
      * La séquence est indépendante par catégorie ET par type de produit (VIE/NON-VIE)
      */
     private async genererNumeroContrat(typeProduit: TypeProduit, codeCategorie: string): Promise<string> {
-        // Récupérer le code agence depuis la configuration
         const codeAgence = await this.configurationService.getCodeAgence();
 
-        // Validation du code catégorie (doit être numérique et faire 3 chiffres)
         const codeCategorieNumeric = codeCategorie.replace(/\D/g, '');
         if (codeCategorieNumeric.length < 3) {
             throw new BadRequestException(`Le code catégorie "${codeCategorie}" doit contenir au moins 3 chiffres`);
         }
 
-        // Prendre les 3 premiers chiffres du code catégorie
         const codeCategorieFormate = codeCategorieNumeric.substring(0, 3);
 
-        // Construire le préfixe de recherche pour trouver le dernier contrat
-        // Format de recherche: {CODE_AGENCE}-{CODE_CATEGORIE}%
         const prefixeRecherche = `${codeAgence}-${codeCategorieFormate}`;
 
-        // Récupérer le dernier contrat avec ce préfixe ET ce type de produit
-        // On doit vérifier le type de produit via une jointure
         const dernierContrat = await this.contratRepository
             .createQueryBuilder('contrat')
             .leftJoinAndSelect('contrat.produit', 'produit')
@@ -133,8 +135,6 @@ export class ContratService {
         let numeroSequence = 1;
 
         if (dernierContrat) {
-            // Extraire la séquence du numéro de contrat
-            // Format: 101-23000001 -> extraire 00001
             const partieApresCodeCategorie = dernierContrat.numero_contrat.substring(prefixeRecherche.length);
             const dernierNumero = parseInt(partieApresCodeCategorie, 10);
 
@@ -143,11 +143,8 @@ export class ContratService {
             }
         }
 
-        // Formater la séquence sur 5 chiffres
         const sequenceFormatee = numeroSequence.toString().padStart(5, '0');
 
-        // Format final: {CODE_AGENCE}-{CODE_CATEGORIE}{SEQUENCE}
-        // Exemple: 101-23000001
         return `${codeAgence}-${codeCategorieFormate}${sequenceFormatee}`;
     }
 

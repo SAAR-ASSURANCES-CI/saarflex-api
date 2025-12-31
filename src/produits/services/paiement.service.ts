@@ -174,6 +174,13 @@ export class PaiementService {
     }
 
     /**
+     * Lie un contrat à un paiement
+     */
+    async lierContrat(paiementId: string, contratId: string): Promise<void> {
+        await this.paiementRepository.update(paiementId, { contrat_id: contratId });
+    }
+
+    /**
      * Récupère un paiement par sa référence
      */
     async obtenirPaiementParReference(reference: string): Promise<Paiement> {

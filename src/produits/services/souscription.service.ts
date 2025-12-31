@@ -117,6 +117,8 @@ export class SouscriptionService {
 
     const contrat = await this.contratService.creerContratDepuisDevis(devisId);
 
+    await this.paiementService.lierContrat(paiement.id, contrat.id);
+
     if (devis.produit.necessite_beneficiaires && paiement.donnees_callback?.beneficiaires) {
       await this.beneficiaireService.ajouterBeneficiaires(
         contrat.id,
