@@ -156,6 +156,33 @@ export class EmailService {
     }
 
     /**
+     * Envoie une notification de disponibilité du contrat
+     * @param nom Nom de l'utilisateur
+     * @param email Email de l'utilisateur
+     * @param numeroContrat Numéro du contrat
+     */
+    async sendContractAvailabilityNotification(nom: string, email: string, numeroContrat: string): Promise<void> {
+        const html = this.emailTemplateService.getContractAvailableTemplate(nom, numeroContrat);
+
+        const mailOptions = {
+            from: {
+                name: 'SAARCIFLEX',
+                address: this.configService.get('SMTP_USER'),
+            },
+            to: email,
+            subject: 'Votre contrat est disponible - SAARCIFLEX',
+            html,
+        };
+
+        try {
+            const result = await this.transporter.sendMail(mailOptions);
+            this.logger.log(`Email de disponibilité de contrat envoyé à ${email}: ${result.messageId}`);
+        } catch (error) {
+            this.logger.error(`Erreur lors de l'envoi de l'email de disponibilité à ${email}:`, error);
+        }
+    }
+
+    /**
      * Envoie un email générique
      * @param to Destinataire
      * @param subject Sujet de l'email

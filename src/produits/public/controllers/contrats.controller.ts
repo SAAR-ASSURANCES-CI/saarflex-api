@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Patch, UseGuards, Request, HttpStatus, Body, Res } from '@nestjs/common';
+import { Controller, Get, Param, Patch, UseGuards, Request, HttpStatus, Body, Res, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { join } from 'path';
 import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
 import { ContratService } from '../../services/contrat.service';
 import { AttestationService } from '../../services/attestation.service';
@@ -103,6 +104,39 @@ export class ContratsController {
     });
 
     res.end(buffer);
+  }
+
+  /**
+   * Télécharger le contrat final PDF d'un contrat (celui téléversé par l'admin)
+   */
+  @Get(':id/telecharger')
+  @ApiOperation({
+    summary: "Télécharger le contrat final PDF",
+    description: "Télécharge le contrat définitif téléversé par l'administration"
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID du contrat'
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Fichier récupéré avec succès'
+  })
+  async téléchargerContratFinal(
+    @Param('id') contratId: string,
+    @Request() req: any,
+    @Res() res: Response,
+  ) {
+    const utilisateurId = req.user.id;
+    const contrat = await this.contratService.obtenirContratParId(contratId, utilisateurId);
+
+    if (!contrat.chemin_contrat_final) {
+      throw new NotFoundException("Le contrat final n'est pas encore disponible pour ce dossier.");
+    }
+
+    const path = join(__dirname, '..', '..', '..', '..', 'uploads', 'contrats', contrat.chemin_contrat_final);
+
+    res.download(path, `contrat_${contrat.numero_contrat}.pdf`);
   }
 
   /**

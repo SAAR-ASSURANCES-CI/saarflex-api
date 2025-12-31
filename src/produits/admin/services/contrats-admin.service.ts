@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Contrat, StatutContrat } from '../../entities/contrat.entity';
 import { User, UserType } from '../../../users/entities/user.entity';
 import { Beneficiaire } from '../../entities/beneficiaire.entity';
+import { EmailService } from '../../../users/email/email.service';
 import {
   ContratsListQueryDto,
   ContratAdminDto,
@@ -21,7 +22,38 @@ export class ContratsAdminService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Beneficiaire)
     private readonly beneficiaireRepository: Repository<Beneficiaire>,
-  ) {}
+    private readonly emailService: EmailService,
+  ) { }
+
+  /**
+   * Téléverse le contrat PDF final et notifie l'utilisateur
+   */
+  async uploadContratFinal(id: string, file: Express.Multer.File): Promise<ContratAdminDto> {
+    console.log('[ContratsAdminService] uploadContratFinal - ID:', id, 'File:', file.filename);
+
+    const contrat = await this.contratRepository.findOne({
+      where: { id },
+      relations: ['utilisateur', 'produit']
+    });
+
+    if (!contrat) {
+      throw new NotFoundException('Contrat non trouvé');
+    }
+
+    contrat.chemin_contrat_final = file.filename;
+    const updated = await this.contratRepository.save(contrat);
+
+    // Notification par email
+    if (contrat.utilisateur) {
+      this.emailService.sendContractAvailabilityNotification(
+        contrat.utilisateur.nom,
+        contrat.utilisateur.email,
+        contrat.numero_contrat
+      ).catch(err => console.error('[ContratsAdminService] Erreur envoi email:', err));
+    }
+
+    return this.getContratById(id);
+  }
 
   /**
    * Récupère la liste paginée des contrats avec filtres
@@ -217,12 +249,12 @@ export class ContratsAdminService {
       numero_contrat: contrat.numero_contrat,
       devis: contrat.devisSimule
         ? {
-            id: contrat.devisSimule.id,
-            reference: contrat.devisSimule.reference,
-            statut: contrat.devisSimule.statut,
-            prime_calculee: Number(contrat.devisSimule.prime_calculee),
-            created_at: contrat.devisSimule.created_at,
-          }
+          id: contrat.devisSimule.id,
+          reference: contrat.devisSimule.reference,
+          statut: contrat.devisSimule.statut,
+          prime_calculee: Number(contrat.devisSimule.prime_calculee),
+          created_at: contrat.devisSimule.created_at,
+        }
         : undefined,
       produit: {
         id: contrat.produit?.id || '',
@@ -253,6 +285,7 @@ export class ContratsAdminService {
       informations_assure: contrat.informations_assure || undefined,
       chemin_recto_assure: contrat.chemin_recto_assure || undefined,
       chemin_verso_assure: contrat.chemin_verso_assure || undefined,
+      chemin_contrat_final: contrat.chemin_contrat_final || undefined,
       nombre_beneficiaires: contrat.nombre_beneficiaires || 0,
       created_at: contrat.created_at,
       updated_at: contrat.updated_at,

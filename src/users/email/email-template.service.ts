@@ -4,6 +4,7 @@ import { getWelcomeEmailTemplate } from './templates/welcome.template';
 import { getPasswordResetTemplate } from './templates/password-reset.template';
 import { getAgentCredentialsTemplate } from './templates/agent-credentials.template';
 import { getAgentPasswordResetTemplate } from './templates/agent-password-reset.template';
+import { getContractAvailableTemplate } from './templates/contract-available.template';
 
 /**
  * Service responsable de la génération des templates d'emails
@@ -48,6 +49,16 @@ export class EmailTemplateService {
      */
     getAgentPasswordResetTemplate(nom: string, email: string, nouveauMotDePasse: string): string {
         return getAgentPasswordResetTemplate(nom, email, nouveauMotDePasse);
+    }
+
+    /**
+     * Génère le template HTML pour l'email de disponibilité du contrat
+     * @param nom Nom de l'utilisateur
+     * @param numeroContrat Numéro du contrat
+     * @returns Template HTML
+     */
+    getContractAvailableTemplate(nom: string, numeroContrat: string): string {
+        return getContractAvailableTemplate(nom, numeroContrat);
     }
 
     /**
