@@ -32,7 +32,7 @@ export const getContractAvailableTemplate = (nom: string, numeroContrat: string)
                 <p>Vous pouvez dès à présent le consulter et le télécharger en vous connectant à votre compte SAARCIFLEX.</p>
                 
                 <p>Merci de votre confiance.</p>
-                <p>L'équipe SAAR Assurances</p>
+                <p>L'équipe SAAR Assurances CI</p>
             </div>
             <div class="footer">
                 <p>© 2025 SAARCIFLEX - Tous droits réservés</p>
