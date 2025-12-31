@@ -6041,6 +6041,37 @@
         ]
       }
     },
+    "/contrats/{id}/attestation": {
+      "get": {
+        "description": "Génère et télécharge l'attestation de souscription en format PDF",
+        "operationId": "ContratsController_téléchargerAttestation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du contrat",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF généré avec succès"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Télécharger l'attestation PDF",
+        "tags": [
+          "Contrats"
+        ]
+      }
+    },
     "/contrats/numero/{numero}": {
       "get": {
         "description": "Récupère un contrat par son numéro unique (ex: VIE-2025-000001)",

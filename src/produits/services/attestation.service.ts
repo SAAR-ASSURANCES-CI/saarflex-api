@@ -112,7 +112,7 @@ export class AttestationService {
             .text('Nom & Prénoms :', 80, startY)
             .font('Helvetica-Bold')
             .fillColor('#2D3748')
-            .text(user.nom.toUpperCase(), 180, startY);
+            .text((user.nom || 'Client').toUpperCase(), 180, startY);
 
         doc
             .font('Helvetica')
@@ -217,12 +217,14 @@ export class AttestationService {
             .fontSize(8)
             .font('Helvetica')
             .text(
-                'SAAR ASSURANCES CÔTE D\'IVOIRE - S.A au capital de 5.000.000.000 FCFA - Registre du Commerce: CI-ABJ-01-2005-B12-03456',
+                'SAAR ASSURANCES CÔTE D\'IVOIRE - S.A au capital de 5.000.000.000 FCFA - Siège social: Abidjan, Cocody II Plateaux Aghien',
                 50,
                 750,
                 { align: 'center', width: 500 }
             );
 
-        doc.text('Siège social: Avenue Terrasson de Fougères, Immeuble SAAR - 01 BP 3456 Abidjan 01', { align: 'center' });
+        doc.text('Tél: +225 27 22 50 81 50', { align: 'center' });
+        doc.text('Email: saarci@saar-assurances.com', { align: 'center' });
+        doc.text('www.saarassurancesci.com', { align: 'center' });
     }
 }
