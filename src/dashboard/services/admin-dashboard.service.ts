@@ -21,7 +21,7 @@ export class AdminDashboardService {
     private readonly paiementRepository: Repository<Paiement>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   /**
    * Récupérer les statistiques globales pour l'admin
@@ -85,8 +85,8 @@ export class AdminDashboardService {
    * Statistiques des produits
    */
   private async getProduitsStats() {
-    const total = await this.produitRepository.count({ 
-      where: { statut: StatutProduit.ACTIF } 
+    const total = await this.produitRepository.count({
+      where: { statut: StatutProduit.ACTIF }
     });
     const vie = await this.produitRepository.count({
       where: { type: TypeProduit.VIE, statut: StatutProduit.ACTIF },
@@ -360,22 +360,18 @@ export class AdminDashboardService {
   private async getTopClients() {
     const results = await this.paiementRepository
       .createQueryBuilder('paiement')
-      .leftJoin('paiement.contrat', 'contrat')
-      .leftJoin('paiement.devisSimule', 'devis')
-      .leftJoin('contrat.utilisateur', 'userContrat')
-      .leftJoin('devis.utilisateur', 'userDevis')
-      .select('COALESCE(userContrat.id, userDevis.id)', 'id')
-      .addSelect('COALESCE(userContrat.nom, userDevis.nom)', 'nom')
-      .addSelect('COUNT(DISTINCT contrat.id)', 'nombreContrats')
+      .innerJoin('users', 'user', 'user.id = paiement.utilisateur_id')
+      .select('user.id', 'id')
+      .addSelect('user.nom', 'nom')
       .addSelect('SUM(paiement.montant)', 'primesPayees')
-      .where('paiement.statut = :statut', { statut: StatutPaiement.REUSSI })
-      .andWhere(
-        '(userContrat.type_utilisateur = :clientType OR userDevis.type_utilisateur = :clientType)',
-        { clientType: UserType.CLIENT },
+      .addSelect(
+        '(SELECT COUNT(c.id) FROM contrats c WHERE c.utilisateur_id = user.id)',
+        'nombreContrats'
       )
-      .andWhere('COALESCE(userContrat.id, userDevis.id) IS NOT NULL')
-      .groupBy('COALESCE(userContrat.id, userDevis.id)')
-      .addGroupBy('COALESCE(userContrat.nom, userDevis.nom)')
+      .where('paiement.statut = :statut', { statut: StatutPaiement.REUSSI })
+      .andWhere('user.type_utilisateur = :clientType', { clientType: UserType.CLIENT })
+      .groupBy('user.id')
+      .addGroupBy('user.nom')
       .orderBy('primesPayees', 'DESC')
       .limit(5)
       .getRawMany();

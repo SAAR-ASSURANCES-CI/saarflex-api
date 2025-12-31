@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import { Contrat } from '../entities/contrat.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -10,7 +10,7 @@ export class AttestationService {
     async genererAttestationPDF(contrat: Contrat, user: User): Promise<Buffer> {
         return new Promise((resolve, reject) => {
             const chunks: any[] = [];
-            const doc = new (PDFDocument as any)({
+            const doc = new PDFDocument({
                 margin: 50,
                 size: 'A4',
             });
@@ -39,110 +39,190 @@ export class AttestationService {
     }
 
     private generateHeader(doc: PDFKit.PDFDocument) {
+        // Bandeau supérieur rouge
+        doc.rect(0, 0, 600, 20).fill('#E53E3E');
+
+        // Logo / Nom de la compagnie
         doc
-            .fillColor('#444444')
-            .fontSize(20)
-            .text('SAAR ASSURANCES CI', 110, 57)
-            .fontSize(10)
-            .text('SAAR ASSURANCES CI', 200, 50, { align: 'right' })
-            .text('7eme Tranche, Cocody II Plateaux Aghien', 200, 65, { align: 'right' })
-            .text('Abidjan, Côte d\'Ivoire', 200, 80, { align: 'right' })
-            .text('Tél: +225 27 22 50 81 50', 200, 95, { align: 'right' })
-            .moveDown();
+            .fillColor('#1A202C')
+            .fontSize(22)
+            .font('Helvetica-Bold')
+            .text('SAAR', 50, 45)
+            .fillColor('#E53E3E')
+            .text('ASSURANCES CI', 115, 45);
+
+        doc
+            .fillColor('#4A5568')
+            .fontSize(9)
+            .font('Helvetica')
+            .text('L\'assurance qui vous comprend', 50, 70);
+
+        // Infos contact à droite
+        doc
+            .fillColor('#2D3748')
+            .fontSize(8)
+            .text('Abidjan, Cocody II Plateaux Aghien', 400, 45, { align: 'right' })
+            .text('Tél: +225 27 22 50 81 50', 400, 57, { align: 'right' })
+            .text('Email: saarci@saar-assurances.com', 400, 69, { align: 'right' })
+            .text('www.saarassurancesci.com', 400, 81, { align: 'right' });
+
+        // Ligne de séparation
+        doc
+            .moveTo(50, 110)
+            .lineTo(550, 110)
+            .strokeColor('#E2E8F0')
+            .lineWidth(0.5)
+            .stroke();
     }
 
     private generateTitle(doc: PDFKit.PDFDocument) {
         doc
-            .fillColor('#E53E3E')
-            .fontSize(18)
-            .text('ATTESTATION DE SOUSCRIPTION', 0, 160, { align: 'center' })
-            .moveDown();
+            .fillColor('#1A202C')
+            .fontSize(24)
+            .font('Helvetica-Bold')
+            .text('ATTESTATION DE SOUSCRIPTION', 50, 140, { align: 'center' });
 
         doc
-            .fillColor('#444444')
+            .fillColor('#E53E3E')
             .fontSize(10)
-            .font('Helvetica-Oblique')
-            .text('Ceci est une preuve de souscription et ne remplace pas le contrat officiel.', { align: 'center' })
-            .font('Helvetica')
-            .moveDown(2);
+            .font('Helvetica-Bold')
+            .text('N° CERTIFICAT : ' + Math.random().toString(36).substring(2, 10).toUpperCase(), 50, 170, { align: 'center' });
+
+        doc.moveDown(2);
     }
 
     private generateSubscriberInfo(doc: PDFKit.PDFDocument, user: User, contrat: Contrat) {
         const infoAssure = contrat.informations_assure as any;
 
-        doc
-            .fillColor('#333333')
-            .fontSize(12)
-            .text('INFORMATIONS DU SOUSCRIPTEUR', { underline: true })
-            .moveDown(0.5);
-
-        const startY = doc.y;
+        // Bloc Fond Gris
+        doc.rect(50, doc.y, 500, 85).fill('#F7FAFC');
 
         doc
+            .fillColor('#E53E3E')
             .fontSize(10)
-            .text(`Nom complet: ${user.nom}`, 50, startY)
-            .text(`Email: ${user.email}`, 50, startY + 15)
-            .text(`Téléphone: ${user.telephone || 'Non renseigné'}`, 50, startY + 30);
+            .font('Helvetica-Bold')
+            .text('   COORDONNÉES DU SOUSCRIPTEUR', 70, doc.y + 10);
 
-        if (contrat.assure_est_souscripteur) {
-            doc.text('Statut: Souscripteur et Assuré', 50, startY + 45);
-        } else if (infoAssure) {
-            doc.text(`Assuré: ${infoAssure.nom} ${infoAssure.prenoms || ''}`, 50, startY + 45);
+        const startY = doc.y + 10;
+
+        doc
+            .fillColor('#4A5568')
+            .fontSize(10)
+            .font('Helvetica')
+            .text('Nom & Prénoms :', 80, startY)
+            .font('Helvetica-Bold')
+            .fillColor('#2D3748')
+            .text(user.nom.toUpperCase(), 180, startY);
+
+        doc
+            .font('Helvetica')
+            .fillColor('#4A5568')
+            .text('Email :', 80, startY + 18)
+            .fillColor('#2D3748')
+            .text(user.email, 180, startY + 18);
+
+        doc
+            .font('Helvetica')
+            .fillColor('#4A5568')
+            .text('Téléphone :', 80, startY + 36)
+            .fillColor('#2D3748')
+            .text(user.telephone || 'Non renseigné', 180, startY + 36);
+
+        if (!contrat.assure_est_souscripteur && infoAssure) {
+            doc
+                .font('Helvetica')
+                .fillColor('#4A5568')
+                .text('Assuré désigné :', 320, startY)
+                .fillColor('#2D3748')
+                .font('Helvetica-Bold')
+                .text(`${infoAssure.nom} ${infoAssure.prenoms || ''}`, 405, startY);
         }
 
+        doc.text('', 50, startY + 60); // Reset position
         doc.moveDown(2);
     }
 
     private generateContractDetails(doc: PDFKit.PDFDocument, contrat: Contrat) {
         doc
-            .fillColor('#333333')
+            .fillColor('#1A202C')
             .fontSize(12)
-            .text('DÉTAILS DE LA SOUSCRIPTION', { underline: true })
-            .moveDown(0.5);
+            .font('Helvetica-Bold')
+            .text('CARACTÉRISTIQUES DE LA SOUSCRIPTION', 50, doc.y);
+
+        doc.moveDown(0.5);
 
         const tableTop = doc.y;
 
-        // Dessiner un tableau simple
-        this.generateTableRow(doc, tableTop, 'Référence Contrat', contrat.numero_contrat);
-        this.generateTableRow(doc, tableTop + 20, 'Produit', contrat.produit?.nom || 'N/A');
-        this.generateTableRow(doc, tableTop + 40, 'Date de début', new Date(contrat.date_debut_couverture).toLocaleDateString('fr-FR'));
-        this.generateTableRow(doc, tableTop + 60, 'Montant de la prime', `${Number(contrat.prime_mensuelle).toLocaleString('fr-FR')} FCFA`);
-        this.generateTableRow(doc, tableTop + 80, 'Périodicité', contrat.periodicite_paiement || 'Annuelle');
+        // Entête de tableau stylisé
+        doc.rect(50, tableTop, 500, 20).fill('#2D3748');
+        doc.fillColor('#FFFFFF').fontSize(9).text('LIBELLE', 70, tableTop + 6);
+        doc.text('INFORMATIONS RELATIVES AU CONTRAT', 200, tableTop + 6, { align: 'left' });
+
+        let currentY = tableTop + 20;
+
+        const details = [
+            { label: 'Référence Contrat', value: contrat.numero_contrat },
+            { label: 'Produit Souscrit', value: contrat.produit?.nom || 'N/A' },
+            { label: 'Date d\'Effet', value: new Date(contrat.date_debut_couverture).toLocaleDateString('fr-FR') },
+            // { label: 'Date d\'Échéance', value: new Date(contrat.date_fin_couverture).toLocaleDateString('fr-FR') },
+            { label: 'Montant Prime', value: `${Number(contrat.prime_mensuelle).toLocaleString('fr-FR')} FCFA` },
+            { label: 'Mode Paiement', value: (contrat.periodicite_paiement || 'Mensuel').toUpperCase() },
+        ];
+
+        details.forEach((item, index) => {
+            const isEven = index % 2 === 0;
+            if (isEven) {
+                doc.rect(50, currentY, 500, 20).fill('#F7FAFC');
+            }
+
+            doc
+                .fillColor('#4A5568')
+                .fontSize(9)
+                .font('Helvetica')
+                .text(item.label, 70, currentY + 6)
+                .fillColor('#1A202C')
+                .font('Helvetica-Bold')
+                .text(item.value, 200, currentY + 6);
+
+            currentY += 20;
+        });
 
         doc.moveDown(3);
     }
 
     private generateTableRow(doc: PDFKit.PDFDocument, y: number, label: string, value: string) {
-        doc
-            .fontSize(10)
-            .text(label, 50, y)
-            .text(value, 200, y);
-
-        doc
-            .moveTo(50, y + 15)
-            .lineTo(550, y + 15)
-            .strokeColor('#EEEEEE')
-            .stroke();
     }
 
     private generateFooter(doc: PDFKit.PDFDocument) {
+        const bottomY = 650;
+
+        // Cachet et Signature
         doc
+            .fillColor('#2D3748')
             .fontSize(10)
-            .text(
-                'Fait à Abidjan, le ' + new Date().toLocaleDateString('fr-FR'),
-                50,
-                700,
-                { align: 'center', width: 500 }
-            );
+            .font('Helvetica-Bold')
+            .text('POUR LA COMPAGNIE', 380, bottomY, { align: 'center' });
 
         doc
             .fontSize(8)
-            .fillColor('#888888')
+            .font('Helvetica-Oblique')
+            .text('Document généré électroniquement', 380, bottomY + 15, { align: 'center' });
+
+        // Signature digitale fictive (un cadre)
+        doc.rect(380, bottomY + 30, 120, 40).strokeColor('#E2E8F0').stroke();
+
+        // Footer légal
+        doc
+            .fillColor('#A0AEC0')
+            .fontSize(8)
+            .font('Helvetica')
             .text(
-                'SAAR ASSURANCES CI - www.saarassurancesci.com - saarci@saar-assurances.com',
+                'SAAR ASSURANCES CÔTE D\'IVOIRE - S.A au capital de 5.000.000.000 FCFA - Registre du Commerce: CI-ABJ-01-2005-B12-03456',
                 50,
                 750,
                 { align: 'center', width: 500 }
             );
+
+        doc.text('Siège social: Avenue Terrasson de Fougères, Immeuble SAAR - 01 BP 3456 Abidjan 01', { align: 'center' });
     }
 }
