@@ -138,7 +138,7 @@ export class AttestationService {
                 .text(`${infoAssure.nom} ${infoAssure.prenoms || ''}`, 405, startY);
         }
 
-        doc.text('', 50, startY + 60); // Reset position
+        doc.text('', 50, startY + 60);
         doc.moveDown(2);
     }
 

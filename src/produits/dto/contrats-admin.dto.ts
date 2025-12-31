@@ -206,6 +206,9 @@ export class ContratAdminDto {
   @ApiProperty({ description: 'Chemin document identité verso', required: false })
   chemin_verso_assure?: string | null;
 
+  @ApiProperty({ description: 'Chemin du contrat final téléversé', required: false })
+  chemin_contrat_final?: string | null;
+
   @ApiProperty({ description: "Nombre de bénéficiaires associés", example: 2 })
   nombre_beneficiaires: number;
 

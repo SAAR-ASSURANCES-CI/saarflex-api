@@ -18,7 +18,7 @@ export class Contrat {
     id: string;
 
     @Column({ type: 'varchar', length: 50, unique: true, nullable: false })
-    numero_contrat: string; 
+    numero_contrat: string;
 
     @Column({ type: 'uuid', nullable: false })
     devis_simule_id: string;
@@ -78,6 +78,9 @@ export class Contrat {
 
     @Column({ type: 'varchar', length: 500, nullable: true })
     chemin_verso_assure: string | null;
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    chemin_contrat_final: string | null;
 
     @CreateDateColumn()
     created_at: Date;

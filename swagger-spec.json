@@ -4623,6 +4623,51 @@
         ]
       }
     },
+    "/admin/contrats/{id}/upload": {
+      "patch": {
+        "operationId": "ContratsAdminController_uploadContrat",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Téléverser le contrat final (PDF)",
+        "tags": [
+          "Administration - Contrats"
+        ]
+      }
+    },
     "/agent/contrats": {
       "get": {
         "description": "Liste paginée des contrats avec filtres. Accès en lecture seule.",
@@ -6067,6 +6112,37 @@
           }
         ],
         "summary": "Télécharger l'attestation PDF",
+        "tags": [
+          "Contrats"
+        ]
+      }
+    },
+    "/contrats/{id}/telecharger": {
+      "get": {
+        "description": "Télécharge le contrat définitif téléversé par l'administration",
+        "operationId": "ContratsController_téléchargerContratFinal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du contrat",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fichier récupéré avec succès"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Télécharger le contrat final PDF",
         "tags": [
           "Contrats"
         ]
@@ -9459,6 +9535,10 @@
           "chemin_verso_assure": {
             "type": "object",
             "description": "Chemin document identité verso"
+          },
+          "chemin_contrat_final": {
+            "type": "object",
+            "description": "Chemin du contrat final téléversé"
           },
           "nombre_beneficiaires": {
             "type": "number",
