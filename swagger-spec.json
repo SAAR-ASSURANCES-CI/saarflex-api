@@ -6051,6 +6051,27 @@
         ]
       }
     },
+    "/contrats/count": {
+      "get": {
+        "description": "Récupère le nombre total de contrats de l'utilisateur connecté",
+        "operationId": "ContratsController_obtenirNombreContrats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Nombre de contrats récupéré avec succès"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Nombre de contrats",
+        "tags": [
+          "Contrats"
+        ]
+      }
+    },
     "/contrats/{id}": {
       "get": {
         "description": "Récupère les détails d'un contrat spécifique",
@@ -6587,7 +6608,7 @@
   "info": {
     "title": "SAARCIFLEX",
     "description": "SAARCIFLEX API est le moteur backend robuste alimentant les plateformes d'assurance de SAAR Assurances Côte d'Ivoire. Cette solution fournit une suite complète de services REST sécurisés pour la gestion du cycle de vie des contrats, l'administration des profils multi-rôles (Clients, Agents, RH, Admin), la tarification dynamique des produits, et le suivi analytique des performances. L'infrastructure s'appuie sur NestJS et TypeORM, intégrant des fonctionnalités critiques telles que l'authentification JWT/OTP, la génération documentaire automatisée et une architecture microservices par transport Redis.",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "contact": {}
   },
   "tags": [
