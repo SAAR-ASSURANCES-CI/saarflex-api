@@ -1,0 +1,7 @@
+{
+    "$schema": "https://cdn.scalar.com/schema/scalar-config.json",
+    "subdomain": "saarflex",
+    "docs": {
+        "entry": "swagger-spec.json"
+    }
+}

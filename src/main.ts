@@ -48,8 +48,10 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('SAARCIFLEX')
-      .setDescription('API backend de l\' Saarciflex')
-      .setVersion('1.0')
+      .setDescription(
+        "SAARCIFLEX API est le moteur backend robuste alimentant les plateformes d'assurance de SAAR Assurances Côte d'Ivoire. Cette solution fournit une suite complète de services REST sécurisés pour la gestion du cycle de vie des contrats, l'administration des profils multi-rôles (Clients, Agents, RH, Admin), la tarification dynamique des produits, et le suivi analytique des performances. L'infrastructure s'appuie sur NestJS et TypeORM, intégrant des fonctionnalités critiques telles que l'authentification JWT/OTP, la génération documentaire automatisée et une architecture microservices par transport Redis."
+      )
+      .setVersion('1.0.1')
       .addBearerAuth()
       .addTag('SAARCIFLEX')
       .build();
