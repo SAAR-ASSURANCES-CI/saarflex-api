@@ -1,7 +1,7 @@
 {
   "name": "saarflex-api",
   "version": "0.0.1",
-  "description": "",
+  "description": "API backend robuste pour la gestion des assurances SAARCIFLEX (Contrats, Sinistres, Profils)",
   "author": "",
   "private": true,
   "license": "UNLICENSED",

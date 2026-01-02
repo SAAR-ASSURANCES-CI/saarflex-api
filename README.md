@@ -1,12 +1,14 @@
-## SAARFLEX API
+# SAARCIFLEX - Plateforme d'Assurance Digitale (API)
 
-API backend pour l'application d'assurances pour SAAR Assurances Côte d'Ivoire. Ce service expose des endpoints REST et des patterns microservices (Redis) pour l'authentification, la gestion de profil, les sessions et les notifications, etc.
+L'API SAARCIFLEX est une solution backend de haut niveau conçue pour SAAR Assurances Côte d'Ivoire. Elle orchestre les services d'assurance, la gestion des contrats, les flux d'authentification sécurisés et les communications multi-canal via une architecture moderne et performante.
 
 Important — Propriété et confidentialité
+
 - Ce dépôt est privé et appartient à SAAR Assurances Côte d'Ivoire.
 - Tous droits réservés. Toute diffusion, copie ou usage non autorisé est strictement interdit.
 
 ### Pile technique
+
 - NestJS 11 (Express)
 - TypeORM 0.3 (MySQL 8)
 - JWT (authentification)
@@ -18,11 +20,13 @@ Important — Propriété et confidentialité
 ## Démarrage rapide
 
 ### Prérequis
+
 - Node.js 20+
 - PNPM (automatiquement activé dans l'image Docker via Corepack)
 - Docker et Docker Compose
 
 ### Variables d'environnement (.env)
+
 Créer un fichier `.env` à la racine avec, au minimum:
 
 ```
@@ -57,32 +61,41 @@ SMTP_PASS=change-me
 ```
 
 ### Lancement avec Docker (recommandé)
+
 - Build et démarrage:
+
 ```
 pnpm run docker:up
 ```
+
 - Arrêt et nettoyage des volumes:
+
 ```
 pnpm run docker:down
 ```
+
 - Logs de l'API:
+
 ```
 pnpm run docker:logs
 ```
 
 Services exposés par docker-compose:
+
 - API: `http://localhost:3000`
 - MySQL: `localhost:3307` (mappé sur 3306 du conteneur)
 - phpMyAdmin: `http://localhost:8080`
 - Redis: `localhost:6379`
 
 ### Lancement en local (sans Docker)
+
 ```
 pnpm install
 pnpm run start:dev
 ```
 
 ## Scripts PNPM
+
 - `pnpm run start` — démarre l'app
 - `pnpm run start:dev` — démarre en watch
 - `pnpm run build` — compile TypeScript vers `dist`
@@ -100,14 +113,17 @@ pnpm run start:dev
 ## Architecture applicative
 
 ### Modules principaux
+
 - `UsersModule` — endpoints REST et handlers microservices autour des utilisateurs, profils, sessions, notifications et OTP reset.
 - `EmailModule` — envoi d'emails (bienvenue, OTP) via SMTP.
 - `AppModule` — configuration globale (env, TypeORM, injection du `ValidationPipe`).
 
 ### Entités (TypeORM)
+
 - `User`, `Profile`, `Session`, `Notification`, `PasswordReset`
 
 ### Stockage et migrations
+
 - Connexion MySQL configurée via variables d'environnement.
 - Migrations dans `src/migrations` (exécutées en prod depuis `dist/migrations`).
 
@@ -118,6 +134,7 @@ Documentation Swagger (en développement uniquement): `http://localhost:3000/api
 Authentification: Bearer Token (header `Authorization: Bearer <token>`)
 
 Endpoints principaux (contrôleur `users`):
+
 - `POST /users/register` — inscription (retourne un JWT)
 - `POST /users/login` — connexion (retourne un JWT)
 - `POST /users/forgot-password` — envoi d'un code OTP (6 chiffres, 15 min)
@@ -127,6 +144,7 @@ Endpoints principaux (contrôleur `users`):
 - `PATCH /users/me` — mise à jour profil (protégé par JWT)
 
 Exemple d'appel de connexion:
+
 ```
 curl -X POST http://localhost:3000/users/login \
   -H "Content-Type: application/json" \
@@ -139,6 +157,7 @@ curl -X POST http://localhost:3000/users/login \
 ## Patterns microservices (Redis)
 
 Le service se connecte à Redis comme transport microservices et expose des `MessagePattern` depuis `UsersController`:
+
 - `user.login` — payload: `{ loginDto, ipAddress?, userAgent? }`
 - `user.register` — payload: `{ registerDto, ipAddress?, userAgent? }`
 - `user.findById` — payload: `userId: string`
@@ -153,12 +172,14 @@ La configuration microservice est faite au bootstrap et utilise `REDIS_HOST`, `R
 ## Emails
 
 Le module `EmailService` utilise les variables SMTP pour envoyer:
+
 - Email de bienvenue après inscription
 - Code OTP de réinitialisation de mot de passe
 
 Assurez-vous que `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` sont valides. En dev, la vérification SMTP loggue le résultat au démarrage.
 
 ## Sécurité et bonnes pratiques
+
 - CORS: la liste `ALLOWED_ORIGINS` est lue depuis l'environnement.
 - Validation: `ValidationPipe` avec `whitelist`, `forbidNonWhitelisted`, `transform` activés.
 - Mots de passe: hashés via `bcrypt` (12 rounds).
@@ -168,17 +189,21 @@ Assurez-vous que `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` sont valides
 ## Déploiement
 
 ### Image Docker
+
 - `Dockerfile` multi-étapes (development / production)
 - Production: build TypeScript, prune du store PNPM, exécution en user non-root
 
 ### Variables clés en prod
+
 - `NODE_ENV=production` désactive Swagger par défaut et les messages d'erreur détaillés.
 - Fournir un `JWT_SECRET` robuste et des identifiants DB/SMTP/Redis sécurisés.
 
 ## Dépannage
+
 - L'API ne devient pas `healthy` dans Compose: implémentez `GET /health` (via `@nestjs/terminus`) ou modifiez le `healthcheck` de `api`.
 - Erreurs SMTP au démarrage: vérifier `SMTP_HOST/PORT/USER/PASS`; la vérification est logguée par `EmailService`.
 - Migrations: en dev, exécuter `pnpm run migration:run` après démarrage des conteneurs.
 
 ## Mentions légales
+
 Ce logiciel et sa documentation sont la propriété de SAAR Assurances Côte d'Ivoire. Toute reproduction ou utilisation non autorisée est interdite. Aucune licence open-source n'est accordée; l'usage est strictement interne.
