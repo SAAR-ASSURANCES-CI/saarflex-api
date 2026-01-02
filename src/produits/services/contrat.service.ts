@@ -198,6 +198,15 @@ export class ContratService {
     }
 
     /**
+     * Compte le nombre de contrats d'un utilisateur
+     */
+    async compterContratsUtilisateur(utilisateurId: string): Promise<number> {
+        return await this.contratRepository.count({
+            where: { utilisateur_id: utilisateurId }
+        });
+    }
+
+    /**
      * Met à jour le statut d'un contrat
      */
     async mettreAJourStatutContrat(contratId: string, nouveauStatut: StatutContrat): Promise<Contrat> {

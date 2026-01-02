@@ -40,6 +40,24 @@ export class ContratsController {
   }
 
   /**
+   * Récupérer le nombre total de contrats de l'utilisateur connecté
+   */
+  @Get('count')
+  @ApiOperation({
+    summary: 'Nombre de contrats',
+    description: 'Récupère le nombre total de contrats de l\'utilisateur connecté'
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Nombre de contrats récupéré avec succès'
+  })
+  async obtenirNombreContrats(@Request() req: any) {
+    const utilisateurId = req.user.id;
+    const count = await this.contratService.compterContratsUtilisateur(utilisateurId);
+    return { count };
+  }
+
+  /**
    * Récupérer un contrat spécifique par son ID
    */
   @Get(':id')
