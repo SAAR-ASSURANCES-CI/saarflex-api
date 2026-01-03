@@ -10,6 +10,7 @@ import { BeneficiaireService } from './beneficiaire.service';
 import { Beneficiaire } from '../entities/beneficiaire.entity';
 import { AttestationService } from './attestation.service';
 import { EmailService } from '../../users/email/email.service';
+import { UserManagementService } from '../../users/services/user-management.service';
 import { User } from '../../users/entities/user.entity';
 
 /**
@@ -31,6 +32,7 @@ export class SouscriptionService {
     private readonly beneficiaireService: BeneficiaireService,
     private readonly attestationService: AttestationService,
     private readonly emailService: EmailService,
+    private readonly userManagementService: UserManagementService,
   ) { }
 
   /**
@@ -145,11 +147,36 @@ export class SouscriptionService {
         );
       }
     } catch (error) {
-      // On ne bloque pas la souscription si l'envoi de l'email échoue
       console.error('Erreur lors de l\'envoi de l\'attestation par email:', error);
     }
 
+    // Notification aux agents
+    this.notifierAgentsNouvelleSouscription(contrat, devis).catch(err => {
+      console.error(`Erreur lors du déclenchement de la notification agent (souscription) : ${err.message}`);
+    });
+
     return contrat;
+  }
+
+  /**
+   * Notifie les agents d'une nouvelle souscription
+   */
+  private async notifierAgentsNouvelleSouscription(contrat: Contrat, devis: DevisSimule) {
+    try {
+      const agentsEmails = await this.userManagementService.findAgentsEmails();
+      const clientNom = devis.informations_assure?.nom_complet || 'Client inconnu';
+      const produitNom = devis.produit?.nom || 'Produit inconnu';
+
+      await this.emailService.sendNewSubscriptionAgentNotification(
+        agentsEmails,
+        contrat.numero_contrat,
+        produitNom,
+        clientNom,
+        Number(contrat.prime_mensuelle)
+      );
+    } catch (error) {
+      console.error(`Erreur notification agents (souscription) : ${error.message}`);
+    }
   }
 
   /**

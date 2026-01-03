@@ -156,6 +156,67 @@ export class EmailService {
     }
 
     /**
+     * Envoie une notification de nouvelle simulation à tous les agents
+     * @param agentsEmails Liste des emails des agents
+     * @param reference Référence du devis
+     * @param produitNom Nom du produit
+     * @param clientNom Nom du client
+     */
+    async sendNewSimulationAgentNotification(agentsEmails: string[], reference: string, produitNom: string, clientNom: string): Promise<void> {
+        if (!agentsEmails.length) return;
+
+        const html = this.emailTemplateService.getAgentNewSimulationTemplate(reference, produitNom, clientNom);
+
+        const mailOptions = {
+            from: {
+                name: 'SAARCIFLEX NOTIFICATIONS',
+                address: this.configService.get('SMTP_USER'),
+            },
+            to: agentsEmails,
+            subject: `[SAARCIFLEX] Nouvelle simulation : ${reference}`,
+            html,
+        };
+
+        try {
+            await this.transporter.sendMail(mailOptions);
+            this.logger.log(`Notification de simulation envoyée à ${agentsEmails.length} agents`);
+        } catch (error) {
+            this.logger.error(`Erreur lors de l'envoi de la notification de simulation aux agents:`, error);
+        }
+    }
+
+    /**
+     * Envoie une notification de nouvelle souscription à tous les agents
+     * @param agentsEmails Liste des emails des agents
+     * @param numeroContrat Numéro du contrat
+     * @param produitNom Nom du produit
+     * @param clientNom Nom du client
+     * @param montant Montant payé
+     */
+    async sendNewSubscriptionAgentNotification(agentsEmails: string[], numeroContrat: string, produitNom: string, clientNom: string, montant: number): Promise<void> {
+        if (!agentsEmails.length) return;
+
+        const html = this.emailTemplateService.getAgentNewSubscriptionTemplate(numeroContrat, produitNom, clientNom, montant);
+
+        const mailOptions = {
+            from: {
+                name: 'SAARCIFLEX NOTIFICATIONS',
+                address: this.configService.get('SMTP_USER'),
+            },
+            to: agentsEmails,
+            subject: `[SAARCIFLEX] Nouvelle souscription : ${numeroContrat}`,
+            html,
+        };
+
+        try {
+            await this.transporter.sendMail(mailOptions);
+            this.logger.log(`Notification de souscription envoyée à ${agentsEmails.length} agents`);
+        } catch (error) {
+            this.logger.error(`Erreur lors de l'envoi de la notification de souscription aux agents:`, error);
+        }
+    }
+
+    /**
      * Envoie une notification de disponibilité du contrat
      * @param nom Nom de l'utilisateur
      * @param email Email de l'utilisateur
