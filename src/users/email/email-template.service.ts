@@ -52,6 +52,49 @@ export class EmailTemplateService {
     }
 
     /**
+     * Génère le template HTML pour la notification d'une nouvelle simulation aux agents
+     * @param reference Référence du devis
+     * @param produitNom Nom du produit
+     * @param clientNom Nom du client (ou 'Client non identifié')
+     * @returns Template HTML
+     */
+    getAgentNewSimulationTemplate(reference: string, produitNom: string, clientNom: string): string {
+        const content = `
+            <h2>Nouvelle simulation de devis</h2>
+            <p>Un client vient de réaliser une simulation de devis sur la plateforme.</p>
+            <ul>
+                <li><strong>Référence :</strong> ${reference}</li>
+                <li><strong>Produit :</strong> ${produitNom}</li>
+                <li><strong>Client :</strong> ${clientNom}</li>
+            </ul>
+            <p>Connectez-vous au back-office pour plus de détails.</p>
+        `;
+        return this.getGenericTemplate('Nouvelle simulation - SAARCIFLEX', content);
+    }
+
+    /**
+     * Génère le template HTML pour la notification d'une nouvelle souscription aux agents
+     * @param numeroContrat Numéro du contrat
+     * @param produitNom Nom du produit
+     * @param clientNom Nom du client
+     * @param montant Montant payé
+     * @returns Template HTML
+     */
+    getAgentNewSubscriptionTemplate(numeroContrat: string, produitNom: string, clientNom: string, montant: number): string {
+        const content = `
+            <h2 style="color: #28a745;">Nouvelle souscription confirmée</h2>
+            <p>Un nouveau contrat vient d'être émis suite à un paiement réussi.</p>
+            <ul>
+                <li><strong>N° Contrat :</strong> ${numeroContrat}</li>
+                <li><strong>Produit :</strong> ${produitNom}</li>
+                <li><strong>Client :</strong> ${clientNom}</li>
+                <li><strong>Montant :</strong> ${montant.toLocaleString('fr-FR')} FCFA</li>
+            </ul>
+        `;
+        return this.getGenericTemplate('Nouvelle souscription - SAARCIFLEX', content);
+    }
+
+    /**
      * Génère le template HTML pour l'email de disponibilité du contrat
      * @param nom Nom de l'utilisateur
      * @param numeroContrat Numéro du contrat

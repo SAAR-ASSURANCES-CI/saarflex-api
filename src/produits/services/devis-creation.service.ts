@@ -7,6 +7,8 @@ import { GrilleTarifaire } from '../entities/grille-tarifaire.entity';
 import { Profile } from '../../users/entities/profile.entity';
 import { CreateSimulationDevisSimplifieeDto } from '../dto/simulation-devis-simplifie.dto';
 import { CategorieMappingService } from './categorie-mapping.service';
+import { EmailService } from '../../users/email/email.service';
+import { UserManagementService } from '../../users/services/user-management.service';
 
 const DUREE_VALIDITE_SIMULATION = 24 * 60 * 60 * 1000; // 24 heures
 
@@ -23,6 +25,8 @@ export class DevisCreationService {
         @InjectRepository(Profile)
         private readonly profileRepository: Repository<Profile>,
         private readonly categorieMappingService: CategorieMappingService,
+        private readonly emailService: EmailService,
+        private readonly userManagementService: UserManagementService,
     ) { }
 
     /**
@@ -62,7 +66,37 @@ export class DevisCreationService {
             utilisateurId
         );
 
-        return await this.sauvegarderDevisAvecReference(devisData, produit);
+        const savedDevis = await this.sauvegarderDevisAvecReference(devisData, produit);
+
+        // Envoyer la notification aux agents
+        this.notifierAgentsNouvelleSimulation(savedDevis, produit, informationsAssure).catch(err => {
+            this.logger.error(`Erreur lors du déclenchement de la notification agent : ${err.message}`);
+        });
+
+        return savedDevis;
+    }
+
+    /**
+     * Notifie les agents d'une nouvelle simulation
+     */
+    private async notifierAgentsNouvelleSimulation(
+        devis: DevisSimule,
+        produit: Produit,
+        informationsAssure?: Record<string, any>
+    ) {
+        try {
+            const agentsEmails = await this.userManagementService.findAgentsEmails();
+            const clientNom = informationsAssure?.nom_complet || 'Client non identifié';
+
+            await this.emailService.sendNewSimulationAgentNotification(
+                agentsEmails,
+                devis.reference,
+                produit.nom,
+                clientNom
+            );
+        } catch (error) {
+            this.logger.error(`Erreur notification agents: ${error.message}`);
+        }
     }
 
     /**

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User, UserType } from '../entities/user.entity';
 import { SessionService } from './session.service';
 
 /**
@@ -13,7 +13,7 @@ export class UserManagementService {
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
         private readonly sessionService: SessionService,
-    ) {}
+    ) { }
 
     /**
      * Recherche un utilisateur par son ID
@@ -116,13 +116,15 @@ export class UserManagementService {
     }
 
     /**
-     * Compte le nombre d'utilisateurs actifs
-     * @returns Nombre d'utilisateurs actifs
+     * Récupère les emails de tous les agents
+     * @returns Liste des emails des agents
      */
-    async countActiveUsers(): Promise<number> {
-        return this.userRepository.count({
-            where: { statut: true }
+    async findAgentsEmails(): Promise<string[]> {
+        const agents = await this.userRepository.find({
+            where: { type_utilisateur: UserType.AGENT, statut: true },
+            select: ['email']
         });
+        return agents.map(agent => agent.email);
     }
 }
 
