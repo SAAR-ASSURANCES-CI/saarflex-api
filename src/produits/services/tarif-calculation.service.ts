@@ -205,6 +205,18 @@ export class TarifCalculationService {
             console.log(`[TarifCalculation] Comparaison valeur: attendue="${valeurAttendueStr}" vs fournie="${valeurFournieStr}"`);
 
             if (valeurAttendueStr !== valeurFournieStr) {
+                // Support des intervalles (ex: "18-40")
+                if (valeurAttendueStr.includes('-')) {
+                    const [min, max] = valeurAttendueStr.split('-').map(v => Number(v.trim()));
+                    const valeurFournieNum = Number(valeurFournieStr);
+
+                    if (!isNaN(min) && !isNaN(max) && !isNaN(valeurFournieNum)) {
+                        if (valeurFournieNum >= min && valeurFournieNum <= max) {
+                            console.log(`[TarifCalculation] ✅ Valeur ${valeurFournieNum} comprise dans l'intervalle [${min}, ${max}]`);
+                            continue; 
+                        }
+                    }
+                }
 
                 console.log(`[TarifCalculation] ❌ Valeurs ne correspondent pas pour "${nomCritere}"`);
                 return false;
