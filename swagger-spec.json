@@ -7847,7 +7847,8 @@
               "numerique",
               "categoriel",
               "booleen",
-              "texte"
+              "texte",
+              "date"
             ],
             "description": "Type de critère (numérique, catégoriel ou booléen)",
             "example": "numerique"
@@ -8001,7 +8002,8 @@
               "numerique",
               "categoriel",
               "booleen",
-              "texte"
+              "texte",
+              "date"
             ],
             "description": "Type du critère"
           },
@@ -8104,7 +8106,8 @@
               "numerique",
               "categoriel",
               "booleen",
-              "texte"
+              "texte",
+              "date"
             ],
             "description": "Type de critère",
             "example": "numerique"
@@ -9939,7 +9942,8 @@
               "numerique",
               "categoriel",
               "booleen",
-              "texte"
+              "texte",
+              "date"
             ],
             "description": "Type du critère (numérique, catégoriel ou booléen)"
           },
