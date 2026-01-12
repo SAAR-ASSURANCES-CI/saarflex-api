@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { Produit, TypeProduit, PeriodicitePrime } from './produit.entity';
 import { DevisSimule } from './devis-simule.entity';
 import type { Beneficiaire } from './beneficiaire.entity';
@@ -13,12 +13,21 @@ export enum StatutContrat {
 }
 
 @Entity('contrats')
+@Index(['numero_contrat', 'type_produit'], { unique: true })
 export class Contrat {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'varchar', length: 50, unique: true, nullable: false })
+    @Column({ type: 'varchar', length: 50, nullable: false })
     numero_contrat: string;
+
+    @Column({
+        type: 'enum',
+        enum: TypeProduit,
+        nullable: false,
+        default: TypeProduit.NON_VIE
+    })
+    type_produit: TypeProduit;
 
     @Column({ type: 'uuid', nullable: false })
     devis_simule_id: string;

@@ -2,12 +2,24 @@ import { Injectable, Logger } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
 import { Contrat } from '../entities/contrat.entity';
 import { User } from '../../users/entities/user.entity';
+import { ProfileService } from '../../users/services/profile.service';
+import { ProfileDto } from '../../users/dto/profile.dto';
 
 @Injectable()
 export class AttestationService {
     private readonly logger = new Logger(AttestationService.name);
 
+    constructor(
+        private readonly profileService: ProfileService,
+    ) { }
+
     async genererAttestationPDF(contrat: Contrat, user: User): Promise<Buffer> {
+        // Détecter si c'est un produit voyage
+        const nomProduit = (contrat.produit?.nom || '').toUpperCase();
+        if (nomProduit.includes('VOYAGE') || nomProduit.includes('TRAVEL') || nomProduit.includes('VOYAGES')) {
+            return this.genererAttestationVoyagePDF(contrat, user);
+        }
+
         return new Promise((resolve, reject) => {
             const chunks: any[] = [];
             const doc = new PDFDocument({
@@ -208,7 +220,7 @@ export class AttestationService {
             .font('Helvetica-Oblique')
             .text('Document généré électroniquement', 380, bottomY + 15, { align: 'center' });
 
-        // Signature digitale fictive (un cadre)
+        // Signature digitale
         doc.rect(380, bottomY + 30, 120, 40).strokeColor('#E2E8F0').stroke();
 
         // Footer légal
@@ -226,5 +238,191 @@ export class AttestationService {
         doc.text('Tél: +225 27 22 50 81 50', { align: 'center' });
         doc.text('Email: saarci@saar-assurances.com', { align: 'center' });
         doc.text('www.saarassurancesci.com', { align: 'center' });
+    }
+
+    /**
+     * Génère l'attestation spécifique pour l'assurance voyage
+     */
+    private async genererAttestationVoyagePDF(contrat: Contrat, user: User): Promise<Buffer> {
+        // Récupérer le profil complet de l'utilisateur
+        const profile = await this.profileService.getProfile(user.id);
+
+        return new Promise((resolve, reject) => {
+            const chunks: any[] = [];
+            const doc = new PDFDocument({
+                margin: 40,
+                size: 'A4',
+            });
+
+            doc.on('data', (chunk: any) => chunks.push(chunk));
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+            doc.on('error', (err: any) => reject(err));
+
+            const criteres = contrat.criteres_utilisateur || {};
+
+            // Extraction sémantique des données essentielles depuis les critères
+            // Si pas trouvé dans les critères, on prend dans le profil
+            const destination = this.extraireValeurParMotsCles(criteres, ['pays', 'zone', 'destination', 'lieu']);
+            const passport = this.extraireValeurParMotsCles(criteres, ['passport', 'passeport']) || profile.numero_piece_identite;
+            const expirationPassport = this.extraireValeurParMotsCles(criteres, ['expire', 'expiration', 'validite']) || profile.date_expiration_piece_identite;
+            const dureeSejour = this.extraireValeurParMotsCles(criteres, ['duree', 'sejour', 'jours', 'quantieme']);
+
+            // --- Construction du PDF Voyage (Page 1) ---
+            this.generateVoyageHeader(doc);
+            this.generateVoyageIntro(doc, user, contrat);
+            this.generateVoyageParticipantTable(doc, user, profile, passport ?? 'N/A', expirationPassport ?? 'N/A');
+            this.generateVoyageTripTable(doc, contrat, destination, dureeSejour);
+            this.generateVoyageGuarantees(doc, destination);
+
+            // Page 2 (Dispositions spéciales et signature)
+            doc.addPage();
+            this.generateVoyageHeader(doc);
+            this.generateVoyageSpecialDispositions(doc, contrat);
+
+            doc.end();
+        });
+    }
+
+    private generateVoyageHeader(doc: PDFKit.PDFDocument) {
+        doc.rect(50, 40, 500, 30).fill('#0088CC'); // Bleu entête voyage
+        doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('Attestation d\'Assistance Au Voyage', 50, 50, { align: 'center' });
+        doc.moveDown(2);
+    }
+
+    private generateVoyageIntro(doc: PDFKit.PDFDocument, user: User, contrat: Contrat) {
+        doc.fillColor('#000000').fontSize(10).font('Helvetica').moveDown(1);
+        const introText = `Nous Soussignés, SAAR ASSURANCE COTE D'IVOIRE (SAAR-CI) dont le siège est à Deux plateaux Aghien, 01 BP 12201 Abidjan 01, attestons par la présente que :`;
+        doc.text(introText, { align: 'center', width: 480 });
+        doc.moveDown(1);
+    }
+
+    private generateVoyageParticipantTable(doc: PDFKit.PDFDocument, user: User, profile: ProfileDto, passport: string, expiration: string) {
+        const nomComplet = (user.nom || '').toUpperCase();
+
+        doc.rect(50, doc.y, 500, 70).fill('#F2F2F2');
+        doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
+        doc.text(`   Mme, Melle, Mr : ${nomComplet}`, 70, doc.y + 10);
+
+        doc.fontSize(9).font('Helvetica').fillColor('#333333');
+        const nextY = doc.y + 5;
+        doc.text(`Adresse : ${profile.adresse || 'ABIDJAN'}`, 70, nextY);
+        doc.text(`Ville : ${profile.lieu_naissance || 'Abidjan'}`, 70, nextY + 12);
+
+        const dateNaiss = profile.date_naissance || 'N/A';
+        doc.text(`Informations pers. : Né(e) le : ${dateNaiss}  -  sexe : ${profile.sexe || 'Masculin'}`, 70, nextY + 24);
+        doc.text(`Passport N° : ${passport || 'N/A'}  -  Expire le : ${expiration}`, 150, nextY + 36);
+
+        doc.moveDown(4);
+    }
+
+    private generateVoyageTripTable(doc: PDFKit.PDFDocument, contrat: Contrat, destination: string, duree: string) {
+        const tableY = doc.y;
+        doc.rect(50, tableY, 500, 15).fill('#CCCCCC');
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000');
+        doc.text('Pays ou Zone destination', 50, tableY + 3, { width: 200, align: 'center' });
+        doc.text('Date Début', 250, tableY + 3, { width: 150, align: 'center' });
+        doc.text('Date Fin', 400, tableY + 3, { width: 150, align: 'center' });
+
+        const rowY = tableY + 15;
+        doc.rect(50, rowY, 500, 15).stroke();
+        doc.font('Helvetica').text(destination || 'N/A', 50, rowY + 3, { width: 200, align: 'center' });
+        doc.text(new Date(contrat.date_debut_couverture).toLocaleDateString('fr-FR'), 250, rowY + 3, { width: 150, align: 'center' });
+        doc.text(new Date(contrat.date_fin_couverture).toLocaleDateString('fr-FR'), 400, rowY + 3, { width: 150, align: 'center' });
+
+        doc.moveDown(1);
+        doc.font('Helvetica-Bold').text(`La durée de séjour ne doit pas dépasser ${duree || 'la durée du contrat'}.`, 50, doc.y);
+        doc.font('Helvetica').text(`Est assuré(e) par notre compagnie au titre du Police N° : ${contrat.numero_contrat} valable du ${new Date(contrat.date_debut_couverture).toLocaleDateString('fr-FR')} Au ${new Date(contrat.date_fin_couverture).toLocaleDateString('fr-FR')}.`, 50, doc.y + 12);
+        doc.moveDown(2);
+    }
+
+    private generateVoyageGuarantees(doc: PDFKit.PDFDocument, destination: string) {
+        doc.font('Helvetica-Bold').fontSize(10).text('Principales Garanties :', 50, doc.y);
+        doc.moveDown(0.5);
+
+        const startY = doc.y;
+        doc.rect(50, startY, 500, 15).fill('#0088CC');
+        doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold');
+        doc.text('PRINCIPALES GARANTIES', 60, startY + 4);
+        doc.text('LIMITES / PLAFONDS', 400, startY + 4);
+
+        let currentY = startY + 15;
+        doc.fillColor('#000000').font('Helvetica');
+
+        const guarantees = [
+            { label: 'SECTION A : ASSISTANCE MÉDICALE ET D\'URGENCE', isTitle: true },
+            { label: '- Frais médicaux et hospitalisation à l\'étranger', value: '19 740 000 FCFA' },
+            { label: '- Transport ou rapatriement en cas de maladie', value: 'Frais réels' },
+            { label: '- Soins dentaires d\'urgence', value: '295 200 FCFA' },
+            { label: 'SECTION B : ASSISTANCE PERSONNELLE', isTitle: true },
+            { label: '- Services d\'assistance 24H/24', value: 'Couvert' },
+            { label: '- Transmission de messages urgents', value: 'Illimité' },
+            { label: 'SECTION C : PERTES ET RETARDS', isTitle: true },
+            { label: '- Perte de Passeport, Pièce d\'identité', value: '131 200 FCFA' },
+            { label: '- Indemnité pour arrivée en retard de bagages', value: '131 200 FCFA' },
+            { label: 'SECTION D : ACCIDENT PERSONNEL', isTitle: true },
+            { label: '- Décès à bord d\'un moyen de transport', value: '6 560 000 FCFA' },
+            { label: '- Invalidité Totale Permanente', value: '6 560 000 FCFA' },
+        ];
+
+        guarantees.forEach((g, index) => {
+            if (g.isTitle) {
+                doc.rect(50, currentY, 500, 12).fill('#EEEEEE');
+                doc.fillColor('#000000').font('Helvetica-Bold').fontSize(7).text(g.label, 60, currentY + 3);
+            } else {
+                doc.fillColor('#333333').font('Helvetica').fontSize(7).text(g.label, 65, currentY + 3);
+                if (g.value) doc.text(g.value, 400, currentY + 3);
+                // Ligne de séparation
+                doc.moveTo(50, currentY + 12).lineTo(550, currentY + 12).strokeColor('#F0F0F0').lineWidth(0.5).stroke();
+            }
+            currentY += 12;
+        });
+
+        doc.moveDown(1);
+        doc.fillColor('#000000').font('Helvetica-Bold').fontSize(9);
+        doc.text(`La garantie s'applique dans les pays de : ${destination || 'MONDE'}.`, 50, currentY + 5);
+
+        doc.moveDown(1);
+        doc.font('Helvetica').fontSize(8);
+        doc.text('Il est rappelé, en cas d\'urgence, de contacter :', 50, doc.y);
+        doc.font('Helvetica-Bold').text('Centre d\'Appel disponible 24heures/24, 7jours/7 au numéros ci-dessous:', 50, doc.y + 2);
+    }
+
+    private generateVoyageSpecialDispositions(doc: PDFKit.PDFDocument, contrat: Contrat) {
+        doc.fontSize(11).font('Helvetica-Bold').text('Disposition Spéciale :', 50, doc.y);
+        doc.fontSize(9).font('Helvetica').moveDown(0.5);
+        const text = `L'assuré reconnait avoir reçu les Conditions Générales du contrat...\n\nFait à Abidjan, le ${new Date().toLocaleDateString('fr-FR')}`;
+        doc.text(text, { width: 500 });
+
+        doc.moveDown(4);
+        doc.text('Pour l\'assuré :', 50, doc.y);
+        doc.text('Pour la compagnie :', 350, doc.y);
+    }
+
+    /**
+     * Extrait une valeur des critères en utilisant des mots-clés sémantiques
+     */
+    private extraireValeurParMotsCles(criteres: Record<string, any>, motsCles: string[]): string {
+        for (const [key, value] of Object.entries(criteres)) {
+            const keyNormalisee = this.normaliserNomCritere(key);
+            for (const mot of motsCles) {
+                if (keyNormalisee.includes(this.normaliserNomCritere(mot))) {
+                    return value?.toString() || '';
+                }
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Normalise un texte pour la recherche sémantique
+     */
+    private normaliserNomCritere(nom: string): string {
+        if (!nom) return '';
+        return nom
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .trim();
     }
 }

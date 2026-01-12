@@ -53,7 +53,6 @@ export class SouscriptionService {
     beneficiaires?: Array<{ nom_complet: string, lien_souscripteur: string, ordre: number }>;
   }> {
 
-    //récupération du devis
     const devis = await this.devisSimuleRepository.findOne({
       where: { id: devisId, utilisateur_id: utilisateurId },
       relations: ['produit', 'categorie']
@@ -62,8 +61,7 @@ export class SouscriptionService {
     if (!devis) {
       throw new NotFoundException('Devis non trouvé');
     }
-
-    //vérification si le produit nécessite des bénéficiaires
+    
     if (devis.produit.necessite_beneficiaires) {
       if (!beneficiaires || beneficiaires.length === 0) {
         throw new BadRequestException('Ce produit nécessite au moins un bénéficiaire');
@@ -103,14 +101,28 @@ export class SouscriptionService {
    * Appelé par le webhook de paiement
    */
   async finaliserSouscription(devisId: string, paiementId: string): Promise<Contrat> {
+    
+    const contratExistant = await this.contratService.obtenirContratsUtilisateur('') 
+      .then(contrats => contrats.find(c => c.devis_simule_id === devisId));
 
     const devis = await this.devisSimuleRepository.findOne({
-      where: { id: devisId, statut: StatutDevis.PAYE },
+      where: { id: devisId },
       relations: ['produit', 'categorie']
     });
 
     if (!devis) {
-      throw new NotFoundException('Devis payé non trouvé');
+      throw new NotFoundException('Devis non trouvé');
+    }
+
+    if (devis.statut === StatutDevis.CONVERTI_EN_CONTRAT) {
+
+      const c = await this.contratService.obtenirContratsUtilisateur(devis.utilisateur_id)
+        .then(contrats => contrats.find(c => c.devis_simule_id === devisId));
+      if (c) return c;
+    }
+
+    if (devis.statut !== StatutDevis.PAYE) {
+      throw new BadRequestException('Le devis n\'est pas dans un état permettant la finalisation (attendu: PAYE)');
     }
 
     const paiement = await this.paiementService.obtenirPaiementParReference(paiementId);
@@ -145,7 +157,6 @@ export class SouscriptionService {
         );
       }
     } catch (error) {
-      // On ne bloque pas la souscription si l'envoi de l'email échoue
       console.error('Erreur lors de l\'envoi de l\'attestation par email:', error);
     }
 

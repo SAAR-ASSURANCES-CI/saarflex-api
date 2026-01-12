@@ -85,6 +85,7 @@ export class ContratService {
             date_debut_couverture: dateDebutCouverture,
             date_fin_couverture: dateFinCouverture,
             statut: StatutContrat.ACTIF,
+            type_produit: devis.produit.type,
             informations_assure: devis.informations_assure,
             assure_est_souscripteur: devis.assure_est_souscripteur,
             chemin_recto_assure: devis.chemin_recto_assure,
