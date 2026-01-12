@@ -4,8 +4,9 @@ import { Not, Repository } from 'typeorm';
 import { CritereTarification, TypeCritere } from '../../entities/critere-tarification.entity';
 import { ValeurCritere } from '../../entities/valeur-critere.entity';
 import { Produit } from '../../entities/produit.entity';
-import { 
-    CreateCritereTarificationDto, 
+import { Tarif } from '../../entities/tarif.entity';
+import {
+    CreateCritereTarificationDto,
     UpdateCritereTarificationDto,
     CreateValeurCritereDto,
     UpdateValeurCritereDto,
@@ -23,13 +24,15 @@ export class CriteresAdminService {
         private readonly valeurRepository: Repository<ValeurCritere>,
         @InjectRepository(Produit)
         private readonly produitRepository: Repository<Produit>,
+        @InjectRepository(Tarif)
+        private readonly tarifRepository: Repository<Tarif>,
     ) { }
 
     /**
      * Crée un nouveau critère de tarification
      */
     async create(createDto: CreateCritereTarificationDto): Promise<CritereTarificationAdminDto> {
-    
+
         const produit = await this.produitRepository.findOne({
             where: { id: createDto.produit_id }
         });
@@ -39,7 +42,7 @@ export class CriteresAdminService {
         }
 
         const existingCritere = await this.critereRepository.findOne({
-            where: { 
+            where: {
                 nom: createDto.nom,
                 produit_id: createDto.produit_id
             }
@@ -76,8 +79,8 @@ export class CriteresAdminService {
      * Récupère tous les critères d'un produit avec pagination
      */
     async findAllByProduit(
-        produitId: string, 
-        page: number = 1, 
+        produitId: string,
+        page: number = 1,
         limit: number = 10
     ): Promise<CriteresAdminResponseDto> {
         const skip = (page - 1) * limit;
@@ -158,7 +161,7 @@ export class CriteresAdminService {
 
         if (updateDto.nom && updateDto.nom !== critere.nom) {
             const existingCritere = await this.critereRepository.findOne({
-                where: { 
+                where: {
                     nom: updateDto.nom,
                     produit_id: critere.produit_id,
                     id: Not(id)
@@ -171,7 +174,26 @@ export class CriteresAdminService {
         }
 
         if (updateDto.nom !== undefined) critere.nom = updateDto.nom;
-        if (updateDto.type !== undefined) critere.type = updateDto.type;
+
+        if (updateDto.type !== undefined && updateDto.type !== critere.type) {
+            const tarifsCount = await this.tarifRepository.count({
+                where: { critere_id: id }
+            });
+
+            if (tarifsCount > 0) {
+                throw new BadRequestException(
+                    `Impossible de changer le type du critère car ${tarifsCount} tarifs y sont déjà associés. ` +
+                    `Supprimez d'abord les tarifs pour modifier le type.`
+                );
+            }
+
+            if ([TypeCritere.TEXTE, TypeCritere.DATE, TypeCritere.BOOLEEN].includes(updateDto.type)) {
+                await this.valeurRepository.delete({ critere_id: id });
+            }
+
+            critere.type = updateDto.type;
+        }
+
         if (updateDto.unite !== undefined) critere.unite = updateDto.unite;
         if (updateDto.ordre !== undefined) critere.ordre = updateDto.ordre;
         if (updateDto.obligatoire !== undefined) critere.obligatoire = updateDto.obligatoire;

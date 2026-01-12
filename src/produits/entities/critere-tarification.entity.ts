@@ -8,7 +8,8 @@ export enum TypeCritere {
   NUMERIQUE = 'numerique',
   CATEGORIEL = 'categoriel',
   BOOLEEN = 'booleen',
-  TEXTE = 'texte'
+  TEXTE = 'texte',
+  DATE = 'date',
 }
 
 @Entity('criteres_tarification')
