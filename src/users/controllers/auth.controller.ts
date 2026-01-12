@@ -8,6 +8,7 @@ import {
     UseGuards,
     Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
     ApiTags,
     ApiOperation,
@@ -30,11 +31,12 @@ import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 @ApiTags('Authentication')
 @Controller('users')
 export class AuthController {
-    constructor(private readonly userService: UsersService) {}
+    constructor(private readonly userService: UsersService) { }
 
     /**
      * Inscription d'un nouvel utilisateur
      */
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
     @Post('register')
     @ApiOperation({
         summary: 'Inscription d\'un nouvel utilisateur',
@@ -108,6 +110,7 @@ export class AuthController {
     /**
      * Connexion d'un utilisateur
      */
+    @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post('login')
     @ApiOperation({
         summary: 'Connexion utilisateur',
@@ -150,6 +153,7 @@ export class AuthController {
     /**
      * Démarre le flux mot de passe oublié: envoie un code OTP 6 chiffres (expire en 15 min)
      */
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
     @Post('forgot-password')
     @ApiOperation({ summary: 'Mot de passe oublié - envoi du code OTP' })
     @ApiBody({ type: ForgotPasswordDto })
@@ -158,9 +162,9 @@ export class AuthController {
         @Body() dto: ForgotPasswordDto
     ): Promise<{ status: string; message: string; }> {
         await this.userService.forgotPassword(dto);
-        return { 
-            status: 'success', 
-            message: 'Si un compte existe pour cet email, un code a été envoyé.' 
+        return {
+            status: 'success',
+            message: 'Si un compte existe pour cet email, un code a été envoyé.'
         };
     }
 
@@ -182,6 +186,7 @@ export class AuthController {
     /**
      * Réinitialise le mot de passe via code OTP
      */
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
     @Post('reset-password')
     @ApiOperation({ summary: 'Réinitialiser le mot de passe via code OTP' })
     @ApiBody({ type: ResetPasswordDto })
@@ -244,7 +249,7 @@ export class AuthController {
     @Post('logout')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Déconnexion utilisateur',
         description: 'Invalide toutes les sessions actives de l\'utilisateur connecté'
     })

@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Param, HttpStatus, HttpCode, Logger, NotFoundException, BadRequestException, Req, Query } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { PaiementService } from '../../services/paiement.service';
@@ -9,6 +10,7 @@ import { StatutPaiement } from '../../entities/paiement.entity';
  * Contrôleur des webhooks de paiement
  * Reçoit les callbacks des agrégateurs de paiement
  */
+@SkipThrottle()
 @ApiTags('Webhooks Paiement')
 @Controller('webhooks/paiement')
 export class PaiementWebhookController {
