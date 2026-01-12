@@ -260,21 +260,38 @@ export class AttestationService {
 
             const criteres = contrat.criteres_utilisateur || {};
 
-            // Extraction sémantique des données essentielles depuis les critères
-            // Si pas trouvé dans les critères, on prend dans le profil
-            const destination = this.extraireValeurParMotsCles(criteres, ['pays', 'zone', 'destination', 'lieu']);
-            const passport = this.extraireValeurParMotsCles(criteres, ['passport', 'passeport']) || profile.numero_piece_identite;
-            const expirationPassport = this.extraireValeurParMotsCles(criteres, ['expire', 'expiration', 'validite']) || profile.date_expiration_piece_identite;
-            const dureeSejour = this.extraireValeurParMotsCles(criteres, ['duree', 'sejour', 'jours', 'quantieme']);
+            // 1. Extraction stricte de la formule
+            const formuleExtraite = this.extraireValeurParMotsCles(criteres, ['formule', 'plan', 'offre', 'formules']);
+            const formule = formuleExtraite || contrat.produit?.nom || 'Standard';
 
-            // --- Construction du PDF Voyage (Page 1) ---
+            // 2. Extraction du pays / zone
+            const destination = this.extraireValeurParMotsCles(criteres, ['pays', 'destination', 'zone', 'lieu']) || 'MONDE';
+
+            const passport = this.extraireValeurParMotsCles(criteres, ['passport', 'passeport']) || profile.numero_piece_identite;
+
+            const expirationPassport = this.extraireValeurParMotsCles(criteres, ['date d\'expiration passeport', 'expiration', 'expire le', 'expire', 'validite']) || profile.date_expiration_piece_identite;
+
+            const dureeRaw = this.extraireValeurParMotsCles(criteres, ['duree du sejour', 'periodes', 'periode', 'jours', 'sejour', 'duree', 'quantieme']);
+            const nbJours = parseInt(dureeRaw.replace(/\D/g, ''), 10) || 0;
+
+            const dateDebut = new Date(contrat.date_debut_couverture);
+            let dateFin = new Date(contrat.date_fin_couverture);
+
+            if (nbJours > 0) {
+                dateFin = new Date(dateDebut);
+                dateFin.setDate(dateFin.getDate() + nbJours);
+            }
+
+            const formattedDuree = nbJours > 0 ? `${nbJours} Jours` : dureeRaw;
+
+            // --- Construction du PDF Voyage ---
             this.generateVoyageHeader(doc);
             this.generateVoyageIntro(doc, user, contrat);
             this.generateVoyageParticipantTable(doc, user, profile, passport ?? 'N/A', expirationPassport ?? 'N/A');
-            this.generateVoyageTripTable(doc, contrat, destination, dureeSejour);
-            this.generateVoyageGuarantees(doc, destination);
+            this.generateVoyageTripTable(doc, contrat, destination, formattedDuree, dateFin, formule);
+            this.generateVoyageGuarantees(doc, formule);
 
-            // Page 2 (Dispositions spéciales et signature)
+            // Page 2
             doc.addPage();
             this.generateVoyageHeader(doc);
             this.generateVoyageSpecialDispositions(doc, contrat);
@@ -284,7 +301,7 @@ export class AttestationService {
     }
 
     private generateVoyageHeader(doc: PDFKit.PDFDocument) {
-        doc.rect(50, 40, 500, 30).fill('#0088CC'); // Bleu entête voyage
+        doc.rect(50, 40, 500, 30).fill('#0088CC');
         doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold').text('Attestation d\'Assistance Au Voyage', 50, 50, { align: 'center' });
         doc.moveDown(2);
     }
@@ -315,7 +332,7 @@ export class AttestationService {
         doc.moveDown(4);
     }
 
-    private generateVoyageTripTable(doc: PDFKit.PDFDocument, contrat: Contrat, destination: string, duree: string) {
+    private generateVoyageTripTable(doc: PDFKit.PDFDocument, contrat: Contrat, destination: string, duree: string, dateFinCalculated: Date, formule: string) {
         const tableY = doc.y;
         doc.rect(50, tableY, 500, 15).fill('#CCCCCC');
         doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000');
@@ -327,15 +344,20 @@ export class AttestationService {
         doc.rect(50, rowY, 500, 15).stroke();
         doc.font('Helvetica').text(destination || 'N/A', 50, rowY + 3, { width: 200, align: 'center' });
         doc.text(new Date(contrat.date_debut_couverture).toLocaleDateString('fr-FR'), 250, rowY + 3, { width: 150, align: 'center' });
-        doc.text(new Date(contrat.date_fin_couverture).toLocaleDateString('fr-FR'), 400, rowY + 3, { width: 150, align: 'center' });
+        doc.text(dateFinCalculated.toLocaleDateString('fr-FR'), 400, rowY + 3, { width: 150, align: 'center' });
 
         doc.moveDown(1);
         doc.font('Helvetica-Bold').text(`La durée de séjour ne doit pas dépasser ${duree || 'la durée du contrat'}.`, 50, doc.y);
-        doc.font('Helvetica').text(`Est assuré(e) par notre compagnie au titre du Police N° : ${contrat.numero_contrat} valable du ${new Date(contrat.date_debut_couverture).toLocaleDateString('fr-FR')} Au ${new Date(contrat.date_fin_couverture).toLocaleDateString('fr-FR')}.`, 50, doc.y + 12);
+        doc.font('Helvetica').text('Est assuré(e) par notre compagnie au titre du Police N° : ', 50, doc.y + 12, { continued: true });
+        doc.font('Helvetica-Bold').text(`${contrat.numero_contrat} `, { continued: true });
+        doc.font('Helvetica').text('valable du ', { continued: true });
+        doc.font('Helvetica-Bold').text(`${new Date(contrat.date_debut_couverture).toLocaleDateString('fr-FR')} `, { continued: true });
+        doc.font('Helvetica').text('Au ', { continued: true });
+        doc.font('Helvetica-Bold').text(`${dateFinCalculated.toLocaleDateString('fr-FR')}.`);
         doc.moveDown(2);
     }
 
-    private generateVoyageGuarantees(doc: PDFKit.PDFDocument, destination: string) {
+    private generateVoyageGuarantees(doc: PDFKit.PDFDocument, formule: string) {
         doc.font('Helvetica-Bold').fontSize(10).text('Principales Garanties :', 50, doc.y);
         doc.moveDown(0.5);
 
@@ -349,25 +371,46 @@ export class AttestationService {
         doc.fillColor('#000000').font('Helvetica');
 
         const guarantees = [
-            { label: 'SECTION A : ASSISTANCE MÉDICALE ET D\'URGENCE', isTitle: true },
+            { label: 'PRESTATIONS D\' ASSISTANCE MEDICALE ET D\'URGENCE', isTitle: true, section: 'SECTION A' },
             { label: '- Frais médicaux et hospitalisation à l\'étranger', value: '19 740 000 FCFA' },
-            { label: '- Transport ou rapatriement en cas de maladie', value: 'Frais réels' },
-            { label: '- Soins dentaires d\'urgence', value: '295 200 FCFA' },
-            { label: 'SECTION B : ASSISTANCE PERSONNELLE', isTitle: true },
+            { label: '- Transport ou rapatriement en cas de Maladie ou Lésion', value: 'Frais réels' },
+            { label: '- Soins dentaires d\'urgence', value: '295 200 FCFA   Franchise 32 800 FCFA' },
+            { label: '- Transport ou Rapatriement du bénéficiaire décédé', value: 'Frais réels' },
+            { label: '- Rapatriement de la famille accompagnatrice', value: 'Frais réels' },
+            { label: '- Retour d\'urgence au domicile suite au décès d\'un proche parent', value: 'Frais réels' },
+            { label: '- Voyage d\'un membre de la famille immédiate', value: 'Min 32800 FCFA/ Jour - Max 557 600 FCFA' },
+            { label: '- Quarantaine Obligatoire en cas d\'infection COVID-19', value: '85 Euros/ Jour -14 Jours max.' },
+            { label: '- Frais Medicaux en cas d\'infection au COVID-19', value: '85 Euros/ Jour -14 Jours max.' },
+
+            { label: 'PRESTATIONS D\'ASSISTANCE PERSONNELLE', isTitle: true, section: 'SECTION B' },
             { label: '- Services d\'assistance 24H/24', value: 'Couvert' },
+            { label: '- Livraison de médicaments', value: 'Illimité' },
+            { label: '- Avance de Caution', value: '10 036 800 FCFA' },
+            { label: '- Avance de Fonds', value: '1 001 712 FCFA' },
             { label: '- Transmission de messages urgents', value: 'Illimité' },
-            { label: 'SECTION C : PERTES ET RETARDS', isTitle: true },
-            { label: '- Perte de Passeport, Pièce d\'identité', value: '131 200 FCFA' },
+            { label: '- Défense Juridique', value: '1 377 600 FCFA' },
+
+            { label: 'PRESTATIONS POUR PERTES ET RETARDS', isTitle: true, section: 'SECTION C' },
+            { label: '- Perte de Passeport ,Pièce d\'identité,Permis de conduire', value: '131 200 FCFA' },
+            { label: '- Indemnité pour perte de bagages enregistrés', value: '200 080 FCFA / Bagage' },
             { label: '- Indemnité pour arrivée en retard de bagages', value: '131 200 FCFA' },
-            { label: 'SECTION D : ACCIDENT PERSONNEL', isTitle: true },
-            { label: '- Décès à bord d\'un moyen de transport', value: '6 560 000 FCFA' },
+            { label: '- Localisation et acheminement des effets personnels', value: 'Couvert' },
+            { label: '- Départ retardé', value: '196 800 FCFA' },
+
+            { label: 'PRESTATIONS D\'ACCIDENT PERSONNEL', isTitle: true, section: 'SECTION D' },
+            { label: '- Décès à bord d\'un moyen de transport d\'un transporteur public', value: '6 560 000 FCFA' },
+            { label: '- Invalidité Permanente', value: 'Pourcentage de la somme principale suivant la grille' },
             { label: '- Invalidité Totale Permanente', value: '6 560 000 FCFA' },
+
+            { label: 'PRESTATIONS DE RESPONSABILITE CIVILE', isTitle: true, section: 'SECTION E' },
+            { label: '- Responsabilité Civile personnelle', value: '1 968 000 FCFA' },
         ];
 
-        guarantees.forEach((g, index) => {
+        guarantees.forEach((g: any) => {
             if (g.isTitle) {
                 doc.rect(50, currentY, 500, 12).fill('#EEEEEE');
                 doc.fillColor('#000000').font('Helvetica-Bold').fontSize(7).text(g.label, 60, currentY + 3);
+                if (g.section) doc.text(g.section, 400, currentY + 3);
             } else {
                 doc.fillColor('#333333').font('Helvetica').fontSize(7).text(g.label, 65, currentY + 3);
                 if (g.value) doc.text(g.value, 400, currentY + 3);
@@ -378,34 +421,69 @@ export class AttestationService {
         });
 
         doc.moveDown(1);
-        doc.fillColor('#000000').font('Helvetica-Bold').fontSize(9);
-        doc.text(`La garantie s'applique dans les pays de : ${destination || 'MONDE'}.`, 50, currentY + 5);
+        doc.fillColor('#000000').font('Helvetica').fontSize(9);
+        doc.text('La garantie s\'applique dans les pays de la zone : ', 50, currentY + 5, { continued: true });
+        doc.font('Helvetica-Bold').text(`${formule || 'MONDE'}.`);
 
         doc.moveDown(1);
         doc.font('Helvetica').fontSize(8);
         doc.text('Il est rappelé, en cas d\'urgence, de contacter :', 50, doc.y);
-        doc.font('Helvetica-Bold').text('Centre d\'Appel disponible 24heures/24, 7jours/7 au numéros ci-dessous:', 50, doc.y + 2);
+        doc.font('Helvetica-Bold').text('Centre d\'Appel disponible 24heures/24, 7jours/7 aux numéros ci-dessous:', 50, doc.y + 2);
     }
 
     private generateVoyageSpecialDispositions(doc: PDFKit.PDFDocument, contrat: Contrat) {
-        doc.fontSize(11).font('Helvetica-Bold').text('Disposition Spéciale :', 50, doc.y);
-        doc.fontSize(9).font('Helvetica').moveDown(0.5);
-        const text = `L'assuré reconnait avoir reçu les Conditions Générales du contrat...\n\nFait à Abidjan, le ${new Date().toLocaleDateString('fr-FR')}`;
-        doc.text(text, { width: 500 });
+        doc.fillColor('#000000').font('Helvetica-Bold').fontSize(10);
+        doc.text('Tel. 00 (33) 4 37 37 28 98 - Fax. 00 (33) 4 37 37 28 56.', 50, doc.y);
+        doc.moveDown(2);
 
-        doc.moveDown(4);
+        doc.fontSize(10).font('Helvetica-Bold').text('Disposition Spéciale :', 50, doc.y, { underline: true });
+        doc.fontSize(9).font('Helvetica').moveDown(0.5);
+
+        const lines = [
+            "L'assuré reconnait avoir reçu les Conditions Générales du contrat et déclare avoir pris connaissance des évenements garantis ainsi que des exclusions générales et médicales.",
+            "Ce certificat ne peut servir en aucun cas de lettre de garantie ou de prise en charge auprès des structures médicales publiques ou privées comme de tout organisme.",
+            "L'assuré déclare ne pas effectuer ce voyage à des fins thérapeutiques.",
+            "La présente Attestation d'assurance est établie pour servir et valoir ce que de droit dans le cas d'une demande de visas auprès des consulats étrangers."
+        ];
+
+        lines.forEach(line => {
+            doc.text(line, { width: 500, align: 'justify' });
+            doc.moveDown(1);
+        });
+
+        doc.moveDown(1);
+        const dateSignature = new Date(contrat.date_debut_couverture).toLocaleDateString('fr-FR');
+        doc.font('Helvetica').text(`Fait à Abidjan , le ${dateSignature}`, 70, doc.y);
+
+        doc.moveDown(2);
+        doc.font('Helvetica-Bold').fontSize(10);
         doc.text('Pour l\'assuré :', 50, doc.y);
         doc.text('Pour la compagnie :', 350, doc.y);
+
+        // Espace réservé pour le cachet et la signature
+        doc.moveDown(10);
     }
 
     /**
      * Extrait une valeur des critères en utilisant des mots-clés sémantiques
      */
     private extraireValeurParMotsCles(criteres: Record<string, any>, motsCles: string[]): string {
-        for (const [key, value] of Object.entries(criteres)) {
-            const keyNormalisee = this.normaliserNomCritere(key);
-            for (const mot of motsCles) {
-                if (keyNormalisee.includes(this.normaliserNomCritere(mot))) {
+        const entries = Object.entries(criteres);
+        const motsNormalises = motsCles.map(m => this.normaliserNomCritere(m));
+
+        // Premier passage : recherche de correspondance EXACTE (plus robuste)
+        for (const [key, value] of entries) {
+            const keyNorm = this.normaliserNomCritere(key);
+            if (motsNormalises.includes(keyNorm)) {
+                return value?.toString() || '';
+            }
+        }
+
+        // Deuxième passage : recherche de correspondance partielle (si rien trouvé en exact)
+        for (const [key, value] of entries) {
+            const keyNorm = this.normaliserNomCritere(key);
+            for (const mot of motsNormalises) {
+                if (keyNorm.includes(mot)) {
                     return value?.toString() || '';
                 }
             }
