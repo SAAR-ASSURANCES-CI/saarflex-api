@@ -7846,7 +7846,8 @@
             "enum": [
               "numerique",
               "categoriel",
-              "booleen"
+              "booleen",
+              "texte"
             ],
             "description": "Type de critère (numérique, catégoriel ou booléen)",
             "example": "numerique"
@@ -7999,7 +8000,8 @@
             "enum": [
               "numerique",
               "categoriel",
-              "booleen"
+              "booleen",
+              "texte"
             ],
             "description": "Type du critère"
           },
@@ -8101,7 +8103,8 @@
             "enum": [
               "numerique",
               "categoriel",
-              "booleen"
+              "booleen",
+              "texte"
             ],
             "description": "Type de critère",
             "example": "numerique"
@@ -9935,7 +9938,8 @@
             "enum": [
               "numerique",
               "categoriel",
-              "booleen"
+              "booleen",
+              "texte"
             ],
             "description": "Type du critère (numérique, catégoriel ou booléen)"
           },

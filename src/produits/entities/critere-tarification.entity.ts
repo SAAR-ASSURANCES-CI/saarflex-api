@@ -7,7 +7,8 @@ import { Tarif } from './tarif.entity';
 export enum TypeCritere {
   NUMERIQUE = 'numerique',
   CATEGORIEL = 'categoriel',
-  BOOLEEN = 'booleen'
+  BOOLEEN = 'booleen',
+  TEXTE = 'texte'
 }
 
 @Entity('criteres_tarification')
@@ -21,10 +22,10 @@ export class CritereTarification {
   @Column({ type: 'varchar', length: 255, nullable: false })
   nom: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: TypeCritere, 
-    nullable: false 
+  @Column({
+    type: 'enum',
+    enum: TypeCritere,
+    nullable: false
   })
   type: TypeCritere;
 

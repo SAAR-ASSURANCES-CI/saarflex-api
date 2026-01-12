@@ -140,18 +140,14 @@ export class TarifCalculationService {
     private normaliserNomCritere(nom: string): string {
         if (!nom) return '';
 
-        // Supprimer les accents
         let normalise = nom
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '');
 
-        // Convertir en minuscules
         normalise = normalise.toLowerCase();
 
-        // Supprimer les espaces multiples et trim
         normalise = normalise.replace(/\s+/g, ' ').trim();
 
-        // Supprimer les articles courants en début de phrase
         const articles = ['de', 'du', 'des', 'le', 'la', 'les', 'un', 'une'];
         const mots = normalise.split(' ');
         if (mots.length > 1 && articles.includes(mots[0])) {
@@ -184,7 +180,6 @@ export class TarifCalculationService {
 
         console.log(`[TarifCalculation] Critères fournis normalisés:`, Array.from(criteresFournisNormalises.entries()).map(([k, v]) => `${k} (original: ${v.originalKey}) = ${v.valeur}`).join(', '));
 
-        // Vérifier chaque critère attendu
         for (const [nomCritere, valeurAttendue] of Object.entries(criteresAttendus)) {
             const nomCritereNormalise = this.normaliserNomCritere(nomCritere);
 
@@ -193,19 +188,17 @@ export class TarifCalculationService {
             const critereFourni = criteresFournisNormalises.get(nomCritereNormalise);
 
             if (!critereFourni) {
-                // Critère attendu non trouvé dans les critères fournis
                 console.log(`[TarifCalculation] ❌ Critère "${nomCritere}" (normalisé: "${nomCritereNormalise}") non trouvé dans les critères fournis`);
                 return false;
             }
 
-            // Comparer les valeurs 
+            
             const valeurAttendueStr = valeurAttendue?.toString().trim() || '';
             const valeurFournieStr = critereFourni.valeur?.toString().trim() || '';
 
             console.log(`[TarifCalculation] Comparaison valeur: attendue="${valeurAttendueStr}" vs fournie="${valeurFournieStr}"`);
 
             if (valeurAttendueStr !== valeurFournieStr) {
-                // Support des intervalles (ex: "18-40")
                 if (valeurAttendueStr.includes('-')) {
                     const [min, max] = valeurAttendueStr.split('-').map(v => Number(v.trim()));
                     const valeurFournieNum = Number(valeurFournieStr);
