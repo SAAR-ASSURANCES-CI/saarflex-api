@@ -1,4 +1,5 @@
 import { Module, ValidationPipe } from '@nestjs/common';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -6,12 +7,12 @@ import { UsersModule } from './users/users.module';
 import { ProduitsModule } from './produits/produits.module';
 import { ConfigurationModule } from './config/configuration.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_PIPE } from '@nestjs/core';
+import { Profile } from './users/entities/profile.entity';
+import { APP_PIPE, APP_GUARD } from '@nestjs/core';
 import { User } from './users/entities/user.entity';
 import { Notification } from './users/entities/notification.entity';
 import { Session } from './users/entities/session.entity';
 import { PasswordReset } from './users/entities/password-reset.entity';
-import { Profile } from './users/entities/profile.entity';
 import { EmailModule } from './users/email/email.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ClientsModule } from './clients/clients.module';
@@ -38,6 +39,24 @@ import { ConfigurationSysteme } from './config/entities/configuration-systeme.en
       isGlobal: true,
       envFilePath: '.env'
     }),
+
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: 3,
+      },
+      {
+        name: 'medium',
+        ttl: 10000,
+        limit: 20,
+      },
+      {
+        name: 'long',
+        ttl: 60000,
+        limit: 100,
+      }
+    ]),
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -96,6 +115,10 @@ import { ConfigurationSysteme } from './config/entities/configuration-systeme.en
         transform: true,
         disableErrorMessages: process.env.NODE_ENV === 'production',
       }),
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
     AppService,
   ],
