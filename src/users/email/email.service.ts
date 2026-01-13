@@ -249,7 +249,7 @@ export class EmailService {
      * @param subject Sujet de l'email
      * @param html Contenu HTML de l'email
      */
-    async sendEmail(to: string, subject: string, html: string): Promise<void> {
+    async sendEmail(to: string | string[], subject: string, html: string): Promise<void> {
         const mailOptions = {
             from: {
                 name: 'SAARCIFLEX',

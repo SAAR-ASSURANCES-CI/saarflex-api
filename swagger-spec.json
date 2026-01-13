@@ -963,6 +963,43 @@
         ]
       }
     },
+    "/emailing/send": {
+      "post": {
+        "description": "Permet à un administrateur ou un agent d'envoyer un email à un destinataire spécifique.",
+        "operationId": "EmailMessagingController_sendManualEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email envoyé avec succès"
+          },
+          "401": {
+            "description": "Non autorisé - Token manquant ou invalide"
+          },
+          "403": {
+            "description": "Accès refusé - Réservé aux administrateurs et agents"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Envoyer un email manuel",
+        "tags": [
+          "Emails Messaging"
+        ]
+      }
+    },
     "/admin/produits": {
       "post": {
         "description": "Endpoint réservé aux administrateurs pour créer un nouveau produit d'assurance",
@@ -6608,7 +6645,7 @@
   "info": {
     "title": "SAARCIFLEX",
     "description": "SAARCIFLEX API est le moteur backend robuste alimentant les plateformes d'assurance de SAAR Assurances Côte d'Ivoire. Cette solution fournit une suite complète de services REST sécurisés pour la gestion du cycle de vie des contrats, l'administration des profils multi-rôles (Clients, Agents, RH, Admin), la tarification dynamique des produits, et le suivi analytique des performances. L'infrastructure s'appuie sur NestJS et TypeORM, intégrant des fonctionnalités critiques telles que l'authentification JWT/OTP, la génération documentaire automatisée et une architecture microservices par transport Redis.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "contact": {}
   },
   "tags": [
@@ -7275,6 +7312,31 @@
             "example": "+225 01 02 03 04 05"
           }
         }
+      },
+      "SendEmailDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "object",
+            "description": "Adresse(s) email du ou des destinataires (chaîne séparée par des virgules ou tableau)",
+            "example": "client@example.com, autre@example.com"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Sujet de l'email",
+            "example": "Information sur votre contrat"
+          },
+          "message": {
+            "type": "string",
+            "description": "Contenu HTML de l'email",
+            "example": "<p>Bonjour, voici les informations...</p>"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "message"
+        ]
       },
       "CreateProduitDto": {
         "type": "object",
