@@ -71,10 +71,9 @@ export class PaiementWebhookController {
         }
 
         try {
-            // Utiliser les données combinées
+            
             const donneesAdaptees = this.adapterCallbackAgregateur(aggregateur, allData);
 
-            // si on n'a pas la reference_paiement, chercher par transaction_id
             let referencePaiement = donneesAdaptees.reference_paiement;
             if (aggregateur.toLowerCase() === 'cinetpay' && !referencePaiement && donneesAdaptees.reference_externe) {
                 const paiementParTransaction = await this.paiementService.obtenirPaiementParTransactionId(donneesAdaptees.reference_externe);
@@ -238,7 +237,7 @@ export class PaiementWebhookController {
             reference_externe: transactionId,
             message_erreur: isSuccess ? null : (callbackData.message || callbackData.data?.message || 'Paiement échoué'),
             devis_id: devisId,
-            // On renvoie les bénéficiaires éventuels pour enrichir le callback
+            
             ...(beneficiaires ? { beneficiaires } : {}),
         };
     }
