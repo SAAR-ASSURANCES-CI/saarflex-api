@@ -1000,6 +1000,147 @@
         ]
       }
     },
+    "/email-templates": {
+      "post": {
+        "operationId": "EmailTemplateController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEmailTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Modèle créé avec succès"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Créer un nouveau modèle d'email",
+        "tags": [
+          "Email Templates"
+        ]
+      },
+      "get": {
+        "operationId": "EmailTemplateController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Liste des modèles d'emails",
+        "tags": [
+          "Email Templates"
+        ]
+      }
+    },
+    "/email-templates/{id}": {
+      "get": {
+        "operationId": "EmailTemplateController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Détails d'un modèle",
+        "tags": [
+          "Email Templates"
+        ]
+      },
+      "patch": {
+        "operationId": "EmailTemplateController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmailTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Modifier un modèle d'email",
+        "tags": [
+          "Email Templates"
+        ]
+      },
+      "delete": {
+        "operationId": "EmailTemplateController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Supprimer un modèle d'email (Admin)",
+        "tags": [
+          "Email Templates"
+        ]
+      }
+    },
     "/admin/produits": {
       "post": {
         "description": "Endpoint réservé aux administrateurs pour créer un nouveau produit d'assurance",
@@ -7337,6 +7478,52 @@
           "subject",
           "message"
         ]
+      },
+      "CreateEmailTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Relance Paiement",
+            "description": "Nom unique du modèle"
+          },
+          "subject": {
+            "type": "string",
+            "example": "Action requise : Paiement de votre prime",
+            "description": "Sujet du mail"
+          },
+          "content": {
+            "type": "string",
+            "example": "<p>Bonjour {{nom}}, ...</p>",
+            "description": "Contenu HTML du mail"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "subject",
+          "content"
+        ]
+      },
+      "UpdateEmailTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
       },
       "CreateProduitDto": {
         "type": "object",
