@@ -32,6 +32,7 @@ import { DocumentIdentite } from './produits/entities/document-identite.entity';
 import { Contrat } from './produits/entities/contrat.entity';
 import { Paiement } from './produits/entities/paiement.entity';
 import { ConfigurationSysteme } from './config/entities/configuration-systeme.entity';
+import { EmailTemplate } from './users/email/entities/email-template.entity';
 
 @Module({
   imports: [
@@ -89,7 +90,8 @@ import { ConfigurationSysteme } from './config/entities/configuration-systeme.en
           GarantieCritere,
           TarifGarantie,
           Paiement,
-          ConfigurationSysteme
+          ConfigurationSysteme,
+          EmailTemplate
         ],
         migrations: ['dist/migrations/*.js'],
         migrationsRun: true,

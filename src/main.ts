@@ -78,7 +78,7 @@ async function bootstrap() {
     });
   }
 
-  //config microservice Redis (optionnel)
+  //config microservice Redis
   const redisHost = process.env.REDIS_HOST;
   const redisEnabled = process.env.REDIS_ENABLED !== 'false' && redisHost && redisHost !== '';
 
@@ -98,7 +98,6 @@ async function bootstrap() {
         },
       });
 
-      //start microservice avec gestion d'erreur améliorée
       try {
         await app.startAllMicroservices();
         console.log('[Redis]  Microservice Redis démarré avec succès');

@@ -20,6 +20,8 @@ import { Beneficiaire } from './produits/entities/beneficiaire.entity';
 import { DocumentIdentite } from './produits/entities/document-identite.entity';
 import { Contrat } from './produits/entities/contrat.entity';
 import { Paiement } from './produits/entities/paiement.entity';
+import { ConfigurationSysteme } from './config/entities/configuration-systeme.entity';
+import { EmailTemplate } from './users/email/entities/email-template.entity';
 
 dotenv.config();
 
@@ -51,7 +53,9 @@ export default new DataSource({
     Garantie,
     GarantieCritere,
     TarifGarantie,
-    Paiement
+    Paiement,
+    ConfigurationSysteme,
+    EmailTemplate
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,
