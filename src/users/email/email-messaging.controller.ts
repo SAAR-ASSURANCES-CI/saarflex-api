@@ -115,19 +115,31 @@ export class EmailMessagingController implements OnModuleInit {
                     if (client) {
                         clientProfile = await this.profileService.getProfile(client.id).catch(() => null);
 
-                        // Chercher le dernier contrat
-                        const contrats = await this.contratService.obtenirContratsUtilisateur(client.id).catch(() => []);
-                        if (contrats && contrats.length > 0) {
-                            lastContrat = contrats[0];
+                        // Gestion de la référence spécifique (Contrat ou Devis)
+                        if (dto.referenceId && dto.referenceType) {
+                            if (dto.referenceType === 'CONTRAT') {
+                                lastContrat = await this.contratService.obtenirContratParId(dto.referenceId).catch(() => null);
+                            } else if (dto.referenceType === 'DEVIS') {
+                                lastDevis = await this.devisAdminService.getDevisById(dto.referenceId).catch(() => null);
+                            }
                         }
 
-                        // Chercher le dernier devis
-                        const devisList = await this.devisAdminService.getAllDevis({
-                            utilisateur_id: client.id,
-                            limit: 1
-                        }, client.type_utilisateur).catch(() => null);
-                        if (devisList && devisList.data && devisList.data.length > 0) {
-                            lastDevis = devisList.data[0];
+                        // Fallback : si pas de référence ou objet non trouvé, on prend le dernier
+                        if (!lastContrat) {
+                            const contrats = await this.contratService.obtenirContratsUtilisateur(client.id).catch(() => []);
+                            if (contrats && contrats.length > 0) {
+                                lastContrat = contrats[0];
+                            }
+                        }
+
+                        if (!lastDevis) {
+                            const devisList = await this.devisAdminService.getAllDevis({
+                                utilisateur_id: client.id,
+                                limit: 1
+                            }, client.type_utilisateur).catch(() => null);
+                            if (devisList && devisList.data && devisList.data.length > 0) {
+                                lastDevis = devisList.data[0];
+                            }
                         }
                     }
 

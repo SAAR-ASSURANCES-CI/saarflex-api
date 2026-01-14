@@ -7491,6 +7491,18 @@
             "type": "string",
             "description": "Contenu HTML de l'email",
             "example": "<p>Bonjour, voici les informations...</p>"
+          },
+          "referenceId": {
+            "type": "string",
+            "description": "ID de l'objet de référence (contratId ou devisId)"
+          },
+          "referenceType": {
+            "type": "string",
+            "description": "Type de l'objet de référence (CONTRAT ou DEVIS)",
+            "enum": [
+              "CONTRAT",
+              "DEVIS"
+            ]
           }
         },
         "required": [

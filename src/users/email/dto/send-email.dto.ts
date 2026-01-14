@@ -24,4 +24,21 @@ export class SendEmailDto {
     @IsString()
     @IsNotEmpty({ message: 'Le contenu du message est requis' })
     message: string;
+
+    @ApiProperty({
+        description: 'ID de l\'objet de référence (contratId ou devisId)',
+        required: false
+    })
+    @IsOptional()
+    @IsString()
+    referenceId?: string;
+
+    @ApiProperty({
+        description: 'Type de l\'objet de référence (CONTRAT ou DEVIS)',
+        required: false,
+        enum: ['CONTRAT', 'DEVIS']
+    })
+    @IsOptional()
+    @IsString()
+    referenceType?: 'CONTRAT' | 'DEVIS';
 }
