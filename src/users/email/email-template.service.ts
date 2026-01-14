@@ -124,12 +124,30 @@ export class EmailTemplateService {
      */
     getAvailableVariables() {
         return [
+            // Identité
             { tag: '{{client_nom}}', description: 'Nom complet du client' },
             { tag: '{{client_email}}', description: 'Adresse email du client' },
+            { tag: '{{client_telephone}}', description: 'Numéro de téléphone du client' },
+
+            // Agent
             { tag: '{{agent_nom}}', description: 'Nom de l\'agent (expéditeur)' },
-            { tag: '{{date_aujourdhui}}', description: 'Date du jour (format court)' },
-            { tag: '{{date_heure}}', description: 'Date et heure actuelle' },
+            { tag: '{{agent_email}}', description: 'Email professionnel de l\'agent' },
+            { tag: '{{agent_telephone}}', description: 'Téléphone de l\'agent' },
+
+            // Contrat 
+            { tag: '{{contrat_numero}}', description: 'Numéro du dernier contrat actif' },
+            { tag: '{{contrat_produit}}', description: 'Nom du produit assuré' },
+            { tag: '{{contrat_echeance}}', description: 'Date d\'échéance du contrat' },
+            { tag: '{{contrat_prime}}', description: 'Montant de la prime mensuelle' },
+
+            // Devis
+            { tag: '{{devis_reference}}', description: 'Référence du dernier devis' },
+            { tag: '{{devis_montant}}', description: 'Montant total du devis' },
+
+            // Système
+            { tag: '{{date_aujourdhui}}', description: 'Date du jour' },
             { tag: '{{entreprise_nom}}', description: 'Nom de l\'entreprise (SAARCIFLEX)' },
+            { tag: '{{espace_client_url}}', description: 'Lien vers l\'espace client' },
         ];
     }
 

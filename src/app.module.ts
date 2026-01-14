@@ -101,10 +101,8 @@ import { EmailTemplate } from './users/email/entities/email-template.entity';
     }),
     UsersModule,
     ProduitsModule,
-    EmailModule,
     DashboardModule,
-    ClientsModule,
-    ConfigurationModule
+    ClientsModule
   ],
   controllers: [AppController],
   providers: [

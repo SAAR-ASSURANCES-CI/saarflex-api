@@ -7,7 +7,9 @@ import {
     HttpException,
     Get,
     Request,
+    OnModuleInit,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import {
     ApiTags,
     ApiOperation,
@@ -20,6 +22,12 @@ import { AdminOrAgentGuard } from '../guards/admin-or-agent.guard';
 import { EmailService } from './email.service';
 import { UsersService } from '../users.service';
 import { EmailTemplateService } from './email-template.service';
+import { ContratService } from '../../produits/services/contrat.service';
+import { DevisAdminService } from '../../produits/admin/services/devis-admin.service';
+import { ProfileService } from '../services/profile.service';
+import { ProfileDto } from '../dto/profile.dto';
+import { Contrat } from '../../produits/entities/contrat.entity';
+import { DevisAdminDto } from '../../produits/dto/devis-admin.dto';
 import { SendEmailDto } from './dto/send-email.dto';
 
 /**
@@ -30,12 +38,23 @@ import { SendEmailDto } from './dto/send-email.dto';
 @Controller('emailing')
 @UseGuards(JwtAuthGuard, AdminOrAgentGuard)
 @ApiBearerAuth()
-export class EmailMessagingController {
+export class EmailMessagingController implements OnModuleInit {
+    private contratService: ContratService;
+    private devisAdminService: DevisAdminService;
+
     constructor(
         private readonly emailService: EmailService,
         private readonly usersService: UsersService,
         private readonly emailTemplateService: EmailTemplateService,
+        private readonly profileService: ProfileService,
+        private readonly moduleRef: ModuleRef,
     ) { }
+
+    onModuleInit() {
+        // Résolution différée pour éviter les dépendances circulaires entre modules
+        this.contratService = this.moduleRef.get(ContratService, { strict: false });
+        this.devisAdminService = this.moduleRef.get(DevisAdminService, { strict: false });
+    }
 
     /**
      * Liste des variables dynamiques disponibles
@@ -89,14 +108,54 @@ export class EmailMessagingController {
                 // Envoi personnalisé par destinataire
                 for (const email of recipients) {
                     const client = await this.usersService.findByEmail(email).catch(() => null);
+                    let clientProfile: ProfileDto | null = null;
+                    let lastContrat: Contrat | null = null;
+                    let lastDevis: DevisAdminDto | null = null;
+
+                    if (client) {
+                        clientProfile = await this.profileService.getProfile(client.id).catch(() => null);
+
+                        // Chercher le dernier contrat
+                        const contrats = await this.contratService.obtenirContratsUtilisateur(client.id).catch(() => []);
+                        if (contrats && contrats.length > 0) {
+                            lastContrat = contrats[0];
+                        }
+
+                        // Chercher le dernier devis
+                        const devisList = await this.devisAdminService.getAllDevis({
+                            utilisateur_id: client.id,
+                            limit: 1
+                        }, client.type_utilisateur).catch(() => null);
+                        if (devisList && devisList.data && devisList.data.length > 0) {
+                            lastDevis = devisList.data[0];
+                        }
+                    }
 
                     const context = {
+                        // Identité Client
                         client_nom: client?.nom || 'Client',
                         client_email: email,
+                        client_telephone: clientProfile?.telephone || client?.telephone || 'Non renseigné',
+
+                        // Agent
                         agent_nom: sender?.nom || 'Votre conseiller',
+                        agent_email: sender?.email || '',
+                        agent_telephone: sender?.telephone || '',
+
+                        // Contrat
+                        contrat_numero: lastContrat?.numero_contrat || 'Aucun contrat actif',
+                        contrat_produit: lastContrat?.produit?.nom || '',
+                        contrat_echeance: lastContrat?.date_fin_couverture ? new Date(lastContrat.date_fin_couverture).toLocaleDateString('fr-FR') : '',
+                        contrat_prime: lastContrat?.prime_mensuelle ? `${Number(lastContrat.prime_mensuelle).toLocaleString('fr-FR')} FCFA` : '',
+
+                        // Devis
+                        devis_reference: lastDevis?.reference || 'Aucun devis récent',
+                        devis_montant: lastDevis?.prime_calculee ? `${Number(lastDevis.prime_calculee).toLocaleString('fr-FR')} FCFA` : '',
+
+                        // Système
                         date_aujourdhui: new Date().toLocaleDateString('fr-FR'),
-                        date_heure: new Date().toLocaleString('fr-FR'),
                         entreprise_nom: 'SAARCIFLEX',
+                        espace_client_url: 'https://saarciflex.com/login',
                     };
 
                     const personalizedSubject = this.emailTemplateService.replaceVariables(dto.subject, context);

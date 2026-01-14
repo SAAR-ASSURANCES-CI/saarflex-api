@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -61,21 +61,17 @@ import { AgentsAdminService } from './admin/services/agents-admin.service';
         },
       }),
     }),
-    EmailModule,
+    forwardRef(() => EmailModule),
     ConfigModule,
   ],
   controllers: [
-    // Contrôleurs HTTP
     AuthController,
     ProfileController,
     UploadController,
     AgentsAdminController,
-
-    // Contrôleur événements microservices
     UsersEventsController,
   ],
   providers: [
-    // Façade principal
     UsersService,
 
     // Services spécialisés
