@@ -105,6 +105,35 @@ export class EmailTemplateService {
     }
 
     /**
+     * Remplace les variables dynamiques dans un texte
+     * @param text Texte contenant des variables {{variable}}
+     * @param context Objet contenant les valeurs de remplacement
+     * @returns Texte avec les variables remplacées
+     */
+    replaceVariables(text: string, context: Record<string, any>): string {
+        if (!text) return '';
+
+        return text.replace(/\{\{([^}]+)\}\}/g, (match, variable) => {
+            const key = variable.trim();
+            return context[key] !== undefined ? context[key] : match;
+        });
+    }
+
+    /**
+     * Retourne la liste des variables disponibles avec leurs descriptions
+     */
+    getAvailableVariables() {
+        return [
+            { tag: '{{client_nom}}', description: 'Nom complet du client' },
+            { tag: '{{client_email}}', description: 'Adresse email du client' },
+            { tag: '{{agent_nom}}', description: 'Nom de l\'agent (expéditeur)' },
+            { tag: '{{date_aujourdhui}}', description: 'Date du jour (format court)' },
+            { tag: '{{date_heure}}', description: 'Date et heure actuelle' },
+            { tag: '{{entreprise_nom}}', description: 'Nom de l\'entreprise (SAARCIFLEX)' },
+        ];
+    }
+
+    /**
      * Génère un template générique d'email
      * @param subject Sujet de l'email
      * @param content Contenu HTML de l'email
