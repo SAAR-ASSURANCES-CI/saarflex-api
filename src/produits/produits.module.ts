@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
@@ -102,8 +102,8 @@ import { User } from '../users/entities/user.entity';
       User
     ]),
     ConfigModule,
-    UsersModule,
-    ConfigurationModule
+    forwardRef(() => UsersModule),
+    forwardRef(() => ConfigurationModule)
   ],
   controllers: [
     ProduitsAdminController,
@@ -187,6 +187,7 @@ import { User } from '../users/entities/user.entity';
     ContratService,
     SouscriptionService,
     AttestationService,
+    DevisAdminService,
   ]
 })
 export class ProduitsModule { }

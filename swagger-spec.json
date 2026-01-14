@@ -963,6 +963,26 @@
         ]
       }
     },
+    "/emailing/variables": {
+      "get": {
+        "operationId": "EmailMessagingController_getVariables",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Liste des variables dynamiques",
+        "tags": [
+          "Emails Messaging"
+        ]
+      }
+    },
     "/emailing/send": {
       "post": {
         "description": "Permet à un administrateur ou un agent d'envoyer un email à un destinataire spécifique.",

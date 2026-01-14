@@ -105,6 +105,53 @@ export class EmailTemplateService {
     }
 
     /**
+     * Remplace les variables dynamiques dans un texte
+     * @param text Texte contenant des variables {{variable}}
+     * @param context Objet contenant les valeurs de remplacement
+     * @returns Texte avec les variables remplacées
+     */
+    replaceVariables(text: string, context: Record<string, any>): string {
+        if (!text) return '';
+
+        return text.replace(/\{\{([^}]+)\}\}/g, (match, variable) => {
+            const key = variable.trim();
+            return context[key] !== undefined ? context[key] : match;
+        });
+    }
+
+    /**
+     * Retourne la liste des variables disponibles avec leurs descriptions
+     */
+    getAvailableVariables() {
+        return [
+            // Identité
+            { tag: '{{client_nom}}', description: 'Nom complet du client' },
+            { tag: '{{client_email}}', description: 'Adresse email du client' },
+            { tag: '{{client_telephone}}', description: 'Numéro de téléphone du client' },
+
+            // Agent
+            { tag: '{{agent_nom}}', description: 'Nom de l\'agent (expéditeur)' },
+            { tag: '{{agent_email}}', description: 'Email professionnel de l\'agent' },
+            { tag: '{{agent_telephone}}', description: 'Téléphone de l\'agent' },
+
+            // Contrat 
+            { tag: '{{contrat_numero}}', description: 'Numéro du dernier contrat actif' },
+            { tag: '{{contrat_produit}}', description: 'Nom du produit assuré' },
+            { tag: '{{contrat_echeance}}', description: 'Date d\'échéance du contrat' },
+            { tag: '{{contrat_prime}}', description: 'Montant de la prime mensuelle' },
+
+            // Devis
+            { tag: '{{devis_reference}}', description: 'Référence du dernier devis' },
+            { tag: '{{devis_montant}}', description: 'Montant total du devis' },
+
+            // Système
+            { tag: '{{date_aujourdhui}}', description: 'Date du jour' },
+            { tag: '{{entreprise_nom}}', description: 'Nom de l\'entreprise (SAARCIFLEX)' },
+            { tag: '{{espace_client_url}}', description: 'Lien vers l\'espace client' },
+        ];
+    }
+
+    /**
      * Génère un template générique d'email
      * @param subject Sujet de l'email
      * @param content Contenu HTML de l'email
