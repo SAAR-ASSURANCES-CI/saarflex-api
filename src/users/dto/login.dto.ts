@@ -37,6 +37,9 @@ export class LoginResponseDto {
   @ApiProperty()
   date_creation: Date;
 
+  @ApiProperty({ required: false, nullable: true })
+  avatar_url?: string | null;
+
   @ApiProperty({ description: "Token JWT pour l'authentification" })
   token: string;
 

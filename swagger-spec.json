@@ -6898,6 +6898,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "avatar_url": {
+            "type": "object",
+            "nullable": true
+          },
           "token": {
             "type": "string",
             "description": "Token JWT pour l'authentification",
@@ -6977,6 +6981,10 @@
           "date_creation": {
             "format": "date-time",
             "type": "string"
+          },
+          "avatar_url": {
+            "type": "object",
+            "nullable": true
           },
           "token": {
             "type": "string",
