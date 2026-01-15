@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserType } from '../entities/user.entity';
+import { Profile } from '../entities/profile.entity';
 import { RegisterDto, RegisterResponseDto } from '../dto/register.dto';
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
 import { JwtService } from '../jwt/jwt.service';
@@ -17,6 +18,7 @@ import { EmailService } from '../email/email.service';
 import { SessionService } from './session.service';
 import { NotificationService } from './notification.service';
 import { UserManagementService } from './user-management.service';
+import { ProfileService } from './profile.service';
 
 /**
  * Service responsable de l'authentification (inscription et connexion)
@@ -26,12 +28,15 @@ export class AuthService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        @InjectRepository(Profile)
+        private readonly profileRepository: Repository<Profile>,
         private readonly jwtService: JwtService,
         private readonly emailService: EmailService,
         private readonly sessionService: SessionService,
         private readonly notificationService: NotificationService,
         private readonly userManagementService: UserManagementService,
-    ) {}
+        private readonly profileService: ProfileService,
+    ) { }
 
     /**
      * Inscrit un nouvel utilisateur
@@ -80,10 +85,10 @@ export class AuthService {
 
             const savedUser = await this.userRepository.save(newUser);
 
-            
+
             const token = this.jwtService.generateToken(savedUser);
 
-            
+
             await this.sessionService.createSession(savedUser.id, token, ipAddress, userAgent);
 
             await this.notificationService.createWelcomeNotification(savedUser.id);
@@ -98,6 +103,7 @@ export class AuthService {
                 type_utilisateur: savedUser.type_utilisateur,
                 statut: savedUser.statut,
                 date_creation: savedUser.date_creation,
+                avatar_url: null, // New users don't have an avatar yet
                 token: token,
                 token_type: 'Bearer',
                 expires_in: 86400, // 24 heures
@@ -145,6 +151,9 @@ export class AuthService {
 
         await this.sessionService.createSession(user.id, token, ipAddress, userAgent);
 
+        const profile = await this.profileRepository.findOne({ where: { user_id: user.id } });
+        const avatarUrl = profile?.avatar_path ? this.profileService.getFileUrl(profile.avatar_path) : null;
+
         return {
             id: user.id,
             nom: user.nom,
@@ -153,6 +162,7 @@ export class AuthService {
             type_utilisateur: user.type_utilisateur,
             statut: user.statut,
             date_creation: user.date_creation,
+            avatar_url: avatarUrl,
             token,
             token_type: 'Bearer',
             expires_in: 22400, // 6 heures

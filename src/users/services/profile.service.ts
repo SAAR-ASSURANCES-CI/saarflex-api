@@ -175,7 +175,7 @@ export class ProfileService {
     /**
      * Génère l'URL complète pour un fichier
      */
-    private getFileUrl(path: string | null): string | null {
+    public getFileUrl(path: string | null): string | null {
         if (!path) return null;
 
         const appUrl = this.configService.get<string>('APP_URL') || `http://localhost:${this.configService.get('PORT', 3000)}`;

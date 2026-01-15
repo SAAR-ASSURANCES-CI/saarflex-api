@@ -85,6 +85,9 @@ export class RegisterResponseDto {
     @ApiProperty()
     date_creation: Date;
 
+    @ApiProperty({ required: false, nullable: true })
+    avatar_url?: string | null;
+
     @ApiProperty({
         description: 'Token JWT pour l\'authentification',
         example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
