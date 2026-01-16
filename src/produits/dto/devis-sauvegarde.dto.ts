@@ -136,6 +136,11 @@ export class DevisSauvegardeDto {
     example: 2
   })
   nombre_documents: number;
+
+  @ApiProperty({
+    description: 'Objet produit complet associé'
+  })
+  produit?: any;
 }
 
 /**

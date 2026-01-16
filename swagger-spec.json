@@ -10657,6 +10657,10 @@
             "type": "number",
             "description": "Nombre de documents d'identité associés",
             "example": 2
+          },
+          "produit": {
+            "type": "object",
+            "description": "Objet produit complet associé"
           }
         },
         "required": [
@@ -10670,7 +10674,8 @@
           "assure_est_souscripteur",
           "statut",
           "created_at",
-          "nombre_documents"
+          "nombre_documents",
+          "produit"
         ]
       },
       "DevisSauvegardesResponseDto": {

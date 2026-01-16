@@ -4,12 +4,12 @@ import { Repository } from 'typeorm';
 import { DevisSimule, StatutDevis } from '../../entities/devis-simule.entity';
 import { Beneficiaire } from '../../entities/beneficiaire.entity';
 import { DocumentIdentite } from '../../entities/document-identite.entity';
-import { 
-  SauvegardeDevisDto, 
-  DevisSauvegardeDto, 
-  ModifierDevisSauvegardeDto, 
+import {
+  SauvegardeDevisDto,
+  DevisSauvegardeDto,
+  ModifierDevisSauvegardeDto,
   FiltresRechercheDevisDto,
-  DevisSauvegardesResponseDto 
+  DevisSauvegardesResponseDto
 } from '../../dto/devis-sauvegarde.dto';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class DevisSauvegardeService {
     private beneficiaireRepository: Repository<Beneficiaire>,
     @InjectRepository(DocumentIdentite)
     private documentRepository: Repository<DocumentIdentite>,
-  ) {}
+  ) { }
 
   /**
    * Sauvegarde un devis simulé dans l'espace utilisateur
@@ -50,7 +50,7 @@ export class DevisSauvegardeService {
     devis.statut = StatutDevis.SAUVEGARDE;
     devis.utilisateur_id = utilisateurId;
     devis.expires_at = null;
-    
+
     if (sauvegardeDto.nom_personnalise) {
       devis.nom_personnalise = sauvegardeDto.nom_personnalise;
     }
@@ -106,10 +106,10 @@ export class DevisSauvegardeService {
     utilisateurId: string
   ): Promise<DevisSauvegardeDto> {
     const devis = await this.devisSimuleRepository.findOne({
-      where: { 
-        id: devisId, 
+      where: {
+        id: devisId,
         utilisateur_id: utilisateurId,
-        statut: StatutDevis.SAUVEGARDE 
+        statut: StatutDevis.SAUVEGARDE
       },
       relations: ['produit', 'grilleTarifaire']
     });
@@ -130,10 +130,10 @@ export class DevisSauvegardeService {
     updateData: ModifierDevisSauvegardeDto
   ): Promise<DevisSauvegardeDto> {
     const devis = await this.devisSimuleRepository.findOne({
-      where: { 
-        id: devisId, 
+      where: {
+        id: devisId,
         utilisateur_id: utilisateurId,
-        statut: StatutDevis.SAUVEGARDE 
+        statut: StatutDevis.SAUVEGARDE
       },
       relations: ['produit', 'grilleTarifaire']
     });
@@ -161,10 +161,10 @@ export class DevisSauvegardeService {
     utilisateurId: string
   ): Promise<void> {
     const devis = await this.devisSimuleRepository.findOne({
-      where: { 
-        id: devisId, 
+      where: {
+        id: devisId,
         utilisateur_id: utilisateurId,
-        statut: StatutDevis.SAUVEGARDE 
+        statut: StatutDevis.SAUVEGARDE
       }
     });
 
@@ -199,38 +199,38 @@ export class DevisSauvegardeService {
       .andWhere('devis.statut = :statut', { statut: StatutDevis.SAUVEGARDE });
 
     if (filtres.nom_produit) {
-      queryBuilder.andWhere('produit.nom ILIKE :nom_produit', { 
-        nom_produit: `%${filtres.nom_produit}%` 
+      queryBuilder.andWhere('produit.nom ILIKE :nom_produit', {
+        nom_produit: `%${filtres.nom_produit}%`
       });
     }
 
     if (filtres.type_produit) {
-      queryBuilder.andWhere('produit.type = :type_produit', { 
-        type_produit: filtres.type_produit 
+      queryBuilder.andWhere('produit.type = :type_produit', {
+        type_produit: filtres.type_produit
       });
     }
 
     if (filtres.date_debut) {
-      queryBuilder.andWhere('devis.created_at >= :date_debut', { 
-        date_debut: filtres.date_debut 
+      queryBuilder.andWhere('devis.created_at >= :date_debut', {
+        date_debut: filtres.date_debut
       });
     }
 
     if (filtres.date_fin) {
-      queryBuilder.andWhere('devis.created_at <= :date_fin', { 
-        date_fin: filtres.date_fin 
+      queryBuilder.andWhere('devis.created_at <= :date_fin', {
+        date_fin: filtres.date_fin
       });
     }
 
     if (filtres.prime_min !== undefined) {
-      queryBuilder.andWhere('devis.prime_calculee >= :prime_min', { 
-        prime_min: filtres.prime_min 
+      queryBuilder.andWhere('devis.prime_calculee >= :prime_min', {
+        prime_min: filtres.prime_min
       });
     }
 
     if (filtres.prime_max !== undefined) {
-      queryBuilder.andWhere('devis.prime_calculee <= :prime_max', { 
-        prime_max: filtres.prime_max 
+      queryBuilder.andWhere('devis.prime_calculee <= :prime_max', {
+        prime_max: filtres.prime_max
       });
     }
 
@@ -258,7 +258,7 @@ export class DevisSauvegardeService {
    */
   async nettoyerDevisExpires(): Promise<{ devisNettoyes: number }> {
     const maintenant = new Date();
-    
+
     const result = await this.devisSimuleRepository
       .createQueryBuilder()
       .update(DevisSimule)
@@ -289,7 +289,8 @@ export class DevisSauvegardeService {
       statut: devis.statut,
       created_at: devis.created_at,
       nom_personnalise: devis.nom_personnalise || undefined,
-      notes: devis.notes || undefined
+      notes: devis.notes || undefined,
+      produit: devis.produit || undefined
     };
   }
 }
