@@ -5583,6 +5583,46 @@
         ]
       }
     },
+    "/produits/{id}/duree-cotisation": {
+      "get": {
+        "description": "Recherche dans les tarifs la durée de cotisation correspondant à l'âge de l'assuré pour un produit donné.",
+        "operationId": "ProduitsController_findDureeCotisationByAge",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID du produit",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "age",
+            "required": true,
+            "in": "query",
+            "description": "Âge de l'assuré",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Suggérer une durée de cotisation selon l'âge",
+        "tags": [
+          "Produits"
+        ]
+      }
+    },
     "/simulation-devis-simplifie": {
       "post": {
         "description": "Crée une simulation de devis avec tarifs fixes basés sur des critères simples",

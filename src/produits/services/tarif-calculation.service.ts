@@ -137,7 +137,7 @@ export class TarifCalculationService {
      * - Supprime les articles courants
      * @param nom Nom du critère à normaliser
      */
-    private normaliserNomCritere(nom: string): string {
+    public normaliserNomCritere(nom: string): string {
         if (!nom) return '';
 
         let normalise = nom
@@ -163,7 +163,7 @@ export class TarifCalculationService {
      * @param criteresAttendus Critères du tarif
      * @param criteresFournis Critères de l'utilisateur
      */
-    private verifierCorrespondanceCriteres(
+    public verifierCorrespondanceCriteres(
         criteresAttendus: Record<string, any>,
         criteresFournis: Record<string, any>
     ): boolean {
@@ -192,7 +192,7 @@ export class TarifCalculationService {
                 return false;
             }
 
-            
+
             const valeurAttendueStr = valeurAttendue?.toString().trim() || '';
             const valeurFournieStr = critereFourni.valeur?.toString().trim() || '';
 
@@ -206,7 +206,7 @@ export class TarifCalculationService {
                     if (!isNaN(min) && !isNaN(max) && !isNaN(valeurFournieNum)) {
                         if (valeurFournieNum >= min && valeurFournieNum <= max) {
                             console.log(`[TarifCalculation] ✅ Valeur ${valeurFournieNum} comprise dans l'intervalle [${min}, ${max}]`);
-                            continue; 
+                            continue;
                         }
                     }
                 }
