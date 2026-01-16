@@ -14,6 +14,9 @@ import {
   ValeurCriterePublicDto,
   CriteresPublicResponseDto
 } from '../../dto/critere-tarification-public.dto';
+import { Tarif } from '../../entities/tarif.entity';
+import { GrilleTarifaire } from '../../entities/grille-tarifaire.entity';
+import { TarifCalculationService } from '../../services/tarif-calculation.service';
 
 @Injectable()
 export class ProduitsService {
@@ -28,6 +31,9 @@ export class ProduitsService {
     private readonly critereRepository: Repository<CritereTarification>,
     @InjectRepository(ValeurCritere)
     private readonly valeurRepository: Repository<ValeurCritere>,
+    @InjectRepository(Tarif)
+    private readonly tarifRepository: Repository<Tarif>,
+    private readonly tarifCalculationService: TarifCalculationService,
   ) { }
 
   /**
@@ -192,6 +198,58 @@ export class ProduitsService {
       limit,
       total_pages: Math.ceil(total / limit)
     };
+  }
+
+  /**
+   * Trouve la durée de cotisation suggérée en fonction de l'âge de l'assuré
+   */
+  async trouverDureeCotisationParAge(produitId: string, age: number): Promise<{ duree: string | null }> {
+    try {
+      const grille = await this.tarifCalculationService.trouverGrilleTarifaireActive(produitId);
+
+      const tarifs = await this.tarifRepository.find({
+        where: { grille_id: grille.id },
+        select: ['id', 'criteres_combines']
+      });
+
+      for (const tarif of tarifs) {
+        if (!tarif.criteres_combines) continue;
+
+        const criteres = tarif.criteres_combines;
+        let ageMatch = false;
+        let dureeFound: string | null = null;
+
+        for (const [nom, valeur] of Object.entries(criteres)) {
+          const nomNormalise = this.tarifCalculationService.normaliserNomCritere(nom);
+
+          // Vérification de l'âge
+          if (nomNormalise.includes('age')) {
+            if (valeur === age.toString()) {
+              ageMatch = true;
+            } else if (valeur.includes('-')) {
+              const [min, max] = valeur.split('-').map(v => Number(v.trim()));
+              if (!isNaN(min) && !isNaN(max) && age >= min && age <= max) {
+                ageMatch = true;
+              }
+            }
+          }
+
+          // Extraction de la durée
+          if (nomNormalise.includes('duree') || nomNormalise.includes('cotisation')) {
+            dureeFound = valeur;
+          }
+        }
+
+        if (ageMatch && dureeFound) {
+          return { duree: dureeFound };
+        }
+      }
+
+      return { duree: null };
+    } catch (error) {
+      console.error('[ProduitsService] Erreur lors de la recherche de la durée:', error);
+      return { duree: null };
+    }
   }
 
   /**
