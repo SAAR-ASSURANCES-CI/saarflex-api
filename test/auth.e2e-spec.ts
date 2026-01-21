@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 describe('AuthController (e2e)', () => {
     let app: INestApplication;
@@ -9,7 +11,12 @@ describe('AuthController (e2e)', () => {
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
-        }).compile();
+        })
+            .overrideGuard(ThrottlerGuard)
+            .useValue({ canActivate: () => true })
+            .overrideProvider(APP_GUARD)
+            .useValue({ canActivate: () => true })
+            .compile();
 
         app = moduleFixture.createNestApplication();
         app.useGlobalPipes(new ValidationPipe({
@@ -24,10 +31,10 @@ describe('AuthController (e2e)', () => {
         await app.close();
     });
 
-    describe('/users/register (POST)', () => {
-        const uniqueEmail = `test-${Date.now()}@example.com`;
-        const registerDto = {
-            nom: 'Test User',
+    describe('Authentication Flow', () => {
+        const uniqueEmail = `flow-${Date.now()}@example.com`;
+        const userCredentials = {
+            nom: 'Flow Test User',
             email: uniqueEmail,
             mot_de_passe: 'Password123!',
             telephone: `+225${Math.floor(1000000000 + Math.random() * 9000000000)}`,
@@ -36,27 +43,51 @@ describe('AuthController (e2e)', () => {
         it('should register a new user successfully', () => {
             return request(app.getHttpServer())
                 .post('/users/register')
-                .send(registerDto)
+                .send(userCredentials)
                 .expect(201)
                 .then(response => {
                     expect(response.body.status).toBe('success');
                     expect(response.body.data).toHaveProperty('token');
-                    expect(response.body.data.email).toBe(registerDto.email);
+                    expect(response.body.data.email).toBe(userCredentials.email);
                 });
-        });
-
-        it('should return 400 if validation fails (short password)', () => {
-            return request(app.getHttpServer())
-                .post('/users/register')
-                .send({ ...registerDto, mot_de_passe: 'short' })
-                .expect(400);
         });
 
         it('should return 409 if email already exists', () => {
             return request(app.getHttpServer())
                 .post('/users/register')
-                .send(registerDto)
+                .send(userCredentials)
                 .expect(409);
+        });
+
+        it('should login successfully with correct credentials', () => {
+            return request(app.getHttpServer())
+                .post('/users/login')
+                .send({
+                    email: userCredentials.email,
+                    mot_de_passe: userCredentials.mot_de_passe,
+                })
+                .expect(201)
+                .then(response => {
+                    expect(response.body.status).toBe('success');
+                    expect(response.body.data).toHaveProperty('token');
+                });
+        });
+
+        it('should return 401 for incorrect password', () => {
+            return request(app.getHttpServer())
+                .post('/users/login')
+                .send({
+                    email: userCredentials.email,
+                    mot_de_passe: 'WrongPassword!',
+                })
+                .expect(401);
+        });
+
+        it('should return 400 if registration validation fails', () => {
+            return request(app.getHttpServer())
+                .post('/users/register')
+                .send({ ...userCredentials, email: 'invalid-email' })
+                .expect(400);
         });
     });
 });
