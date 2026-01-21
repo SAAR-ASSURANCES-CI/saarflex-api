@@ -4,9 +4,19 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { EmailService } from '../src/users/email/email.service';
 
 describe('AuthController (e2e)', () => {
     let app: INestApplication;
+    let lastOtpCode: string;
+
+    const mockEmailService = {
+        sendPasswordResetCode: jest.fn((email, code) => {
+            lastOtpCode = code;
+            return Promise.resolve();
+        }),
+        sendWelcomeEmail: jest.fn().mockResolvedValue(undefined),
+    };
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -16,6 +26,8 @@ describe('AuthController (e2e)', () => {
             .useValue({ canActivate: () => true })
             .overrideProvider(APP_GUARD)
             .useValue({ canActivate: () => true })
+            .overrideProvider(EmailService)
+            .useValue(mockEmailService)
             .compile();
 
         app = moduleFixture.createNestApplication();
@@ -88,6 +100,50 @@ describe('AuthController (e2e)', () => {
                 .post('/users/register')
                 .send({ ...userCredentials, email: 'invalid-email' })
                 .expect(400);
+        });
+
+        it('should trigger forgot password and receive OTP', async () => {
+            await request(app.getHttpServer())
+                .post('/users/forgot-password')
+                .send({ email: userCredentials.email })
+                .expect(201); // AuthController returns 201 for POST
+
+            expect(lastOtpCode).toBeDefined();
+            expect(lastOtpCode.length).toBe(6);
+        });
+
+        it('should verify the received OTP', () => {
+            return request(app.getHttpServer())
+                .post('/users/verify-otp')
+                .send({
+                    email: userCredentials.email,
+                    code: lastOtpCode,
+                })
+                .expect(201)
+                .then(response => {
+                    expect(response.body.status).toBe('success');
+                });
+        });
+
+        it('should reset password using OTP', async () => {
+            const newPassword = 'NewPassword123!';
+            await request(app.getHttpServer())
+                .post('/users/reset-password')
+                .send({
+                    email: userCredentials.email,
+                    code: lastOtpCode,
+                    nouveau_mot_de_passe: newPassword,
+                })
+                .expect(201);
+
+            // Verify login with new password
+            await request(app.getHttpServer())
+                .post('/users/login')
+                .send({
+                    email: userCredentials.email,
+                    mot_de_passe: newPassword,
+                })
+                .expect(201);
         });
     });
 });
