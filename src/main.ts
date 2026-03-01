@@ -37,33 +37,30 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-
-
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
       crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
-    })
+    }),
   );
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
 
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-    })
+    }),
   );
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('SAARCIFLEX')
       .setDescription(
-        "SAARCIFLEX API est le moteur backend robuste alimentant les plateformes d'assurance de SAAR Assurances Côte d'Ivoire. Cette solution fournit une suite complète de services REST sécurisés pour la gestion du cycle de vie des contrats, l'administration des profils multi-rôles (Clients, Agents, RH, Admin), la tarification dynamique des produits, et le suivi analytique des performances. L'infrastructure s'appuie sur NestJS et TypeORM, intégrant des fonctionnalités critiques telles que l'authentification JWT/OTP, la génération documentaire automatisée et une architecture microservices par transport Redis."
+        "SAARCIFLEX API est le moteur backend robuste alimentant les plateformes d'assurance de SAAR Assurances Côte d'Ivoire. Cette solution fournit une suite complète de services REST sécurisés pour la gestion du cycle de vie des contrats, l'administration des profils multi-rôles (Clients, Agents, RH, Admin), la tarification dynamique des produits, et le suivi analytique des performances. L'infrastructure s'appuie sur NestJS et TypeORM, intégrant des fonctionnalités critiques telles que l'authentification JWT/OTP, la génération documentaire automatisée et une architecture microservices par transport Redis.",
       )
       .setVersion('1.1.0')
       .addBearerAuth()
@@ -75,7 +72,7 @@ async function bootstrap() {
     //     persistAuthorization: true,
     //   },
     // });
-    const document = SwaggerModule.createDocument(app, config)
+    const document = SwaggerModule.createDocument(app, config);
     const outputPath = join(process.cwd(), 'swagger-spec.json');
     try {
       writeFileSync(outputPath, JSON.stringify(document, null, 2));
@@ -93,16 +90,21 @@ async function bootstrap() {
 
   //config microservice Redis
   const redisHost = process.env.REDIS_HOST;
-  const redisEnabled = process.env.REDIS_ENABLED !== 'false' && redisHost && redisHost !== '';
+  const redisEnabled =
+    process.env.REDIS_ENABLED !== 'false' && redisHost && redisHost !== '';
 
   if (redisEnabled) {
     try {
-      console.log(`[Redis] Tentative de connexion à Redis sur ${redisHost}:${process.env.REDIS_PORT || 6379}`);
+      console.log(
+        `[Redis] Tentative de connexion à Redis sur ${redisHost}:${process.env.REDIS_PORT || 6379}`,
+      );
       app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.REDIS,
         options: {
           host: redisHost,
-          port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+          port: process.env.REDIS_PORT
+            ? parseInt(process.env.REDIS_PORT)
+            : 6379,
           password: process.env.REDIS_PASSWORD ?? '',
           db: process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0,
           retryDelay: 100,
@@ -115,15 +117,27 @@ async function bootstrap() {
         await app.startAllMicroservices();
         console.log('[Redis]  Microservice Redis démarré avec succès');
       } catch (microserviceError: any) {
-        console.warn(`[Redis]  Erreur lors du démarrage du microservice Redis: ${microserviceError.message}`);
-        console.warn('[Redis]  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
+        console.warn(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          `[Redis]  Erreur lors du démarrage du microservice Redis: ${microserviceError.message}`,
+        );
+        console.warn(
+          "[Redis]  L'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.",
+        );
       }
     } catch (error: any) {
-      console.warn(`[Redis]  Impossible de configurer le microservice Redis: ${error.message}`);
-      console.warn('[Redis]  L\'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.');
+      console.warn(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `[Redis]  Impossible de configurer le microservice Redis: ${error.message}`,
+      );
+      console.warn(
+        "[Redis]  L'application continuera sans Redis. Les fonctionnalités microservices seront désactivées.",
+      );
     }
   } else {
-    console.log('[Redis]  Redis désactivé (REDIS_ENABLED=false ou REDIS_HOST non défini)');
+    console.log(
+      '[Redis]  Redis désactivé (REDIS_ENABLED=false ou REDIS_HOST non défini)',
+    );
   }
 
   await app.listen(process.env.PORT ?? 3000);

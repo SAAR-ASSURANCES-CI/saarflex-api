@@ -5,7 +5,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ProduitsModule } from './produits/produits.module';
-import { ConfigurationModule } from './config/configuration.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Profile } from './users/entities/profile.entity';
 import { APP_PIPE, APP_GUARD } from '@nestjs/core';
@@ -13,7 +12,6 @@ import { User } from './users/entities/user.entity';
 import { Notification } from './users/entities/notification.entity';
 import { Session } from './users/entities/session.entity';
 import { PasswordReset } from './users/entities/password-reset.entity';
-import { EmailModule } from './users/email/email.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ClientsModule } from './clients/clients.module';
 import { BrancheProduit } from './produits/entities/branche-produit.entity';
@@ -38,7 +36,7 @@ import { EmailTemplate } from './users/email/entities/email-template.entity';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env'
+      envFilePath: '.env',
     }),
 
     ThrottlerModule.forRoot([
@@ -56,7 +54,7 @@ import { EmailTemplate } from './users/email/entities/email-template.entity';
         name: 'long',
         ttl: 60000,
         limit: 100,
-      }
+      },
     ]),
 
     TypeOrmModule.forRootAsync({
@@ -91,7 +89,7 @@ import { EmailTemplate } from './users/email/entities/email-template.entity';
           TarifGarantie,
           Paiement,
           ConfigurationSysteme,
-          EmailTemplate
+          EmailTemplate,
         ],
         migrations: ['dist/migrations/*.js'],
         migrationsRun: true,
@@ -102,7 +100,7 @@ import { EmailTemplate } from './users/email/entities/email-template.entity';
     UsersModule,
     ProduitsModule,
     DashboardModule,
-    ClientsModule
+    ClientsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -123,4 +121,4 @@ import { EmailTemplate } from './users/email/entities/email-template.entity';
     AppService,
   ],
 })
-export class AppModule { }
+export class AppModule {}
