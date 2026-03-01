@@ -51,4 +51,3 @@ export class CinetPayConfig {
     return !!(this.apikey && this.siteId && this.notifyUrl && this.returnUrl);
   }
 }
-
