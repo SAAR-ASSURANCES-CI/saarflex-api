@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { DateUtilsService } from '../utils/date-utils.service';
 import { Session } from '../entities/session.entity';
 
 /**
@@ -11,7 +13,9 @@ export class SessionService {
     constructor(
         @InjectRepository(Session)
         private readonly sessionRepository: Repository<Session>,
-    ) {}
+        private readonly configService: ConfigService,
+        private readonly dateUtilsService: DateUtilsService,
+    ) { }
 
     /**
      * Crée une nouvelle session utilisateur
@@ -27,12 +31,15 @@ export class SessionService {
         ipAddress?: string,
         userAgent?: string
     ): Promise<Session> {
+        const expiresInStr = this.configService.get('JWT_EXPIRES_IN') || '2h';
+        const expiresInMs = this.dateUtilsService.parseDurationToSeconds(expiresInStr) * 1000;
+
         const session = this.sessionRepository.create({
             user_id: userId,
             token: token,
             ip: ipAddress,
             user_agent: userAgent,
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
+            expires_at: new Date(Date.now() + expiresInMs),
             is_active: true,
         });
 
@@ -67,14 +74,14 @@ export class SessionService {
         const session = await this.sessionRepository.findOne({
             where: { id: sessionId, is_active: true }
         });
-        
+
         if (!session) return false;
-        
+
         if (session.expires_at < new Date()) {
             await this.invalidateSession(sessionId);
             return false;
         }
-        
+
         return true;
     }
 

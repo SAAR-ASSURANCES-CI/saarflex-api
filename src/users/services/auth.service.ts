@@ -6,6 +6,7 @@ import {
     UnauthorizedException,
     ForbiddenException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -19,6 +20,7 @@ import { SessionService } from './session.service';
 import { NotificationService } from './notification.service';
 import { UserManagementService } from './user-management.service';
 import { ProfileService } from './profile.service';
+import { DateUtilsService } from '../utils/date-utils.service';
 
 /**
  * Service responsable de l'authentification (inscription et connexion)
@@ -36,6 +38,8 @@ export class AuthService {
         private readonly notificationService: NotificationService,
         private readonly userManagementService: UserManagementService,
         private readonly profileService: ProfileService,
+        private readonly configService: ConfigService,
+        private readonly dateUtilsService: DateUtilsService,
     ) { }
 
     /**
@@ -78,7 +82,7 @@ export class AuthService {
                 mot_de_passe: hashedPassword,
                 type_utilisateur: registerDto.type_utilisateur || UserType.CLIENT,
                 statut: true,
-                premiere_connexion: false, // Les utilisateurs normaux n'ont pas besoin de changer leur mot de passe
+                premiere_connexion: false,
                 mot_de_passe_temporaire: false,
                 derniere_connexion: new Date(),
             });
@@ -103,10 +107,10 @@ export class AuthService {
                 type_utilisateur: savedUser.type_utilisateur,
                 statut: savedUser.statut,
                 date_creation: savedUser.date_creation,
-                avatar_url: null, // New users don't have an avatar yet
+                avatar_url: null,
                 token: token,
                 token_type: 'Bearer',
-                expires_in: 86400, // 24 heures
+                expires_in: this.dateUtilsService.parseDurationToSeconds(this.configService.get('JWT_EXPIRES_IN') || '2h'),
             };
         } catch (error) {
             if (error instanceof ConflictException || error instanceof BadRequestException) {
@@ -165,7 +169,7 @@ export class AuthService {
             avatar_url: avatarUrl,
             token,
             token_type: 'Bearer',
-            expires_in: 22400, // 6 heures
+            expires_in: this.dateUtilsService.parseDurationToSeconds(this.configService.get('JWT_EXPIRES_IN') || '2h'),
             premiere_connexion: user.premiere_connexion || false,
             must_change_password: user.premiere_connexion || false,
         };

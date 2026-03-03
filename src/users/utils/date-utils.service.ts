@@ -55,11 +55,11 @@ export class DateUtilsService {
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        
+
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
             age--;
         }
-        
+
         return age;
     }
 
@@ -93,6 +93,28 @@ export class DateUtilsService {
             throw new BadRequestException('La date d\'expiration de la pièce d\'identité doit être dans le futur');
         }
         return parsedDate;
+    }
+    /**
+     * Parse une durée JWT (ex: '2h', '24h', '30m') en secondes
+     * @param duration Chaîne de caractères
+     * @returns Nombre de secondes
+     */
+    parseDurationToSeconds(duration: string): number {
+        if (!duration) return 7200;
+
+        const match = /^(\d+)([smhd])$/.exec(duration);
+        if (!match) return 7200;
+
+        const value = parseInt(match[1], 10);
+        const unit = match[2];
+
+        switch (unit) {
+            case 's': return value;
+            case 'm': return value * 60;
+            case 'h': return value * 3600;
+            case 'd': return value * 86400;
+            default: return value * 3600;
+        }
     }
 }
 
