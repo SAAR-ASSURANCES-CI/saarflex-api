@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GrilleTarifaire, StatutGrille } from '../entities/grille-tarifaire.entity';
 import { Tarif, TypeCalculTarif } from '../entities/tarif.entity';
+import { DateUtilsService } from '../../users/utils/date-utils.service';
 import { evaluate } from 'mathjs';
 
 /**
@@ -15,6 +16,7 @@ export class TarifCalculationService {
         private readonly grilleTarifaireRepository: Repository<GrilleTarifaire>,
         @InjectRepository(Tarif)
         private readonly tarifRepository: Repository<Tarif>,
+        private readonly dateUtilsService: DateUtilsService,
     ) { }
 
     /**
@@ -146,13 +148,12 @@ export class TarifCalculationService {
 
         normalise = normalise.toLowerCase();
 
-        normalise = normalise.replace(/\s+/g, ' ').trim();
+        normalise = normalise.replace(/[^a-z0-9]/g, '_');
 
-        const articles = ['de', 'du', 'des', 'le', 'la', 'les', 'un', 'une'];
-        const mots = normalise.split(' ');
-        if (mots.length > 1 && articles.includes(mots[0])) {
-            normalise = mots.slice(1).join(' ');
-        }
+        normalise = normalise.replace(/_+/g, '_').trim();
+
+        if (normalise.startsWith('_')) normalise = normalise.substring(1);
+        if (normalise.endsWith('_')) normalise = normalise.substring(0, normalise.length - 1);
 
         return normalise;
     }
@@ -396,17 +397,46 @@ export class TarifCalculationService {
         }
 
         try {
-            const context = {
-                valeur_neuve: this.extraireValeurNumerique(criteres, 'Valeur à Neuf', 'valeur_neuve', 'ValeurNeuve') || 0,
-                valeur_venale: this.extraireValeurNumerique(criteres, 'Valeur Vénale', 'valeur_venale', 'ValeurVenale') || 0,
+            // 1. Initialiser le contexte avec les variables de base
+            const context: Record<string, number> = {
+                valeur_neuve: 0,
+                valeur_venale: 0,
                 montant_base: Number(tarif.montant_fixe) || 0,
                 taux_pourcentage: Number(tarif.taux_pourcentage) || 0
             };
 
-            console.log(`[TarifCalculation] Évaluation formule: "${tarif.formule_calcul}" avec contexte:`, context);
+            // 2. Injecter dynamiquement TOUS les critères fournis
+            for (const [key, value] of Object.entries(criteres)) {
+                const nomVariable = this.normaliserNomCritere(key);
+                const valeurNumerique = Number(value);
+
+                if (!isNaN(valeurNumerique)) {
+                    context[nomVariable] = valeurNumerique;
+                }
+
+                if (nomVariable === 'date_naissance' || key.toLowerCase().includes('naissance')) {
+                    try {
+                        const birthDate = new Date(value);
+                        if (!isNaN(birthDate.getTime())) {
+                            context['age'] = this.dateUtilsService.calculateAge(birthDate);
+                        }
+                    } catch (e) {
+                        console.warn(`[TarifCalculation] Impossible de calculer l'âge à partir de ${value}`);
+                    }
+                }
+            }
+
+            if (context['valeur_neuve'] === 0 && context['valeur_a_neuf']) context['valeur_neuve'] = context['valeur_a_neuf'];
+            if (context['valeur_venale'] === 0 && context['valeur_venale']) context['valeur_venale'] = context['valeur_venale'];
+
+            console.log(`[TarifCalculation] Évaluation formule: "${tarif.formule_calcul}" avec contexte étendu:`, context);
 
             const resultat = evaluate(tarif.formule_calcul, context);
             const prime = typeof resultat === 'number' ? resultat : Number(resultat);
+
+            if (isNaN(prime)) {
+                throw new Error('Le résultat de la formule n\'est pas un nombre valide');
+            }
 
             console.log(`[TarifCalculation] Résultat formule: ${prime}`);
             return Math.round(prime * 100) / 100;
