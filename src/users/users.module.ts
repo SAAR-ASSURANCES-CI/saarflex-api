@@ -57,7 +57,7 @@ import { AgentsAdminService } from './admin/services/agents-admin.service';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET') || 'secret-key',
         signOptions: {
-          expiresIn: configService.get('JWT_EXPIRES_IN') || '24h',
+          expiresIn: configService.get('JWT_EXPIRES_IN') || '2h',
         },
       }),
     }),

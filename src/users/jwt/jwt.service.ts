@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 import { User } from '../entities/user.entity';
+import { ConfigService, ConfigModule } from '@nestjs/config';
 
 
 export interface JwtPayload {
@@ -14,7 +15,10 @@ export interface JwtPayload {
 @Injectable()
 export class JwtService {
 
-    constructor(private readonly jwtService: NestJwtService) { }
+    constructor(
+        private readonly jwtService: NestJwtService,
+        private readonly configService: ConfigService
+    ) { }
 
     generateToken(user: User): string {
         const payload = {
@@ -24,10 +28,10 @@ export class JwtService {
         };
 
         return this.jwtService.sign(payload, {
-            expiresIn: '24h',
+            expiresIn: this.configService.get('JWT_EXPIRES_IN') || '2h',
         });
     }
-    
+
     verifyToken(token: string): JwtPayload {
         try {
             return this.jwtService.verify(token);
