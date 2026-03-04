@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { TarifGarantie, StatutTarifGarantie } from '../entities/tarif-garantie.entity';
 import { TypeCalculTarif } from '../entities/tarif.entity';
 import { Garantie } from '../entities/garantie.entity';
+import { DateUtilsService } from '../../users/utils/date-utils.service';
 import { evaluate } from 'mathjs';
 
 export interface CalculTarifGarantieParams {
@@ -39,6 +40,7 @@ export class TarifGarantieCalculationService {
         private readonly tarifGarantieRepository: Repository<TarifGarantie>,
         @InjectRepository(Garantie)
         private readonly garantieRepository: Repository<Garantie>,
+        private readonly dateUtilsService: DateUtilsService,
     ) { }
 
     /**
@@ -67,7 +69,7 @@ export class TarifGarantieCalculationService {
         }
 
         // Calculer le montant selon le type de calcul
-        const montant_calcule = await this.calculerMontant(tarif, valeur_neuve, valeur_venale);
+        const montant_calcule = await this.calculerMontant(tarif, valeur_neuve, valeur_venale, params.criteres_additionnels);
 
         return {
             garantie_id: garantie.id,
@@ -137,7 +139,8 @@ export class TarifGarantieCalculationService {
     private async calculerMontant(
         tarif: TarifGarantie,
         valeur_neuve?: number,
-        valeur_venale?: number
+        valeur_venale?: number,
+        criteres?: Record<string, any>
     ): Promise<number> {
         switch (tarif.type_calcul) {
             case TypeCalculTarif.MONTANT_FIXE:
@@ -150,7 +153,7 @@ export class TarifGarantieCalculationService {
                 return this.calculerPourcentageValeurVenale(tarif, valeur_venale);
 
             case TypeCalculTarif.FORMULE_PERSONNALISEE:
-                return this.calculerAvecFormule(tarif, valeur_neuve, valeur_venale);
+                return this.calculerAvecFormule(tarif, valeur_neuve, valeur_venale, criteres);
 
             default:
                 throw new BadRequestException(`Type de calcul non supporté: ${tarif.type_calcul}`);
@@ -204,20 +207,44 @@ export class TarifGarantieCalculationService {
     private calculerAvecFormule(
         tarif: TarifGarantie,
         valeur_neuve?: number,
-        valeur_venale?: number
+        valeur_venale?: number,
+        criteres_utilisateur?: Record<string, any>
     ): number {
         if (!tarif.formule_calcul) {
             throw new BadRequestException('Formule de calcul manquante');
         }
 
         try {
-            // Variables disponibles dans la formule
-            const context = {
+            // 1. Initialiser le contexte avec les variables de base
+            const context: Record<string, number> = {
                 valeur_neuve: valeur_neuve || 0,
                 valeur_venale: valeur_venale || 0,
                 montant_base: Number(tarif.montant_base) || 0,
                 taux_pourcentage: Number(tarif.taux_pourcentage) || 0
             };
+
+            // 2. Injecter dynamiquement tous les critères utilisateur si fournis
+            if (criteres_utilisateur) {
+                for (const [key, value] of Object.entries(criteres_utilisateur)) {
+                    // Utiliser la même normalisation que TarifCalculationService
+                    const nomVariable = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                    const valeurNumerique = Number(value);
+
+                    if (!isNaN(valeurNumerique)) {
+                        context[nomVariable] = valeurNumerique;
+                    }
+
+                    // Calcul de l'âge automatique pour les garanties aussi
+                    if (nomVariable === 'date_naissance' || key.toLowerCase().includes('naissance')) {
+                        try {
+                            const birthDate = new Date(value);
+                            if (!isNaN(birthDate.getTime())) {
+                                context['age'] = this.dateUtilsService.calculateAge(birthDate);
+                            }
+                        } catch (e) { }
+                    }
+                }
+            }
 
             // Évaluation sécurisée de la formule
             const resultat = this.evaluerFormule(tarif.formule_calcul, context);
