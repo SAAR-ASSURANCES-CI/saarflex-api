@@ -116,7 +116,8 @@ export class TarifCalculationService {
 
                 if (correspondance) {
                     const tarifTrouve = await this.tarifRepository.findOne({
-                        where: { id: tarif.id }
+                        where: { id: tarif.id },
+                        relations: ['grilleTarifaire', 'critere', 'valeurCritere']
                     });
 
                     if (tarifTrouve) {
@@ -241,6 +242,7 @@ export class TarifCalculationService {
             .leftJoinAndSelect('tarif.critere', 'critere')
             .leftJoinAndSelect('tarif.valeurCritere', 'valeurCritere')
             .where('tarif.grille_id = :grilleId', { grilleId })
+            .leftJoinAndSelect('tarif.grilleTarifaire', 'grilleTarifaire')
             .getMany();
 
         console.log(`[TarifCalculation] ${tarifs.length} tarif(s) récupéré(s) avec QueryBuilder`);
@@ -404,6 +406,18 @@ export class TarifCalculationService {
                 montant_base: Number(tarif.montant_fixe) || 0,
                 taux_pourcentage: Number(tarif.taux_pourcentage) || 0
             };
+
+            // 1.5 Injecter les variables techniques de la grille
+            if (tarif.grilleTarifaire && tarif.grilleTarifaire.variables_techniques) {
+                const vt = tarif.grilleTarifaire.variables_techniques;
+                for (const [key, value] of Object.entries(vt)) {
+                    const nomVariable = this.normaliserNomCritere(key);
+                    const valeurNumerique = Number(value);
+                    if (!isNaN(valeurNumerique)) {
+                        context[nomVariable] = valeurNumerique;
+                    }
+                }
+            }
 
             // 2. Injecter dynamiquement TOUS les critères fournis
             for (const [key, value] of Object.entries(criteres)) {

@@ -8170,6 +8170,12 @@
             "example": "Surface du logement",
             "maxLength": 255
           },
+          "code": {
+            "type": "string",
+            "description": "Code technique pour utilisation dans les formules",
+            "example": "capital",
+            "maxLength": 50
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -8199,6 +8205,12 @@
             "example": true,
             "default": true
           },
+          "est_interne": {
+            "type": "boolean",
+            "description": "Définit si le critère est une constante interne (taux, frais) non visible par l'utilisateur",
+            "example": false,
+            "default": false
+          },
           "valeurs": {
             "description": "Valeurs possibles pour ce critère",
             "type": "array",
@@ -8212,7 +8224,8 @@
           "nom",
           "type",
           "ordre",
-          "obligatoire"
+          "obligatoire",
+          "est_interne"
         ]
       },
       "ValeurCritereDto": {
@@ -8325,6 +8338,10 @@
             "type": "string",
             "description": "Nom du critère"
           },
+          "code": {
+            "type": "string",
+            "description": "Code technique du critère"
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -8347,6 +8364,10 @@
           "obligatoire": {
             "type": "boolean",
             "description": "Critère obligatoire"
+          },
+          "est_interne": {
+            "type": "boolean",
+            "description": "Critère interne (constante)"
           },
           "created_at": {
             "format": "date-time",
@@ -8377,10 +8398,12 @@
           "id",
           "produit_id",
           "nom",
+          "code",
           "type",
           "unite",
           "ordre",
           "obligatoire",
+          "est_interne",
           "created_at",
           "valeurs",
           "nombre_valeurs"
@@ -8429,6 +8452,12 @@
             "example": "Surface du logement",
             "maxLength": 255
           },
+          "code": {
+            "type": "string",
+            "description": "Code technique pour utilisation dans les formules",
+            "example": "capital",
+            "maxLength": 50
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -8456,6 +8485,11 @@
             "type": "boolean",
             "description": "Critère obligatoire",
             "example": true
+          },
+          "est_interne": {
+            "type": "boolean",
+            "description": "Définit si le critère est une constante interne",
+            "example": false
           }
         }
       },
@@ -9090,6 +9124,14 @@
             "description": "Statut de la grille tarifaire",
             "example": "inactif",
             "default": "inactif"
+          },
+          "variables_techniques": {
+            "type": "object",
+            "description": "Variables techniques propres à la grille (ex: taux, frais)",
+            "example": {
+              "i": 0.035,
+              "frais": 500
+            }
           }
         },
         "required": [
@@ -9132,6 +9174,10 @@
               "futur"
             ],
             "description": "Statut de la grille"
+          },
+          "variables_techniques": {
+            "type": "object",
+            "description": "Variables techniques propres à la grille"
           },
           "created_at": {
             "format": "date-time",
@@ -9232,6 +9278,14 @@
             ],
             "description": "Statut de la grille tarifaire",
             "example": "actif"
+          },
+          "variables_techniques": {
+            "type": "object",
+            "description": "Variables techniques propres à la grille (ex: taux, frais)",
+            "example": {
+              "i": 0.035,
+              "frais": 500
+            }
           }
         }
       },
@@ -10288,6 +10342,10 @@
             "type": "boolean",
             "description": "Indique si le critère est obligatoire"
           },
+          "est_interne": {
+            "type": "boolean",
+            "description": "Indique si le critère est une constante interne"
+          },
           "valeurs": {
             "description": "Valeurs possibles pour ce critère",
             "type": "array",
@@ -10307,6 +10365,7 @@
           "unite",
           "ordre",
           "obligatoire",
+          "est_interne",
           "valeurs",
           "nombre_valeurs"
         ]

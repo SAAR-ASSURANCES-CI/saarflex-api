@@ -5,7 +5,7 @@ import { TypeCritere } from '../entities/critere-tarification.entity';
 import { TypeProduit, StatutProduit } from '../entities/produit.entity';
 
 export class CreateValeurCritereDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Valeur du critère (pour type catégoriel ou booléen)',
     example: 'Béton',
     required: false
@@ -15,7 +15,7 @@ export class CreateValeurCritereDto {
   @MaxLength(255)
   valeur?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Valeur minimale (pour type numérique)',
     example: 0,
     required: false
@@ -25,7 +25,7 @@ export class CreateValeurCritereDto {
   @Min(0)
   valeur_min?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Valeur maximale (pour type numérique)',
     example: 1000,
     required: false
@@ -35,7 +35,7 @@ export class CreateValeurCritereDto {
   @Min(0)
   valeur_max?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Ordre d\'affichage de la valeur',
     example: 1
   })
@@ -45,14 +45,14 @@ export class CreateValeurCritereDto {
 }
 
 export class CreateCritereTarificationDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'ID du produit auquel appartient ce critère',
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
   @IsUUID()
   produit_id: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nom du critère de tarification',
     example: 'Surface du logement',
     maxLength: 255
@@ -62,7 +62,18 @@ export class CreateCritereTarificationDto {
   @MaxLength(255)
   nom: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Code technique pour utilisation dans les formules',
+    example: 'capital',
+    maxLength: 50,
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  code?: string;
+
+  @ApiProperty({
     enum: TypeCritere,
     description: 'Type de critère (numérique, catégoriel ou booléen)',
     example: 'numerique'
@@ -70,7 +81,7 @@ export class CreateCritereTarificationDto {
   @IsEnum(TypeCritere)
   type: TypeCritere;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Unité de mesure (pour type numérique)',
     example: 'm²',
     required: false,
@@ -81,7 +92,7 @@ export class CreateCritereTarificationDto {
   @MaxLength(50)
   unite?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Ordre d\'affichage du critère',
     example: 1
   })
@@ -89,7 +100,7 @@ export class CreateCritereTarificationDto {
   @Min(1)
   ordre: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Indique si le critère est obligatoire',
     example: true,
     default: true
@@ -97,7 +108,16 @@ export class CreateCritereTarificationDto {
   @IsBoolean()
   obligatoire: boolean;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Définit si le critère est une constante interne (taux, frais) non visible par l\'utilisateur',
+    example: false,
+    default: false
+  })
+  @IsBoolean()
+  @IsOptional()
+  est_interne?: boolean;
+
+  @ApiProperty({
     description: 'Valeurs possibles pour ce critère',
     type: [CreateValeurCritereDto],
     required: false
@@ -110,7 +130,7 @@ export class CreateCritereTarificationDto {
 }
 
 export class UpdateCritereTarificationDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nom du critère de tarification',
     example: 'Surface du logement',
     maxLength: 255,
@@ -121,7 +141,18 @@ export class UpdateCritereTarificationDto {
   @MaxLength(255)
   nom?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Code technique pour utilisation dans les formules',
+    example: 'capital',
+    maxLength: 50,
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  code?: string;
+
+  @ApiProperty({
     enum: TypeCritere,
     description: 'Type de critère',
     example: 'numerique',
@@ -131,7 +162,7 @@ export class UpdateCritereTarificationDto {
   @IsEnum(TypeCritere)
   type?: TypeCritere;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Unité de mesure',
     example: 'm²',
     required: false,
@@ -142,7 +173,7 @@ export class UpdateCritereTarificationDto {
   @MaxLength(50)
   unite?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Ordre d\'affichage',
     example: 1,
     required: false
@@ -152,7 +183,7 @@ export class UpdateCritereTarificationDto {
   @Min(1)
   ordre?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Critère obligatoire',
     example: true,
     required: false
@@ -160,10 +191,19 @@ export class UpdateCritereTarificationDto {
   @IsOptional()
   @IsBoolean()
   obligatoire?: boolean;
+
+  @ApiProperty({
+    description: 'Définit si le critère est une constante interne',
+    example: false,
+    required: false
+  })
+  @IsOptional()
+  @IsBoolean()
+  est_interne?: boolean;
 }
 
 export class UpdateValeurCritereDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Valeur du critère',
     example: 'Béton',
     required: false,
@@ -174,7 +214,7 @@ export class UpdateValeurCritereDto {
   @MaxLength(255)
   valeur?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Valeur minimale',
     example: 0,
     required: false
@@ -184,7 +224,7 @@ export class UpdateValeurCritereDto {
   @Min(0)
   valeur_min?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Valeur maximale',
     example: 1000,
     required: false
@@ -194,7 +234,7 @@ export class UpdateValeurCritereDto {
   @Min(0)
   valeur_max?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Ordre d\'affichage',
     example: 1,
     required: false
@@ -235,9 +275,9 @@ export class ProduitInfoDto {
   @ApiProperty({ description: 'Icône du produit' })
   icon: string;
 
-  @ApiProperty({ 
-    enum: TypeProduit, 
-    description: 'Type du produit (vie ou non-vie)' 
+  @ApiProperty({
+    enum: TypeProduit,
+    description: 'Type du produit (vie ou non-vie)'
   })
   type: TypeProduit;
 
@@ -247,9 +287,9 @@ export class ProduitInfoDto {
   @ApiProperty({ description: 'Lien vers les conditions PDF' })
   conditions_pdf: string;
 
-  @ApiProperty({ 
-    enum: StatutProduit, 
-    description: 'Statut du produit' 
+  @ApiProperty({
+    enum: StatutProduit,
+    description: 'Statut du produit'
   })
   statut: StatutProduit;
 
@@ -267,9 +307,12 @@ export class CritereTarificationAdminDto {
   @ApiProperty({ description: 'Nom du critère' })
   nom: string;
 
-  @ApiProperty({ 
-    enum: TypeCritere, 
-    description: 'Type du critère' 
+  @ApiProperty({ description: 'Code technique du critère' })
+  code: string;
+
+  @ApiProperty({
+    enum: TypeCritere,
+    description: 'Type du critère'
   })
   type: TypeCritere;
 
@@ -282,10 +325,13 @@ export class CritereTarificationAdminDto {
   @ApiProperty({ description: 'Critère obligatoire' })
   obligatoire: boolean;
 
+  @ApiProperty({ description: 'Critère interne (constante)' })
+  est_interne: boolean;
+
   @ApiProperty({ description: 'Date de création' })
   created_at: Date;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Valeurs possibles pour ce critère',
     type: [ValeurCritereDto]
   })
@@ -294,7 +340,7 @@ export class CritereTarificationAdminDto {
   @ApiProperty({ description: 'Nombre de valeurs associées' })
   nombre_valeurs: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Informations du produit associé',
     type: ProduitInfoDto,
     required: false

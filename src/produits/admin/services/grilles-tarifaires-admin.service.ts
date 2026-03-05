@@ -4,9 +4,9 @@ import { Not, Repository } from 'typeorm';
 import { GrilleTarifaire, StatutGrille } from '../../entities/grille-tarifaire.entity';
 import { Produit } from '../../entities/produit.entity';
 import { Tarif } from '../../entities/tarif.entity';
-import { 
-  CreateGrilleTarifaireDto, 
-  UpdateGrilleTarifaireDto, 
+import {
+  CreateGrilleTarifaireDto,
+  UpdateGrilleTarifaireDto,
   GrilleTarifaireDto,
   GrillesTarifairesResponseDto,
   GrilleTarifaireWithProduitDto,
@@ -22,11 +22,11 @@ export class GrillesTarifairesAdminService {
     private produitRepository: Repository<Produit>,
     @InjectRepository(Tarif)
     private tarifRepository: Repository<Tarif>,
-  ) {}
+  ) { }
 
   async create(createGrilleDto: CreateGrilleTarifaireDto, userId: string): Promise<GrilleTarifaireWithProduitDto> {
-    const produit = await this.produitRepository.findOne({ 
-      where: { id: createGrilleDto.produit_id } 
+    const produit = await this.produitRepository.findOne({
+      where: { id: createGrilleDto.produit_id }
     });
     if (!produit) {
       throw new NotFoundException('Produit non trouvé');
@@ -51,26 +51,27 @@ export class GrillesTarifairesAdminService {
       created_by: userId,
       date_debut: new Date(createGrilleDto.date_debut),
       date_fin: createGrilleDto.date_fin ? new Date(createGrilleDto.date_fin) : undefined,
-      statut: createGrilleDto.statut || StatutGrille.INACTIF
+      statut: createGrilleDto.statut || StatutGrille.INACTIF,
+      variables_techniques: createGrilleDto.variables_techniques || {}
     });
 
     const savedGrille = await this.grilleRepository.save(grille);
-    
+
     const grilleWithRelations = await this.grilleRepository.findOne({
       where: { id: savedGrille.id },
       relations: ['produit', 'produit.branche']
     });
-    
+
     if (!grilleWithRelations) {
       throw new NotFoundException('Erreur lors de la récupération de la grille créée');
     }
-    
+
     return this.mapToDtoWithProduit(grilleWithRelations);
   }
 
   async findAll(page: number = 1, limit: number = 10): Promise<GrillesTarifairesWithProduitResponseDto> {
     const skip = (page - 1) * limit;
-    
+
     const [grilles, total] = await this.grilleRepository.findAndCount({
       relations: ['produit', 'produit.branche'],
       order: { created_at: 'DESC' },
@@ -113,11 +114,11 @@ export class GrillesTarifairesAdminService {
   }
 
   async update(id: string, updateGrilleDto: UpdateGrilleTarifaireDto): Promise<GrilleTarifaireWithProduitDto> {
-    const grille = await this.grilleRepository.findOne({ 
+    const grille = await this.grilleRepository.findOne({
       where: { id },
       relations: ['produit', 'produit.branche']
     });
-    
+
     if (!grille) {
       throw new NotFoundException('Grille tarifaire non trouvée');
     }
@@ -149,17 +150,18 @@ export class GrillesTarifairesAdminService {
       }
     }
     if (updateGrilleDto.statut !== undefined) grille.statut = updateGrilleDto.statut;
+    if (updateGrilleDto.variables_techniques !== undefined) grille.variables_techniques = updateGrilleDto.variables_techniques;
 
     const updatedGrille = await this.grilleRepository.save(grille);
     return this.mapToDtoWithProduit(updatedGrille);
   }
 
   async remove(id: string): Promise<void> {
-    const grille = await this.grilleRepository.findOne({ 
+    const grille = await this.grilleRepository.findOne({
       where: { id },
       relations: ['tarifs']
     });
-    
+
     if (!grille) {
       throw new NotFoundException('Grille tarifaire non trouvée');
     }
@@ -174,11 +176,11 @@ export class GrillesTarifairesAdminService {
   }
 
   async changeStatus(id: string, newStatus: StatutGrille): Promise<GrilleTarifaireWithProduitDto> {
-    const grille = await this.grilleRepository.findOne({ 
+    const grille = await this.grilleRepository.findOne({
       where: { id },
       relations: ['produit', 'produit.branche']
     });
-    
+
     if (!grille) {
       throw new NotFoundException('Grille tarifaire non trouvée');
     }
@@ -200,16 +202,16 @@ export class GrillesTarifairesAdminService {
 
     grille.statut = newStatus;
     const updatedGrille = await this.grilleRepository.save(grille);
-    
+
     return this.mapToDtoWithProduit(updatedGrille);
   }
 
   async getTarifsByGrille(grilleId: string): Promise<Tarif[]> {
-    const grille = await this.grilleRepository.findOne({ 
+    const grille = await this.grilleRepository.findOne({
       where: { id: grilleId },
       relations: ['tarifs']
     });
-    
+
     if (!grille) {
       throw new NotFoundException('Grille tarifaire non trouvée');
     }
@@ -225,6 +227,7 @@ export class GrillesTarifairesAdminService {
       date_debut: grille.date_debut,
       date_fin: grille.date_fin,
       statut: grille.statut,
+      variables_techniques: grille.variables_techniques,
       created_at: grille.created_at,
       updated_at: grille.updated_at,
       created_by: grille.created_by,
@@ -234,7 +237,7 @@ export class GrillesTarifairesAdminService {
 
   private mapToDtoWithProduit(grille: GrilleTarifaire): GrilleTarifaireWithProduitDto {
     const grilleDto = this.mapToDto(grille);
-    
+
     return {
       ...grilleDto,
       produit: {

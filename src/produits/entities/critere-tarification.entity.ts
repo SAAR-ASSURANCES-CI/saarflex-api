@@ -23,6 +23,9 @@ export class CritereTarification {
   @Column({ type: 'varchar', length: 255, nullable: false })
   nom: string;
 
+  @Column({ type: 'varchar', length: 50, nullable: true, comment: 'Code technique pour utilisation dans les formules (ex: capital, n, m)' })
+  code: string;
+
   @Column({
     type: 'enum',
     enum: TypeCritere,
@@ -38,6 +41,9 @@ export class CritereTarification {
 
   @Column({ type: 'boolean', default: true })
   obligatoire: boolean;
+
+  @Column({ type: 'boolean', default: false, comment: 'Définit si le critère est une constante interne (taux, frais) non visible par l\'utilisateur' })
+  est_interne: boolean;
 
   @CreateDateColumn()
   created_at: Date;

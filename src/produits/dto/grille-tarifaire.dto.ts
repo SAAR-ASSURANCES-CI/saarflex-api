@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsUUID, IsDateString, MaxLength, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsUUID, IsDateString, MaxLength, IsNotEmpty, IsObject } from 'class-validator';
 import { StatutGrille } from '../entities/grille-tarifaire.entity';
 
 export class CreateGrilleTarifaireDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nom de la grille tarifaire',
     example: 'Grille Standard 2024',
     maxLength: 255
@@ -13,21 +13,21 @@ export class CreateGrilleTarifaireDto {
   @MaxLength(255)
   nom: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'ID du produit associé',
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
   @IsUUID()
   produit_id: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Date de début de validité de la grille',
     example: '2024-01-01'
   })
   @IsDateString()
   date_debut: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Date de fin de validité de la grille (optionnelle)',
     example: '2024-12-31',
     required: false
@@ -36,7 +36,7 @@ export class CreateGrilleTarifaireDto {
   @IsDateString()
   date_fin?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: StatutGrille,
     description: 'Statut de la grille tarifaire',
     example: StatutGrille.INACTIF,
@@ -45,10 +45,19 @@ export class CreateGrilleTarifaireDto {
   @IsOptional()
   @IsEnum(StatutGrille)
   statut?: StatutGrille;
+
+  @ApiProperty({
+    description: 'Variables techniques propres à la grille (ex: taux, frais)',
+    example: { i: 0.035, frais: 500 },
+    required: false
+  })
+  @IsOptional()
+  @IsObject()
+  variables_techniques?: any;
 }
 
 export class UpdateGrilleTarifaireDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nom de la grille tarifaire',
     example: 'Grille Standard 2024 Mise à jour',
     maxLength: 255,
@@ -59,7 +68,7 @@ export class UpdateGrilleTarifaireDto {
   @MaxLength(255)
   nom?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Date de début de validité de la grille',
     example: '2024-01-01',
     required: false
@@ -68,7 +77,7 @@ export class UpdateGrilleTarifaireDto {
   @IsDateString()
   date_debut?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Date de fin de validité de la grille',
     example: '2024-12-31',
     required: false
@@ -77,7 +86,7 @@ export class UpdateGrilleTarifaireDto {
   @IsDateString()
   date_fin?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     enum: StatutGrille,
     description: 'Statut de la grille tarifaire',
     example: StatutGrille.ACTIF,
@@ -86,6 +95,15 @@ export class UpdateGrilleTarifaireDto {
   @IsOptional()
   @IsEnum(StatutGrille)
   statut?: StatutGrille;
+
+  @ApiProperty({
+    description: 'Variables techniques propres à la grille (ex: taux, frais)',
+    example: { i: 0.035, frais: 500 },
+    required: false
+  })
+  @IsOptional()
+  @IsObject()
+  variables_techniques?: any;
 }
 
 export class GrilleTarifaireDto {
@@ -107,6 +125,9 @@ export class GrilleTarifaireDto {
   @ApiProperty({ enum: StatutGrille, description: 'Statut de la grille' })
   statut: StatutGrille;
 
+  @ApiProperty({ description: 'Variables techniques propres à la grille', required: false })
+  variables_techniques?: any;
+
   @ApiProperty({ description: 'Date de création' })
   created_at: Date;
 
@@ -121,7 +142,7 @@ export class GrilleTarifaireDto {
 }
 
 export class GrilleTarifaireWithProduitDto extends GrilleTarifaireDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Données du produit associé'
   })
   produit: {

@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Profile } from '../../users/entities/profile.entity';
 import { TypeProduit } from '../entities/produit.entity';
+import { CritereTarification } from '../entities/critere-tarification.entity';
+import { ValeurCritere } from '../entities/valeur-critere.entity';
 import { CreateSimulationDevisSimplifieeDto } from '../dto/simulation-devis-simplifie.dto';
 import { DateUtilsService } from '../../users/utils/date-utils.service';
 
@@ -14,8 +16,12 @@ export class CriteresEnrichmentService {
     constructor(
         @InjectRepository(Profile)
         private readonly profileRepository: Repository<Profile>,
+        @InjectRepository(CritereTarification)
+        private readonly critereRepository: Repository<CritereTarification>,
+        @InjectRepository(ValeurCritere)
+        private readonly valeurRepository: Repository<ValeurCritere>,
         private readonly dateUtilsService: DateUtilsService,
-    ) {}
+    ) { }
 
     /**
      * Enrichit les critères avec l'âge calculé si nécessaire
@@ -32,30 +38,37 @@ export class CriteresEnrichmentService {
     ): Promise<Record<string, any>> {
         console.log(`[CriteresEnrichment] Critères reçus avant enrichissement:`, JSON.stringify(criteres, null, 2));
         console.log(`[CriteresEnrichment] Type produit: ${typeProduit}, Utilisateur ID: ${utilisateurId || 'null'}`);
-        
+
         const criteresEnrichis = { ...criteres };
 
         if (typeProduit === TypeProduit.VIE) {
             const dateNaissance = await this.obtenirDateNaissance(
-                simulationDto, 
+                simulationDto,
                 utilisateurId
             );
 
             const age = this.dateUtilsService.calculateAge(dateNaissance);
-            
+
             console.log(`[CriteresEnrichment] Date de naissance: ${dateNaissance.toISOString()}, Âge calculé: ${age}`);
-            
+
             criteresEnrichis['Age Assuré'] = age.toString();
-            
-            // Supprimer l'ancien champ 'age' si présent
+
             if ('age' in criteresEnrichis) {
                 console.log(`[CriteresEnrichment] Suppression du champ 'age' obsolète`);
                 delete criteresEnrichis.age;
             }
         }
 
-        console.log(`[CriteresEnrichment] Critères après enrichissement:`, JSON.stringify(criteresEnrichis, null, 2));
-        
+        const constantesInternes = await this.obtenirConstantesInternes(simulationDto.produit_id);
+
+        for (const [nom, valeur] of Object.entries(constantesInternes)) {
+            if (!(nom in criteresEnrichis)) {
+                criteresEnrichis[nom] = valeur;
+            }
+        }
+
+        console.log(`[CriteresEnrichment] Critères après enrichissement complet:`, JSON.stringify(criteresEnrichis, null, 2));
+
         return criteresEnrichis;
     }
 
@@ -83,13 +96,13 @@ export class CriteresEnrichmentService {
         const profile = await this.profileRepository.findOne({
             where: { user_id: utilisateurId }
         });
-        
+
         if (!profile || !profile.date_naissance) {
             throw new BadRequestException('Date de naissance manquante dans le profil utilisateur');
         }
-        
+
         const dateNaissance = new Date(profile.date_naissance);
-        
+
         if (isNaN(dateNaissance.getTime())) {
             throw new BadRequestException(`Date de naissance invalide dans le profil: ${profile.date_naissance}`);
         }
@@ -107,7 +120,7 @@ export class CriteresEnrichmentService {
         if (!simulationDto.informations_assure?.date_naissance) {
             throw new BadRequestException('Date de naissance requise pour l\'assuré');
         }
-        
+
         const dateStr = simulationDto.informations_assure.date_naissance;
         return this.parserDateNaissance(dateStr);
     }
@@ -118,34 +131,60 @@ export class CriteresEnrichmentService {
      */
     private parserDateNaissance(dateStr: string | Date): Date {
         let parsedDate: Date;
-        
+
         if (typeof dateStr === 'string') {
-            
+
             if (dateStr.includes('-') && dateStr.split('-').length === 3 && dateStr.split('-')[0].length <= 2) {
                 const parsed = this.dateUtilsService.parseDDMMYYYY(dateStr);
                 if (parsed) {
                     return parsed;
                 }
             }
-            
+
             // Format ISO YYYY-MM-DD
             if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 parsedDate = new Date(dateStr);
             } else {
-                
+
                 parsedDate = new Date(dateStr);
             }
         } else {
             parsedDate = new Date(dateStr);
         }
-        
+
         if (isNaN(parsedDate.getTime())) {
             throw new BadRequestException(
                 `Format de date invalide: ${dateStr}. Utilisez DD-MM-YYYY ou YYYY-MM-DD`
             );
         }
-        
+
         return parsedDate;
+    }
+
+    /**
+     * Récupère toutes les constantes internes (est_interne = true) d'un produit
+     * @param produitId ID du produit
+     */
+    private async obtenirConstantesInternes(produitId: string): Promise<Record<string, any>> {
+        const criteresInternes = await this.critereRepository.find({
+            where: { produit_id: produitId, est_interne: true },
+            relations: ['valeurs']
+        });
+
+        const constantes: Record<string, any> = {};
+
+        for (const critere of criteresInternes) {
+            if (critere.valeurs && critere.valeurs.length > 0) {
+                const valeurObj = critere.valeurs[0];
+                const valeur = valeurObj.valeur !== null ? valeurObj.valeur : (valeurObj.valeur_min !== null ? valeurObj.valeur_min : valeurObj.valeur_max);
+
+                if (valeur !== undefined && valeur !== null) {
+                    constantes[critere.nom] = valeur;
+                }
+            }
+        }
+
+        return constantes;
     }
 }
 

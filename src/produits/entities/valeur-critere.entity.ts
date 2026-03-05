@@ -10,13 +10,13 @@ export class ValeurCritere {
   @Column({ type: 'uuid', nullable: false })
   critere_id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   valeur: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 20, scale: 8, nullable: true })
   valeur_min: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 20, scale: 8, nullable: true })
   valeur_max: number;
 
   @Column({ type: 'int', nullable: false })
