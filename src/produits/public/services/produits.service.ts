@@ -176,6 +176,7 @@ export class ProduitsService {
     const [criteres, total] = await this.critereRepository
       .createQueryBuilder('critere')
       .where('critere.produit_id = :produitId', { produitId })
+      .andWhere('critere.est_interne = :estInterne', { estInterne: false })
       .orderBy('critere.ordre', 'ASC')
       .skip(skip)
       .take(limit)
@@ -353,6 +354,7 @@ export class ProduitsService {
       unite: critere.unite,
       ordre: critere.ordre,
       obligatoire: critere.obligatoire,
+      est_interne: critere.est_interne,
       valeurs: valeursDto,
       nombre_valeurs: valeurs.length
     };

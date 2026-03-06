@@ -55,10 +55,12 @@ export class CriteresAdminService {
         const critere = this.critereRepository.create({
             produit_id: createDto.produit_id,
             nom: createDto.nom,
+            code: createDto.code,
             type: createDto.type,
             unite: createDto.unite,
             ordre: createDto.ordre,
-            obligatoire: createDto.obligatoire
+            obligatoire: createDto.obligatoire,
+            est_interne: createDto.est_interne
         });
 
         const savedCritere = await this.critereRepository.save(critere);
@@ -195,8 +197,10 @@ export class CriteresAdminService {
         }
 
         if (updateDto.unite !== undefined) critere.unite = updateDto.unite;
+        if (updateDto.code !== undefined) critere.code = updateDto.code;
         if (updateDto.ordre !== undefined) critere.ordre = updateDto.ordre;
         if (updateDto.obligatoire !== undefined) critere.obligatoire = updateDto.obligatoire;
+        if (updateDto.est_interne !== undefined) critere.est_interne = updateDto.est_interne;
 
         const updatedCritere = await this.critereRepository.save(critere);
 
@@ -369,10 +373,12 @@ export class CriteresAdminService {
             id: critere.id,
             produit_id: critere.produit_id,
             nom: critere.nom,
+            code: critere.code,
             type: critere.type,
             unite: critere.unite,
             ordre: critere.ordre,
             obligatoire: critere.obligatoire,
+            est_interne: critere.est_interne,
             created_at: critere.created_at,
             valeurs: valeurs.map(v => this.mapValeurToDto(v)),
             nombre_valeurs: valeurs.length,

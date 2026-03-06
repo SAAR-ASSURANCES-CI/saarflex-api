@@ -25,9 +25,9 @@ export class CritereTarificationPublicDto {
   @ApiProperty({ description: 'Nom du critère' })
   nom: string;
 
-  @ApiProperty({ 
-    enum: TypeCritere, 
-    description: 'Type du critère (numérique, catégoriel ou booléen)' 
+  @ApiProperty({
+    enum: TypeCritere,
+    description: 'Type du critère (numérique, catégoriel ou booléen)'
   })
   type: TypeCritere;
 
@@ -40,7 +40,10 @@ export class CritereTarificationPublicDto {
   @ApiProperty({ description: 'Indique si le critère est obligatoire' })
   obligatoire: boolean;
 
-  @ApiProperty({ 
+  @ApiProperty({ description: 'Indique si le critère est une constante interne' })
+  est_interne: boolean;
+
+  @ApiProperty({
     description: 'Valeurs possibles pour ce critère',
     type: [ValeurCriterePublicDto]
   })

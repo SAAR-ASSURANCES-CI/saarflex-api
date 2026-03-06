@@ -25,12 +25,15 @@ export class GrilleTarifaire {
   @Column({ type: 'date', nullable: true })
   date_fin: Date;
 
-  @Column({ 
-    type: 'enum', 
-    enum: StatutGrille, 
-    default: StatutGrille.INACTIF 
+  @Column({
+    type: 'enum',
+    enum: StatutGrille,
+    default: StatutGrille.INACTIF
   })
   statut: StatutGrille;
+
+  @Column({ type: 'json', nullable: true, comment: 'Variables techniques propres à la grille (ex: { "i": 0.035, "m": 12 })' })
+  variables_techniques: any;
 
   @CreateDateColumn()
   created_at: Date;
