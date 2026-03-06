@@ -30,11 +30,18 @@ EXPOSE 3000
 CMD ["pnpm", "run", "start:dev"]
 
 # --- Production Environment ---
+# Final lean image containing only the bundled application and production modules
 FROM base AS production
 
 # Security: Run application as non-privileged user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodeuser -u 1001 -G nodejs
+
+WORKDIR /app
+
+# Ensure uploads directory exists and is writable by nodeuser
+RUN mkdir -p /app/uploads && \
+    chown -R nodeuser:nodejs /app/uploads
 
 # Selective copy from build stage for minimal image size
 COPY --from=build --chown=nodeuser:nodejs /app/dist ./dist
