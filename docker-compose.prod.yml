@@ -92,7 +92,7 @@ services:
       PMA_ARBITRARY: 1
       MYSQL_ALLOW_EMPTY_PASSWORD: 0
     depends_on:
-      saarflex-db:
+      db:
         condition: service_healthy
     networks:
       - saarflex-network
