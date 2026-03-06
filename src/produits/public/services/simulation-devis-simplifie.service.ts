@@ -47,7 +47,7 @@ export class SimulationDevisSimplifieeService {
     // 1. Récupérer et valider le produit
     const produit = await this.produitRepository.findOne({
       where: { id: simulationDto.produit_id, statut: StatutProduit.ACTIF },
-      relations: ['criteres', 'grilles', 'categorie']
+      relations: ['criteres', 'grilles', 'categorie', 'garanties']
     });
 
     if (!produit) {

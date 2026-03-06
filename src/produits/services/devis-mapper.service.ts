@@ -44,7 +44,15 @@ export class DevisMapperService {
             front_document_path: devis.chemin_recto_assure || undefined,
             back_document_path: devis.chemin_verso_assure || undefined,
             // beneficiaires: beneficiaires,
-            created_at: devis.created_at
+            created_at: devis.created_at,
+            garanties: produit.garanties?.filter(g => g.statut === 'active').map(g => ({
+                id: g.id,
+                nom: g.nom,
+                description: g.description,
+                type: g.type,
+                montant_garanti: g.montant_garanti,
+                franchise: g.franchise
+            }))
         };
     }
 

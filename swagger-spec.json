@@ -10628,6 +10628,20 @@
             "type": "string",
             "description": "Date de création",
             "example": "2024-01-15T10:30:00.000Z"
+          },
+          "garanties": {
+            "description": "Liste des garanties associées au produit",
+            "example": [
+              {
+                "nom": "Décès",
+                "description": "Versement du capital en cas de décès",
+                "type": "obligatoire"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -10639,7 +10653,8 @@
           "criteres_utilisateur",
           "prime_calculee",
           "assure_est_souscripteur",
-          "created_at"
+          "created_at",
+          "garanties"
         ]
       },
       "SauvegardeDevisDto": {

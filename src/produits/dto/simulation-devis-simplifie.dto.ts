@@ -266,4 +266,10 @@ export class SimulationDevisSimplifieeResponseDto {
     example: '2024-01-15T10:30:00.000Z'
   })
   created_at: Date;
+
+  @ApiProperty({
+    description: 'Liste des garanties associées au produit',
+    example: [{ nom: 'Décès', description: 'Versement du capital en cas de décès', type: 'obligatoire' }]
+  })
+  garanties?: any[];
 }
