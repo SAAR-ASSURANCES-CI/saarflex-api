@@ -143,20 +143,18 @@ export class TarifCalculationService {
     public normaliserNomCritere(nom: string): string {
         if (!nom) return '';
 
+        // Supprime les accents
         let normalise = nom
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '');
 
         normalise = normalise.toLowerCase();
 
-        normalise = normalise.replace(/[^a-z0-9]/g, '_');
+        const stopWords = ['du', 'de', 'la', 'des', 'le', 'les', 'au', 'aux', 'en', 'd', 'l'];
 
-        normalise = normalise.replace(/_+/g, '_').trim();
+        const words = normalise.split(/[^a-z0-9]/).filter(w => w && !stopWords.includes(w));
 
-        if (normalise.startsWith('_')) normalise = normalise.substring(1);
-        if (normalise.endsWith('_')) normalise = normalise.substring(0, normalise.length - 1);
-
-        return normalise;
+        return words.join('_');
     }
 
     /**
@@ -305,16 +303,14 @@ export class TarifCalculationService {
         tarifs: Tarif[],
         criteresFournisNormalises: Map<string, string>
     ): boolean {
-        // Pour chaque critère fourni, on doit trouver un tarif correspondant
-        for (const [nomNormalise, valeur] of criteresFournisNormalises.entries()) {
-            const tarifCorrespondant = tarifs.find(t => {
-                if (!t.critere || !t.valeurCritere) return false;
-                const nomCritereNormalise = this.normaliserNomCritere(t.critere.nom);
-                const valeurCritereStr = t.valeurCritere.valeur?.toString().trim() || '';
-                return nomCritereNormalise === nomNormalise && valeurCritereStr === valeur.trim();
-            });
 
-            if (!tarifCorrespondant) {
+        for (const tarif of tarifs) {
+            if (!tarif.critere) continue;
+
+            const nomNormalise = this.normaliserNomCritere(tarif.critere.nom);
+            const valeurFournie = criteresFournisNormalises.get(nomNormalise);
+
+            if (!valeurFournie) {
                 return false;
             }
         }
@@ -400,11 +396,12 @@ export class TarifCalculationService {
 
         try {
             // 1. Initialiser le contexte avec les variables de base
-            const context: Record<string, number> = {
+            const context: Record<string, any> = {
                 valeur_neuve: 0,
                 valeur_venale: 0,
                 montant_base: Number(tarif.montant_fixe) || 0,
-                taux_pourcentage: Number(tarif.taux_pourcentage) || 0
+                taux_pourcentage: Number(tarif.taux_pourcentage) || 0,
+                Math: Math
             };
 
             // 1.5 Injecter les variables techniques de la grille
@@ -445,7 +442,13 @@ export class TarifCalculationService {
 
             console.log(`[TarifCalculation] Évaluation formule: "${tarif.formule_calcul}" avec contexte étendu:`, context);
 
-            const resultat = evaluate(tarif.formule_calcul, context);
+            let resultat = evaluate(tarif.formule_calcul, context);
+
+            if (resultat && typeof resultat === 'object' && 'entries' in resultat && Array.isArray((resultat as any).entries)) {
+                const entries = (resultat as any).entries;
+                resultat = entries.length > 0 ? entries[entries.length - 1] : 0;
+            }
+
             const prime = typeof resultat === 'number' ? resultat : Number(resultat);
 
             if (isNaN(prime)) {
