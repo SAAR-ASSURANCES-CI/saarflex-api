@@ -5920,6 +5920,43 @@
         ]
       }
     },
+    "/devis-sauvegardes/count": {
+      "get": {
+        "description": "Retourne le nombre total de devis sauvegardés par l'utilisateur connecté",
+        "operationId": "DevisSauvegardeController_compterDevis",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Nombre de devis récupéré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "number",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non autorisé"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Compter le nombre de devis sauvegardés de l'utilisateur",
+        "tags": [
+          "Devis Sauvegardés"
+        ]
+      }
+    },
     "/devis-sauvegardes/{id}": {
       "get": {
         "description": "Consulter les détails d'un devis sauvegardé spécifique",

@@ -99,6 +99,20 @@ export class DevisSauvegardeService {
   }
 
   /**
+   * Compte le nombre de devis sauvegardés d'un utilisateur
+   */
+  async compterDevisUtilisateur(utilisateurId: string): Promise<{ count: number }> {
+    const count = await this.devisSimuleRepository.count({
+      where: {
+        utilisateur_id: utilisateurId,
+        statut: StatutDevis.SAUVEGARDE
+      }
+    });
+
+    return { count };
+  }
+
+  /**
    * Récupère un devis spécifique par ID
    */
   async recupererDevisParId(
