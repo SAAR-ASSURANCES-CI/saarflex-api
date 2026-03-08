@@ -4,6 +4,8 @@ import { Contrat } from '../entities/contrat.entity';
 import { User } from '../../users/entities/user.entity';
 import { ProfileService } from '../../users/services/profile.service';
 import { ProfileDto } from '../../users/dto/profile.dto';
+import * as path from 'path';
+
 
 @Injectable()
 export class AttestationService {
@@ -458,10 +460,18 @@ export class AttestationService {
         doc.moveDown(2);
         doc.font('Helvetica-Bold').fontSize(10);
         doc.text('Pour l\'assuré :', 50, doc.y);
-        doc.text('Pour la compagnie :', 350, doc.y);
+        const currentY = doc.y;
+        doc.text('Pour la compagnie :', 350, currentY);
 
-        // Espace réservé pour le cachet et la signature
+        const signaturePath = path.join(process.cwd(), 'img', 'sign1.jpeg');
+        try {
+            doc.image(signaturePath, 350, currentY + 15, { width: 150 });
+        } catch (error) {
+            this.logger.error(`Impossible de charger la signature : ${signaturePath}`, error.stack);
+        }
+
         doc.moveDown(10);
+
     }
 
     /**
