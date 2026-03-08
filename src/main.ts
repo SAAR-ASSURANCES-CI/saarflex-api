@@ -18,6 +18,8 @@ async function bootstrap() {
     'http://localhost:3001',
     'http://localhost:4002',
     'http://192.168.4.43:3000',
+    'https://backoffice.saarassurancesci.com',
+    'https://app-client.saarassurancesci.com'
   ];
 
   app.enableCors({
@@ -30,11 +32,17 @@ async function bootstrap() {
         return callback(null, true);
       }
 
-      return callback(null, false);
+      return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With'
+    ],
   });
 
   app.use(
