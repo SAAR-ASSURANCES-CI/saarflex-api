@@ -3645,7 +3645,7 @@
     },
     "/admin/tarifs/grille/{grilleId}": {
       "get": {
-        "description": "Endpoint administrateur pour lister tous les tarifs d'une grille tarifaire spécifique avec données de la grille",
+        "description": "Endpoint administrateur pour lister tous les tarifs d'une grille tarifaire spécifique avec pagination",
         "operationId": "TarifsAdminController_findAllByGrille",
         "parameters": [
           {
@@ -3657,18 +3657,35 @@
               "example": "uuid-de-la-grille",
               "type": "string"
             }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Numéro de page (défaut: 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Nombre d'éléments par page (défaut: 10)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Tarifs de la grille avec données de la grille récupérés avec succès",
+            "description": "Tarifs de la grille récupérés avec succès",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TarifWithGrilleDto"
-                  }
+                  "$ref": "#/components/schemas/TarifsWithGrilleResponseDto"
                 }
               }
             }
