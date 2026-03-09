@@ -1,28 +1,28 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
-  UseGuards, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
   Request,
   Query,
   HttpStatus
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
   ApiBearerAuth,
   ApiParam,
   ApiQuery
 } from '@nestjs/swagger';
 import { TarifsAdminService } from '../services/tarifs-admin.service';
-import { 
-  CreateTarifDto, 
-  UpdateTarifDto, 
+import {
+  CreateTarifDto,
+  UpdateTarifDto,
   TarifDto,
   TarifsResponseDto,
   TarifWithGrilleDto,
@@ -37,7 +37,7 @@ import { AdminGuard } from '../../../users/guards/admin.guard';
 @Controller('admin/tarifs')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class TarifsAdminController {
-  constructor(private readonly tarifsAdminService: TarifsAdminService) {}
+  constructor(private readonly tarifsAdminService: TarifsAdminService) { }
 
   @Post()
   @ApiOperation({
@@ -111,17 +111,31 @@ export class TarifsAdminController {
   @Get('grille/:grilleId')
   @ApiOperation({
     summary: 'Récupérer les tarifs d\'une grille tarifaire',
-    description: 'Endpoint administrateur pour lister tous les tarifs d\'une grille tarifaire spécifique avec données de la grille'
+    description: 'Endpoint administrateur pour lister tous les tarifs d\'une grille tarifaire spécifique avec pagination'
   })
   @ApiParam({
     name: 'grilleId',
     description: 'ID de la grille tarifaire',
     example: 'uuid-de-la-grille'
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Numéro de page (défaut: 1)',
+    example: 1
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Nombre d\'éléments par page (défaut: 10)',
+    example: 10
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Tarifs de la grille avec données de la grille récupérés avec succès',
-    type: [TarifWithGrilleDto]
+    description: 'Tarifs de la grille récupérés avec succès',
+    type: TarifsWithGrilleResponseDto
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -131,8 +145,12 @@ export class TarifsAdminController {
     status: HttpStatus.FORBIDDEN,
     description: 'Accès interdit - Droits administrateur requis'
   })
-  async findAllByGrille(@Param('grilleId') grilleId: string): Promise<TarifWithGrilleDto[]> {
-    return this.tarifsAdminService.findAllByGrille(grilleId);
+  async findAllByGrille(
+    @Param('grilleId') grilleId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10
+  ): Promise<TarifsWithGrilleResponseDto> {
+    return this.tarifsAdminService.findAllByGrille(grilleId, page, limit);
   }
 
   @Get('produit/:produitId')

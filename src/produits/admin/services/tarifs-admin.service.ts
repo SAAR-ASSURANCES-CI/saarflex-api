@@ -66,14 +66,23 @@ export class TarifsAdminService {
     };
   }
 
-  async findAllByGrille(grilleId: string): Promise<TarifWithGrilleDto[]> {
-    const tarifs = await this.tarifRepository.find({
+  async findAllByGrille(grilleId: string, page: number = 1, limit: number = 10): Promise<TarifsWithGrilleResponseDto> {
+    const skip = (page - 1) * limit;
+
+    const [tarifs, total] = await this.tarifRepository.findAndCount({
       where: { grille_id: grilleId },
       relations: ['grilleTarifaire', 'grilleTarifaire.produit', 'grilleTarifaire.produit.branche'],
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC' },
+      skip,
+      take: limit
     });
 
-    return tarifs.map(tarif => this.mapToDtoWithGrille(tarif));
+    return {
+      tarifs: tarifs.map(tarif => this.mapToDtoWithGrille(tarif)),
+      total,
+      page,
+      limit
+    };
   }
 
   async findAllByProduit(produitId: string): Promise<TarifWithGrilleDto[]> {
