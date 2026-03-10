@@ -193,8 +193,8 @@ export class TarifCalculationService {
             }
 
 
-            const valeurAttendueStr = valeurAttendue?.toString().trim() || '';
-            const valeurFournieStr = critereFourni.valeur?.toString().trim() || '';
+            const valeurAttendueStr = valeurAttendue?.toString().trim().toLowerCase() || '';
+            const valeurFournieStr = critereFourni.valeur?.toString().trim().toLowerCase() || '';
 
             console.log(`[TarifCalculation] Comparaison valeur: attendue="${valeurAttendueStr}" vs fournie="${valeurFournieStr}"`);
 
@@ -264,10 +264,10 @@ export class TarifCalculationService {
 
             if (valeurAttendue && tarif.valeurCritere) {
                 // Vérifier si la valeur correspond
-                const valeurCritereStr = tarif.valeurCritere.valeur?.toString().trim() || '';
+                const valeurCritereStr = tarif.valeurCritere.valeur?.toString().trim().toLowerCase() || '';
                 console.log(`[TarifCalculation] Comparaison valeur: attendue="${valeurAttendue}" vs tarif="${valeurCritereStr}"`);
 
-                if (valeurAttendue.trim() === valeurCritereStr) {
+                if (valeurAttendue.trim().toLowerCase() === valeurCritereStr) {
                     console.log(`[TarifCalculation] Valeur correspond, vérification de la correspondance complète...`);
 
                     // Vérifier si tous les critères fournis correspondent
@@ -304,13 +304,15 @@ export class TarifCalculationService {
         criteresFournisNormalises: Map<string, string>
     ): boolean {
 
-        for (const tarif of tarifs) {
-            if (!tarif.critere) continue;
+        for (const [nomNormalise, valeur] of criteresFournisNormalises.entries()) {
+            const tarifCorrespondant = tarifs.find(t => {
+                if (!t.critere || !t.valeurCritere) return false;
+                const nomCritereNormalise = this.normaliserNomCritere(t.critere.nom);
+                const valeurCritereStr = t.valeurCritere.valeur?.toString().trim().toLowerCase() || '';
+                return nomCritereNormalise === nomNormalise && valeurCritereStr === valeur.trim().toLowerCase();
+            });
 
-            const nomNormalise = this.normaliserNomCritere(tarif.critere.nom);
-            const valeurFournie = criteresFournisNormalises.get(nomNormalise);
-
-            if (!valeurFournie) {
+            if (!tarifCorrespondant) {
                 return false;
             }
         }
