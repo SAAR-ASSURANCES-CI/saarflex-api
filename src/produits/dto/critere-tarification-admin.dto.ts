@@ -364,3 +364,22 @@ export class CriteresAdminResponseDto {
   @ApiProperty({ description: 'Nombre total de pages' })
   total_pages: number;
 }
+
+export class CritereReorderItemDto {
+  @ApiProperty({ description: 'ID du critère', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @IsUUID()
+  id: string;
+
+  @ApiProperty({ description: 'Nouvel ordre', example: 1 })
+  @IsInt()
+  @Min(1)
+  ordre: number;
+}
+
+export class ReorderCriteresDto {
+  @ApiProperty({ type: [CritereReorderItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CritereReorderItemDto)
+  criteres: CritereReorderItemDto[];
+}

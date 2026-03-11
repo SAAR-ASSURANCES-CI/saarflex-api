@@ -12,7 +12,8 @@ import {
     UpdateValeurCritereDto,
     CritereTarificationAdminDto,
     ValeurCritereDto,
-    CriteresAdminResponseDto
+    CriteresAdminResponseDto,
+    ReorderCriteresDto
 } from '../../dto/critere-tarification-admin.dto';
 
 @Injectable()
@@ -234,6 +235,16 @@ export class CriteresAdminService {
 
         return {
             message: `Critère "${critere.nom}" supprimé avec succès`
+        };
+    }
+
+    async reorder(reorderDto: ReorderCriteresDto): Promise<{ message: string }> {
+        for (const item of reorderDto.criteres) {
+            await this.critereRepository.update(item.id, { ordre: item.ordre });
+        }
+
+        return {
+            message: 'Ordre des critères mis à jour avec succès'
         };
     }
 
