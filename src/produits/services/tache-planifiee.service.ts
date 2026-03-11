@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DevisSauvegardeService } from '../public/services/devis-sauvegarde.service';
+import { ContratService } from './contrat.service';
 
 @Injectable()
 export class TachePlanifieeService implements OnModuleInit {
@@ -8,27 +9,26 @@ export class TachePlanifieeService implements OnModuleInit {
 
   constructor(
     private readonly devisSauvegardeService: DevisSauvegardeService,
+    private readonly contratService: ContratService,
   ) {}
 
   onModuleInit() {
-    // Démarrer le nettoyage automatique toutes les heures
     this.nettoyageInterval = setInterval(() => {
       this.nettoyerDevisExpires();
     }, 60 * 60 * 1000); // 1 heure
-
-    // Nettoyer immédiatement au démarrage
     this.nettoyerDevisExpires();
   }
 
   async nettoyerDevisExpires() {
     try {
-      this.logger.log('Début du nettoyage des devis expirés...');
+      this.logger.log('Début du nettoyage des devis et contrats expirés...');
       
-      await this.devisSauvegardeService.nettoyerDevisExpires();
+      const nbDevis = await this.devisSauvegardeService.nettoyerDevisExpires();
+      const nbContrats = await this.contratService.mettreAJourContratsExpires();
       
-      this.logger.log('Nettoyage des devis expirés terminé avec succès');
+      this.logger.log(`Nettoyage terminé : ${nbDevis} devis supprimés, ${nbContrats} contrats expirés.`);
     } catch (error) {
-      this.logger.error('Erreur lors du nettoyage des devis expirés:', error);
+      this.logger.error('Erreur lors du nettoyage des éléments expirés:', error);
     }
   }
 
@@ -36,8 +36,6 @@ export class TachePlanifieeService implements OnModuleInit {
     try {
       this.logger.log('Génération du rapport quotidien des devis...');
       
-      // Ici vous pourriez ajouter la logique pour générer des rapports
-      // par exemple, envoyer un email aux administrateurs avec les statistiques
       
       this.logger.log('Rapport quotidien des devis généré avec succès');
     } catch (error) {
