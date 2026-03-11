@@ -2069,6 +2069,37 @@
         ]
       }
     },
+    "/admin/criteres/reorder": {
+      "post": {
+        "description": "Endpoint réservé aux administrateurs pour mettre à jour l'ordre d'affichage de plusieurs critères",
+        "operationId": "CriteresAdminController_reorder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderCriteresDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ordre mis à jour avec succès"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Réorganiser l'ordre des critères",
+        "tags": [
+          "Administration - Critères de Tarification"
+        ]
+      }
+    },
     "/admin/criteres/produit/{produitId}": {
       "get": {
         "description": "Endpoint réservé aux administrateurs pour lister tous les critères d'un produit spécifique",
@@ -8461,6 +8492,39 @@
           "created_at",
           "valeurs",
           "nombre_valeurs"
+        ]
+      },
+      "CritereReorderItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID du critère",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "ordre": {
+            "type": "number",
+            "description": "Nouvel ordre",
+            "example": 1
+          }
+        },
+        "required": [
+          "id",
+          "ordre"
+        ]
+      },
+      "ReorderCriteresDto": {
+        "type": "object",
+        "properties": {
+          "criteres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CritereReorderItemDto"
+            }
+          }
+        },
+        "required": [
+          "criteres"
         ]
       },
       "CriteresAdminResponseDto": {

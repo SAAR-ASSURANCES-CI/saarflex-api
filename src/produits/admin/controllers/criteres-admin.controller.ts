@@ -28,7 +28,8 @@ import {
   UpdateValeurCritereDto,
   CritereTarificationAdminDto,
   ValeurCritereDto,
-  CriteresAdminResponseDto
+  CriteresAdminResponseDto,
+  ReorderCriteresDto
 } from '../../dto/critere-tarification-admin.dto';
 import { JwtAuthGuard } from '../../../users/jwt/jwt-auth.guard';
 import { AdminGuard } from '../../../users/guards/admin.guard';
@@ -80,6 +81,26 @@ export class CriteresAdminController {
             status: 'success',
             message: 'Critère de tarification créé avec succès',
             data: critere
+        };
+    }
+
+    @Post('reorder')
+    @ApiOperation({ 
+        summary: 'Réorganiser l\'ordre des critères',
+        description: 'Endpoint réservé aux administrateurs pour mettre à jour l\'ordre d\'affichage de plusieurs critères'
+    })
+    @ApiBody({ type: ReorderCriteresDto })
+    @ApiResponse({ 
+        status: 200, 
+        description: 'Ordre mis à jour avec succès'
+    })
+    async reorder(
+        @Body() reorderDto: ReorderCriteresDto
+    ): Promise<{ status: string; message: string }> {
+        const result = await this.criteresAdminService.reorder(reorderDto);
+        return {
+            status: 'success',
+            message: result.message
         };
     }
 
