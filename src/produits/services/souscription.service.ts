@@ -27,6 +27,8 @@ export class SouscriptionService {
     private readonly beneficiaireRepository: Repository<Beneficiaire>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Paiement)
+    private readonly paiementRepository: Repository<Paiement>,
     private readonly paiementService: PaiementService,
     private readonly contratService: ContratService,
     private readonly beneficiaireService: BeneficiaireService,
@@ -103,10 +105,6 @@ export class SouscriptionService {
    * Appelé par le webhook de paiement
    */
   async finaliserSouscription(devisId: string, paiementId: string): Promise<Contrat> {
-    
-    const contratExistant = await this.contratService.obtenirContratsUtilisateur('') 
-      .then(contrats => contrats.find(c => c.devis_simule_id === devisId));
-
     const devis = await this.devisSimuleRepository.findOne({
       where: { id: devisId },
       relations: ['produit', 'categorie']
@@ -116,28 +114,45 @@ export class SouscriptionService {
       throw new NotFoundException('Devis non trouvé');
     }
 
-    if (devis.statut === StatutDevis.CONVERTI_EN_CONTRAT) {
-
-      const c = await this.contratService.obtenirContratsUtilisateur(devis.utilisateur_id)
-        .then(contrats => contrats.find(c => c.devis_simule_id === devisId));
-      if (c) return c;
-    }
-
-    if (devis.statut !== StatutDevis.PAYE) {
-      throw new BadRequestException('Le devis n\'est pas dans un état permettant la finalisation (attendu: PAYE)');
+    // Le devis doit être soit déjà payé, soit déjà converti (pour le rattrapage)
+    if (devis.statut !== StatutDevis.PAYE && devis.statut !== StatutDevis.CONVERTI_EN_CONTRAT) {
+      throw new BadRequestException(`Le devis n'est pas dans un état permettant la finalisation (Statut actuel: ${devis.statut})`);
     }
 
     const paiement = await this.paiementService.obtenirPaiementParReference(paiementId);
+    
+    // Extraction sécurisée des bénéficiaires
+    let beneficiaires: any[] = [];
+    try {
+      if (paiement.donnees_callback) {
+        const rawData = typeof paiement.donnees_callback === 'string' 
+          ? JSON.parse(paiement.donnees_callback) 
+          : paiement.donnees_callback;
+        beneficiaires = rawData.beneficiaires || [];
+      }
+    } catch (e) {
+      console.error('Erreur parsing beneficiaires (callbackData):', e.message);
+    }
 
-    const contrat = await this.contratService.creerContratDepuisDevis(devisId);
+    let contrat: Contrat;
+    if (devis.statut === StatutDevis.CONVERTI_EN_CONTRAT) {
+      const contrats = await this.contratService.obtenirContratsUtilisateur(devis.utilisateur_id);
+      const cFound = contrats.find(c => c.devis_simule_id === devisId);
+      if (!cFound) throw new BadRequestException('Contrat marqué comme converti mais introuvable');
+      contrat = cFound;
+    } else {
+      contrat = await this.contratService.creerContratDepuisDevis(devisId);
+      await this.paiementService.lierContrat(paiement.id, contrat.id);
+    }
 
-    await this.paiementService.lierContrat(paiement.id, contrat.id);
-
-    if (devis.produit.necessite_beneficiaires && paiement.donnees_callback?.beneficiaires) {
-      await this.beneficiaireService.ajouterBeneficiaires(
-        contrat.id,
-        paiement.donnees_callback.beneficiaires
-      );
+    if (devis.produit.necessite_beneficiaires && beneficiaires.length > 0) {
+      const nbBenef = await this.beneficiaireService.compterBeneficiaires(contrat.id);
+      if (nbBenef === 0) {
+        await this.beneficiaireService.ajouterBeneficiaires(
+          contrat.id,
+          beneficiaires
+        );
+      }
     }
 
     // Envoi de l'attestation par email

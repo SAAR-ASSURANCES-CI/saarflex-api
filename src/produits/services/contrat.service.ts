@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { Contrat, StatutContrat } from '../entities/contrat.entity';
 import { DevisSimule, StatutDevis } from '../entities/devis-simule.entity';
 import { Produit, TypeProduit, PeriodicitePrime } from '../entities/produit.entity';
@@ -30,7 +30,7 @@ export class ContratService {
     async creerContratDepuisDevis(devisId: string): Promise<Contrat> {
         const devis = await this.devisSimuleRepository.findOne({
             where: { id: devisId, statut: StatutDevis.PAYE },
-            relations: ['produit', 'categorie', 'grilleTarifaire']
+            relations: ['produit', 'produit.criteres', 'categorie', 'grilleTarifaire']
         });
 
         if (!devis) {
@@ -66,8 +66,77 @@ export class ContratService {
         );
 
         const dateDebutCouverture = new Date();
-        const dateFinCouverture = new Date();
-        dateFinCouverture.setMonth(dateFinCouverture.getMonth() + 12);
+        let dateFinCouverture = new Date();
+        let dureeCouverture = 12; // Valeur par défaut
+
+        // 1. Chercher la durée dans les critères utilisateur
+        const criteresUtilisateur = devis.criteres_utilisateur || {};
+        const produitCriteres = devis.produit?.criteres || [];
+        
+        let valeurDuree: number | null = null;
+        let uniteTrouvee: string | null = null;
+
+        // Stratégie A : Recherche par code technique (prioritaire)
+        const critereDuree = produitCriteres.find(c => 
+            ['duree', 'n', 'periode', 'duree_contrat'].includes(c.code?.toLowerCase() || '')
+        );
+
+        if (critereDuree && criteresUtilisateur[critereDuree.nom]) {
+            valeurDuree = Number(criteresUtilisateur[critereDuree.nom]);
+            uniteTrouvee = critereDuree.unite?.toLowerCase();
+        }
+
+        // Stratégie B : Recherche par mots-clés dans les noms de critères si pas trouvé par code
+        if (!valeurDuree) {
+            const keywords = ['durée', 'periode', 'période', 'jours', 'mois', 'ans', 'année', 'sejour', 'séjour'];
+            for (const critere of produitCriteres) {
+                const lowerNom = critere.nom.toLowerCase();
+                if (keywords.some(kw => lowerNom.includes(kw)) && criteresUtilisateur[critere.nom]) {
+                    valeurDuree = Number(criteresUtilisateur[critere.nom]);
+                    uniteTrouvee = critere.unite?.toLowerCase();
+                    break;
+                }
+            }
+        }
+
+        // 2. Déterminer l'unité finale
+        let uniteFinale: 'jours' | 'mois' | 'ans' = 'mois';
+
+        if (uniteTrouvee) {
+            const ut = uniteTrouvee.trim();
+            if (ut.includes('ans') || ut.includes('année')) uniteFinale = 'ans';
+            else if (ut.includes('mois')) uniteFinale = 'mois';
+            else if (ut.includes('jour')) uniteFinale = 'jours';
+        } 
+        else if (devis.produit.type === TypeProduit.VIE) {
+            uniteFinale = 'ans';
+        }
+        else {
+            const periodicite = devis.produit.periodicite_prime;
+            if (periodicite === PeriodicitePrime.JOURNALIER) {
+                uniteFinale = 'jours';
+            } else if (periodicite === PeriodicitePrime.ANNUEL) {
+                uniteFinale = 'ans';
+            } else {
+                uniteFinale = 'mois';
+            }
+        }
+
+        // 3. Calcul de la date de fin effective
+        if (valeurDuree && valeurDuree > 0) {
+            dureeCouverture = valeurDuree;
+            dateFinCouverture = new Date(dateDebutCouverture);
+            
+            if (uniteFinale === 'jours') {
+                dateFinCouverture.setDate(dateFinCouverture.getDate() + valeurDuree);
+            } else if (uniteFinale === 'ans') {
+                dateFinCouverture.setFullYear(dateFinCouverture.getFullYear() + valeurDuree);
+            } else {
+                dateFinCouverture.setMonth(dateFinCouverture.getMonth() + valeurDuree);
+            }
+        } else {
+            dateFinCouverture.setMonth(dateFinCouverture.getMonth() + 12);
+        }
 
         // Créer le contrat
         const contrat = this.contratRepository.create({
@@ -81,7 +150,7 @@ export class ContratService {
             franchise: devis.franchise_calculee,
             plafond: devis.plafond_calcule,
             periodicite_paiement: devis.produit.periodicite_prime,
-            duree_couverture: 12,
+            duree_couverture: dureeCouverture,
             date_debut_couverture: dateDebutCouverture,
             date_fin_couverture: dateFinCouverture,
             statut: StatutContrat.ACTIF,
@@ -255,6 +324,30 @@ export class ContratService {
         }
 
         return await this.mettreAJourStatutContrat(contratId, StatutContrat.ACTIF);
+    }
+    /**
+     * Identifie et met à jour les contrats arrivés à expiration
+     */
+    async mettreAJourContratsExpires(): Promise<number> {
+        const today = new Date();
+        
+        // Trouver les contrats actifs dont la date de fin est dépassée
+        const contratsAExpirer = await this.contratRepository.find({
+            where: {
+                statut: StatutContrat.ACTIF,
+                date_fin_couverture: LessThan(today)
+            }
+        });
+
+        if (contratsAExpirer.length === 0) return 0;
+
+        // Mettre à jour les statuts
+        for (const contrat of contratsAExpirer) {
+            contrat.statut = StatutContrat.EXPIRE;
+        }
+
+        await this.contratRepository.save(contratsAExpirer);
+        return contratsAExpirer.length;
     }
 }
 
